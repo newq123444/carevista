@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Fix all controller SQL queries that reference wrong column names. Fix route ordering collision where /wellbeing/:residentId catches /wellbeing/heatmap requests. Fix absence controller missing validation. Specific issues: billing.controller.ts getBillingSummary uses 'total_amount' and 'invoice_date' (should be 'total_pence' and 'period_start'). digitalTwin.controller.ts queries 'medication_name' and 'status' from medications (should be 'name' and 'active'). wellbeingHeatmap.controller.ts and smartHandover.controller.ts use 'r.status = active' (should be 'r.active = TRUE'). smartHandover.controller.ts and digitalTwin.controller.ts reference care_notes 'category' column (should be 'note_type'). cqcCompliance.controller.ts references 'resident_life_stories' (should be 'resident_life_story'). Route collision: /wellbeing/heatmap routes are registered at line 851 but /wellbeing/:residentId at line 266 catches the request first.",
+  "status": "completed",
+  "steps": [
+    "In backend/src/controllers/billing.controller.ts getBillingSummary function: change 'total_amount' to 'total_pence' (4 occurrences on lines 104-107), change 'invoice_date' to 'period_start' (2 occurrences on line 107)",
+    "In backend/src/controllers/digitalTwin.controller.ts: line 45 change 'SELECT medication_name, dose, route, frequency, status FROM medications' to 'SELECT name AS medication_name, dose, route, frequency, active FROM medications'; line 46 change the WHERE clause filter from 'status = active' to 'active = TRUE'",
+    "In backend/src/controllers/wellbeingHeatmap.controller.ts: line 23 change 'r.status = active' to 'r.active = TRUE'; line 134 change 'r.status = active' to 'r.active = TRUE'",
+    "In backend/src/controllers/smartHandover.controller.ts: line 33 change 'status = active' to 'active = TRUE'; line 26 change 'cn.category' to 'cn.note_type'",
+    "In backend/src/controllers/digitalTwin.controller.ts: line 21 change 'category' to 'note_type'; line 116 change 'category AS sub_type' to 'note_type AS sub_type'",
+    "In backend/src/controllers/cqcCompliance.controller.ts: change all occurrences of 'resident_life_stories' to 'resident_life_story' (there are 3 occurrences around lines 604, 669, 836)",
+    "CRITICAL ROUTE FIX in backend/src/routes/index.ts: Move the 3 wellbeing heatmap routes (currently at lines 851-853: /wellbeing/heatmap, /wellbeing/heatmap/history, /wellbeing/heatmap/room/:roomNumber) to BEFORE the /wellbeing/:residentId route (currently at line 266). Place them between /wellbeing/generate-isolation-alerts and /wellbeing/:residentId so that 'heatmap' is matched as a literal path segment before the :residentId parameter.",
+    "In backend/src/controllers/absence.controller.ts: Add validation at the top of recordAbsence - if (!staffId || !absenceType || !startDate) return res.status(400).json({ error: 'staffId, absenceType and startDate are required' }); This prevents the NOT NULL constraint violation on staff_id."
+  ],
+  "acceptance_criteria": [
+    "billing.controller.ts no longer references total_amount or invoice_date",
+    "digitalTwin.controller.ts queries the correct column names from medications table",
+    "wellbeingHeatmap.controller.ts and smartHandover.controller.ts use r.active = TRUE not r.status",
+    "All care_notes references use note_type not category",
+    "cqcCompliance.controller.ts uses resident_life_story (singular)",
+    "Wellbeing heatmap routes are positioned BEFORE /wellbeing/:residentId in routes/index.ts",
+    "absence.controller.ts validates required fields before INSERT",
+    "Backend TypeScript compiles cleanly: cd backend && npx tsc --noEmit"
+  ],
+  "verification": [
+    "Run: cd backend && npx tsc --noEmit (should succeed with no errors)",
+    "Run: cd backend && npm run build (should succeed)"
+  ],
+  "blocked_reason": null,
+  "findings": "All SQL column fixes applied and verified. Also fixed note.category -> note.note_type in smartHandover JS logic (line 58) since the SQL query now returns note_type instead of category. Backend compiles cleanly with tsc --noEmit. Route collision fixed by moving heatmap routes before :residentId param route."
+}

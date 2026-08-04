@@ -1,0 +1,26 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) with React+TypeScript frontend and Node.js/Express+TypeScript backend",
+  "language": "TypeScript",
+  "build_system": "Vite for frontend, tsc for backend. npm as package manager.",
+  "test_framework": "No formal test framework configured. Validation is build-based.",
+  "build_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "test_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "verification_instructions": "Run frontend build (cd frontend && npm run build) and backend build (cd backend && npm run build). Both must pass with no errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd frontend && npm install && cd ../backend && npm install",
+  "environment_constraints": "Open internet - npm packages available. No database running, so no migration execution - just create SQL files. No test runner configured.",
+  "contribution_requirements": "Follow existing patterns: controllers in backend/src/controllers/, routes registered in backend/src/routes/index.ts, migrations numbered sequentially in backend/migrations/, frontend pages in frontend/src/pages/, API client in frontend/src/services/api.ts, hooks in frontend/src/hooks/index.ts, routes/nav in frontend/src/App.tsx",
+  "key_patterns": "Backend: Express controllers with (req, res, next) pattern, query() from models/db for SQL, AppError for errors, auditLog for audit trail. Middleware: authenticate, tenantGuard, isManager, isClinical, isStaff, isFinance. Frontend: Pages are standalone React components with inline styles, hooks use TanStack React Query, api.ts exports grouped API objects, App.tsx has NAV_ALL for sidebar nav and Routes for routing.",
+  "relevant_files": [
+    "backend/src/routes/index.ts",
+    "backend/src/controllers/competencyMatrix.controller.ts",
+    "backend/src/middleware/auth.ts",
+    "backend/migrations/011_batch2_features.sql",
+    "frontend/src/App.tsx",
+    "frontend/src/services/api.ts",
+    "frontend/src/hooks/index.ts",
+    "frontend/src/types/index.ts",
+    "frontend/src/pages/CompetencyMatrix.tsx"
+  ],
+  "directory_structure": "backend/src/controllers/ - Express controllers, backend/src/routes/index.ts - all route registrations, backend/migrations/ - numbered SQL migration files, frontend/src/pages/ - React page components, frontend/src/services/api.ts - axios API client, frontend/src/hooks/index.ts - React Query hooks, frontend/src/App.tsx - routing and navigation"
+}

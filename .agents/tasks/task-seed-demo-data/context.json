@@ -1,0 +1,25 @@
+{
+  "project_type": "Node.js/TypeScript Express backend with PostgreSQL",
+  "language": "TypeScript",
+  "build_system": "tsc for compilation, tsx for running scripts directly",
+  "test_framework": "No test runner configured - validation is via TypeScript compilation",
+  "build_command": "cd /projects/sandbox/jubilant-waddle/backend && npm run build",
+  "test_command": "cd /projects/sandbox/jubilant-waddle/backend && npx tsc --noEmit",
+  "verification_instructions": "1. Run npx tsc --noEmit to check TypeScript compiles. 2. Ensure seed-demo.ts can be referenced by package.json script.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/jubilant-waddle/backend && npm install",
+  "environment_constraints": "Open internet access. No running PostgreSQL database in sandbox, so cannot execute seed. Validation is compilation-only.",
+  "contribution_requirements": "Seed file must run AFTER main seed.ts. Must look up existing IDs (care_home_id, user IDs, resident IDs) from seeded data. Must use same Pool/pg pattern as seed.ts.",
+  "key_patterns": "seed.ts uses pg Pool directly, helper functions daysAgo/daysFromNow/dateStr/rand/randInt. Uses client.query with parameterized queries. Wraps in BEGIN/COMMIT transaction. References care_homes by email lookup, users by email, residents by room_number.",
+  "relevant_files": [
+    "backend/src/utils/seed.ts",
+    "backend/package.json",
+    "backend/migrations/005_notifications.sql",
+    "backend/migrations/010_batch1_features.sql",
+    "backend/migrations/011_batch2_features.sql",
+    "backend/migrations/012_batch3_features.sql",
+    "backend/migrations/013_quality_of_life.sql",
+    "backend/migrations/014_missing_tables_and_columns.sql"
+  ],
+  "directory_structure": "backend/src/utils/ contains seed.ts and migrate.ts. backend/migrations/ contains 001-014 SQL files. backend/package.json has scripts including seed."
+}

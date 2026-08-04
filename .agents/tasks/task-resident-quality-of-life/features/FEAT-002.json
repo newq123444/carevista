@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Frontend implementation for all 10 resident quality-of-life features: TypeScript types, API service methods, React Query hooks, page components, and navigation integration in App.tsx. Covers all 10 features with full UI pages integrated into the sidebar.",
+  "status": "completed",
+  "steps": [
+    "Add TypeScript interfaces to frontend/src/types/index.ts for all 10 features: MusicGenre, MusicPreference, MusicSession, MusicSessionSong; MenuOption, MenuDietaryProfile, MenuChoice; FriendshipObservation, FriendshipConnection; PurposeRole, PurposeRoleAssignment, PurposeEngagementLog; MoodIntervention, MoodInterventionHistory; PhotoFramePhoto, PhotoViewingHistory; SleepLog, SleepProfile; IntergenerationalProgramme, IntergenerationalVisit, IntergenerationalParticipant; RehabGoal, RehabMilestone, RehabProgressLog; Celebration, CelebrationTask.",
+    "Add API service methods to frontend/src/services/api.ts for all 10 features following the existing pattern (e.g., musicTherapyApi = { getGenres, getPreferences, updatePreferences, startSession, endSession, getHistory, getEffectiveness }, menuChoiceApi = { listOptions, createOption, getDietaryProfile, updateDietaryProfile, submitChoice, getKitchenDashboard, getResidentChoices }, etc.).",
+    "Add React Query hooks to frontend/src/hooks/index.ts for all 10 features following the existing pattern. Include both useQuery hooks for data fetching and useMutation hooks for create/update operations with appropriate query invalidation and toast notifications. Import the new API services at the top of the file.",
+    "Create frontend/src/pages/MusicTherapy.tsx - Page with: genre library browser, per-resident preference profile editor, start/end session interface with mood before/after selection, session history list, effectiveness report showing which songs reduce agitation. Follow DiabetesManagement.tsx pattern with resident selector, tabs, inline styles.",
+    "Create frontend/src/pages/MenuChoiceSystem.tsx - Page with: tablet-friendly meal selection interface showing available options with photo placeholders, resident dietary profile (cultural/religious needs, texture requirements), kitchen dashboard tab showing aggregated choices by meal for tomorrow. Large touch targets for tablet use.",
+    "Create frontend/src/pages/FriendshipMapper.tsx - Page with: staff observation recording form, network visualization showing residents as nodes and connections as lines (simple SVG-based), seating arrangement suggestions, isolated residents alert list with flags.",
+    "Create frontend/src/pages/DailyPurposePlanner.tsx - Page with: role library (watering plants, folding napkins, greeting visitors, sorting mail, feeding fish), assignment interface, engagement tracking log, satisfaction scores, suggestions for new roles when interest wanes.",
+    "Create frontend/src/pages/MoodEnvironment.tsx - Page with: when mood logged as low/very_low shows personalized intervention suggestions based on historical effectiveness, intervention recording with before/after scores, effectiveness dashboard showing what works for each resident.",
+    "Create frontend/src/pages/PhotoFrameFeed.tsx - Page with: photo upload interface (for family), approval workflow (pending/approved/rejected), scheduling (show on birthdays/anniversaries), viewing history, grid display of approved photos per resident.",
+    "Create frontend/src/pages/SleepQualityTracker.tsx - Page with: sleep log entry form (bedtime, wake time, disturbances count, disturbance type checkboxes: pain/anxiety/toileting/noise/confusion, interventions used, quality rating), sleep profile with trend charts (simple bar/line using divs), improvement suggestions.",
+    "Create frontend/src/pages/IntergenerationalProgramme.tsx - Page with: programme creation/management, visit scheduling with local schools/nurseries, activity planning (reading, art, baking, singing), safeguarding requirements checklist, engagement/wellbeing outcome logging per resident.",
+    "Create frontend/src/pages/RehabGoalTracker.tsx - Page with: collaborative goal setting (mobility/independence), milestone definition (walk 10m, use stairs, dress independently), progress tracking with dates, achievement celebrations, family notification toggles.",
+    "Create frontend/src/pages/CelebrationPlanner.tsx - Page with: upcoming celebrations auto-detected (birthdays from DOB, admission anniversaries), religious festivals based on resident faith field, celebration plan creation, task assignment to staff, completion tracking, calendar view showing all celebrations.",
+    "Update frontend/src/App.tsx to: (1) import all 10 new page components, (2) add nav items to NAV_ALL array in a new 'Quality of Life' section with appropriate icons and role access, (3) add Route elements for each page path. Paths: /music-therapy, /menu-choices, /friendship-mapper, /purpose-planner, /mood-environment, /photo-frames, /sleep-tracker, /intergenerational, /rehab-goals, /celebrations."
+  ],
+  "acceptance_criteria": [
+    "All 10 new page component files exist in frontend/src/pages/",
+    "frontend/src/types/index.ts contains interfaces for all 10 features",
+    "frontend/src/services/api.ts contains API client methods for all 10 features",
+    "frontend/src/hooks/index.ts contains React Query hooks for all 10 features",
+    "frontend/src/App.tsx imports all 10 pages, has nav items in NAV_ALL, and has Route elements",
+    "Running 'cd /projects/sandbox/jubilant-waddle/frontend && npm run build' succeeds without TypeScript errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 10 page components created, types/api/hooks/App.tsx updated. Vite build succeeds (dist output created). TSC shows 19 pre-existing errors in CareNotes.tsx, Emar.tsx, Incidents.tsx, Training.tsx - none from our new code. The base branch had 81 tsc errors before our changes (our type additions actually fixed 62 of them). Zero new errors introduced."
+}

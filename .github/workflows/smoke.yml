@@ -1,0 +1,49 @@
+name: Smoke (E2E)
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: carevista
+          POSTGRES_USER: carevista
+          POSTGRES_PASSWORD: carevista
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U carevista"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://carevista:carevista@localhost:5432/carevista
+      JWT_SECRET: ci_test_jwt_secret_at_least_32_characters_long
+      JWT_REFRESH_SECRET: ci_test_refresh_secret_at_least_32_characters
+      NODE_ENV: development
+      PORT: '3001'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm', cache-dependency-path: backend/package-lock.json }
+      - name: Install, build, migrate, seed
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+          npm run migrate
+          npm run seed
+      - name: Start API and wait for health
+        working-directory: backend
+        run: |
+          node dist/index.js & echo $! > /tmp/api.pid
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3001/health && break
+            echo "waiting for API ($i)…"; sleep 2
+          done
+      - name: Run smoke test
+        working-directory: backend
+        run: node tests/smoke.mjs
+      - name: Stop API
+        if: always()
+        run: kill "$(cat /tmp/api.pid)" 2>/dev/null || true

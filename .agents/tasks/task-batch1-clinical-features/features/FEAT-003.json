@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Backend controllers and routes for Smart Rota Builder, Natural Language Search, Automated Risk Assessments, and Medication Interaction Checker (features 5-8)",
+  "status": "completed",
+  "steps": [
+    "Create backend/src/controllers/smartRota.controller.ts with functions: generateRota (POST - AI generates optimal rota based on staff skills, preferences, resident acuity, budget, legal constraints; returns populated week grid), getRotaTemplate (GET - retrieve a generated rota), listRotaTemplates (GET - list saved templates), updateRotaShift (PATCH - manual edit/drag-drop adjustment), publishRota (POST - finalize and copy to main schedule), getStaffConstraints (GET - working time directive checks, contracted hours, preferences)",
+    "Create backend/src/controllers/nlSearch.controller.ts with functions: search (POST - takes natural language query, parses intent using keyword/pattern matching for residents, incidents, medications, falls, risk levels; executes appropriate SQL; returns results), getSearchHistory (GET - recent searches by user). Intent parsing should handle patterns like 'residents who had a fall', 'residents on [medication]', 'high fall risk', 'last month/week/year' time ranges, 'blood thinners' medication category mapping.",
+    "Create backend/src/controllers/riskAssessments.controller.ts with functions: calculateWaterlow (POST - auto-populate from existing data: age, weight, skin type, continence, mobility, appetite, medications, tissue malnutrition, neurological deficit), calculateMUST (POST - BMI score + unplanned weight loss + acute disease effect), calculateFallsRisk (POST - from incidents, mobility notes, medications, age), getResidentAssessments (GET - all assessments for a resident), getOverdueReviews (GET - assessments past next_review_date), getHomeRiskOverview (GET - summary with traffic lights across all residents)",
+    "Create backend/src/controllers/medInteractions.controller.ts with functions: checkInteractions (POST - given a resident_id, cross-reference all active medications against a built-in interaction database; flag dangerous combinations), getResidentInteractions (GET - all flagged interactions for a resident), acknowledgeInteraction (PATCH - mark as reviewed), getInteractionAlerts (GET - all unacknowledged alerts across home). Include a static interaction dataset covering common care home medications: warfarin+NSAIDs, ACEi+potassium-sparing diuretics, metformin+contrast, SSRIs+MAOIs, lithium+NSAIDs, digoxin+amiodarone, statins+macrolides, etc.",
+    "Register all new routes in backend/src/routes/index.ts under appropriate sections with role guards."
+  ],
+  "acceptance_criteria": [
+    "All four controllers compile without TypeScript errors",
+    "Routes are registered with appropriate auth middleware",
+    "NL search handles at least 5 different query patterns (falls, medications, risk levels, time ranges, specific conditions)",
+    "Risk assessments implement correct Waterlow and MUST scoring algorithms",
+    "Medication interaction checker includes at least 15 common interaction pairs",
+    "Smart rota respects 48-hour working time directive limit",
+    "All controllers use tenant isolation via care_home_id"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/jubilant-waddle/backend && npx tsc --noEmit"
+  ],
+  "blocked_reason": null,
+  "findings": "All 4 controllers (smartRota, nlSearch, riskAssessments, medInteractions) compile cleanly with no new TS errors. Pre-existing errors in auth.controller.ts, photos.controller.ts, upload.ts, and index.ts remain unchanged. Used resident_conditions table for dementia check in falls risk since care_type column doesn't exist in the database. Used resident_weights table for BMI data. Routes registered with static routes (overdue, overview, alerts, constraints) before parameterized routes (:id, :residentId). Medication interaction checker includes 17 interaction pairs covering all specified combinations."
+}

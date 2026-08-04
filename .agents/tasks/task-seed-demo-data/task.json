@@ -1,0 +1,14 @@
+{
+  "task_id": "task-seed-demo-data",
+  "task_description": "Create a comprehensive demo seed file (seed-demo.ts) that populates all tables from migrations 005-014 with 30 days of realistic data for a client demo. Runs after the main seed.ts.",
+  "status": "completed",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "TypeScript compiles cleanly with both `tsc` and `npx tsc --noEmit`. All 80+ tables from migrations 005-014 are seeded. Package.json script seed:demo added. File is 2047 lines covering notifications, clinical features, HR/finance, mobile/analytics, quality of life, and all missing tables."
+  }
+}

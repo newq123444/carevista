@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Priority 1 continued: AI Predictive Care Engine - Frontend dashboard page with risk scores per resident, alerts panel, and trend visualization. Add types, API client, hooks, page component, and navigation entry.",
+  "status": "completed",
+  "steps": [
+    "Add TypeScript types to frontend/src/types/index.ts: PredictiveRiskScore (id, resident_id, resident_name, room_number, risk_type, score, factors, generated_at), PredictiveAlert (id, resident_id, resident_name, room_number, alert_type, risk_score, threshold, factors, status, created_at, acknowledged_by_name), PredictiveRiskDashboard (residents array with falls_score, deterioration_score, combined_risk, last_analyzed).",
+    "Add API client methods to frontend/src/services/api.ts: predictiveApi object with getDashboard, getResidentRisk, getResidentHistory, getAlerts, acknowledgeAlert, runAnalysis.",
+    "Add React Query hooks to frontend/src/hooks/index.ts: usePredictiveRiskDashboard, usePredictiveAlerts, useResidentRiskHistory, useRunPredictiveAnalysis, useAcknowledgePredictiveAlert.",
+    "Create frontend/src/pages/PredictiveCare.tsx: A full page with tabs for (1) Risk Dashboard - table/cards showing all residents with their falls and deterioration scores color-coded (green <30, amber 30-70, red >70), sortable by risk. (2) Active Alerts - list of triggered alerts with acknowledge button. (3) Resident Detail - select a resident and see their risk history chart (simple bar/timeline visualization using divs, no chart library needed). Include a 'Run Analysis' button that triggers batch processing. Follow the existing inline-style pattern from AiInsights.tsx.",
+    "Register the page in frontend/src/App.tsx: (1) Add import for PredictiveCare page. (2) Add nav item in NAV_ALL under 'Tools' section: { path: '/predictive-care', label: 'Falls & Risk AI', icon: '🎯', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] }. (3) Add Route: <Route path='/predictive-care' element={<PredictiveCare />} />."
+  ],
+  "acceptance_criteria": [
+    "PredictiveCare page renders with 3 tabs (Risk Dashboard, Alerts, Resident Detail)",
+    "API client methods exist in api.ts for all predictive endpoints",
+    "Hooks exist in hooks/index.ts",
+    "Nav item appears in sidebar under Tools",
+    "Route registered in App.tsx",
+    "Frontend builds successfully with npm run build"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Successfully implemented predictive care frontend. All types (PredictiveRiskScore, PredictiveAlert, PredictiveRiskDashboardItem) added to types/index.ts. API client (predictiveApi) added to services/api.ts. Hooks (usePredictiveRiskDashboard, usePredictiveAlerts, useResidentRiskHistory, useRunPredictiveAnalysis, useAcknowledgePredictiveAlert) added to hooks/index.ts. PredictiveCare page with 3 tabs (Risk Dashboard, Active Alerts, Resident Detail) created. Nav item and route registered in App.tsx. Frontend builds successfully with only the 18 pre-existing type errors (no new errors introduced)."
+}

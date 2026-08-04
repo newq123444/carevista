@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Backend controllers and routes for all 10 Batch 2 features: invoicing enhancements, occupancy forecasting, staff cost analytics, digital recruitment pipeline, competency matrix, sickness/absence analytics, fire log book, visitor sign-in, room turnover manager, and custom report builder. Each feature gets its own controller file following the pattern in billing.controller.ts.",
+  "status": "completed",
+  "steps": [
+    "Create backend/src/controllers/invoicing.controller.ts with: listInvoicesEnhanced (with overdue alerts, rate uplift info), createRateUplift, listRateUplifts, sendPaymentReminder, getRevenueDashboard (monthly revenue summary, payment status breakdown, overdue alerts count)",
+    "Create backend/src/controllers/occupancy.controller.ts with: recordOccupancy, getOccupancyHistory, generateForecast (predict vacancies based on trends), getForecasts, getOccupancyDashboard (current %, trend over time, revenue impact)",
+    "Create backend/src/controllers/staffCosts.controller.ts with: recordStaffCost, getStaffCostsSummary (overtime vs basic, agency vs permanent), getCostPerResident, getBudgetVsActual, listBudgets, createBudget",
+    "Create backend/src/controllers/recruitment.controller.ts with: createJobPosting, listJobPostings, updateJobPosting, createApplication, listApplications, updateApplicationStage, scheduleInterview, listInterviews, updateInterviewOutcome, createDbsCheck, updateDbsCheck, getPipelineOverview (kanban counts per stage)",
+    "Create backend/src/controllers/competencyMatrix.controller.ts with: listCompetencies, createCompetency, listStaffCompetencies, updateStaffCompetency, getCompetencyMatrix (grid of staff vs competencies with status), getExpiringCompetencies",
+    "Create backend/src/controllers/absence.controller.ts with: recordAbsence, listAbsences, calculateBradfordScore, getBradfordScores, getAbsencePatterns (detect e.g. always Monday), getReturnToWorkDue, completeReturnToWork, getAbsenceDashboard",
+    "Create backend/src/controllers/fireLog.controller.ts with: recordFireTest, listFireTests, recordEquipmentCheck, listEquipmentChecks, getOverdueChecks, createPeep, listPeeps, updatePeep, getFireDashboard (summary of tests, equipment status, peeps coverage)",
+    "Create backend/src/controllers/visitors.controller.ts with: signInVisitor, signOutVisitor, listVisitors, getVisitorHistory (per resident), addSafeguardingFlag, listSafeguardingFlags, getVisitorDashboard (current visitors, today stats), getFireRoll (all signed-in visitors for emergency)",
+    "Create backend/src/controllers/roomTurnover.controller.ts with: createTurnover, listTurnovers, updateTurnoverStatus, addChecklistItem, completeChecklistItem, getChecklistItems, getTurnoverDashboard (rooms in progress, ready, summary)",
+    "Create backend/src/controllers/reportBuilder.controller.ts with: createReportTemplate, listReportTemplates, getReportTemplate, updateReportTemplate, deleteReportTemplate, runReport, listReportRuns, getReportRun, getAvailableDataSources (list of queryable tables/views)",
+    "Register all new controller routes in backend/src/routes/index.ts following the existing pattern: import controllers, add routes with appropriate middleware guards (isFinance for finance features, isManager for HR/facilities, isStaff for visitor sign-in)",
+    "Ensure all controllers use care_home_id from req.user for tenant isolation, follow the try/catch/next(err) pattern, and use auditLog for important actions"
+  ],
+  "acceptance_criteria": [
+    "All 10 controller files exist in backend/src/controllers/",
+    "All routes are registered in backend/src/routes/index.ts with proper auth middleware",
+    "Backend build (tsc) succeeds without errors",
+    "Each controller handles at least CRUD operations for its domain"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 10 controller files created and routes registered. Backend build succeeds with exit code 0. Only pre-existing type errors remain (auth.controller.ts, photos.controller.ts, index.ts, upload.ts related to missing @types/compression and multer types). No errors from any new controller files."
+}

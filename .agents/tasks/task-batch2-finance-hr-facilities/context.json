@@ -1,0 +1,28 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) - React 18 frontend + Node.js/Express/TypeScript backend",
+  "language": "TypeScript",
+  "build_system": "npm with Vite for frontend, tsc for backend",
+  "test_framework": "No test framework installed - validation is build-only",
+  "build_command": "cd /projects/sandbox/jubilant-waddle/frontend && npm run build && cd /projects/sandbox/jubilant-waddle/backend && npm run build",
+  "test_command": "N/A - no tests configured, verification is successful TypeScript compilation",
+  "verification_instructions": "1. Run frontend build: cd frontend && npm run build. 2. Run backend build: cd backend && npm run build. Both must succeed with zero errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd frontend && npm install; cd backend && npm install",
+  "environment_constraints": "Open internet - npm packages are installable. No database available at build time so DB-dependent tests cannot run.",
+  "contribution_requirements": "Follow existing patterns: controllers in backend/src/controllers/, routes registered in backend/src/routes/index.ts, migrations numbered sequentially in backend/migrations/, frontend pages in frontend/src/pages/, API client in frontend/src/services/api.ts, hooks in frontend/src/hooks/index.ts, types in frontend/src/types/index.ts, nav items in App.tsx NAV_ALL array with routes in Routes block.",
+  "key_patterns": "Backend: Express controllers with (req, res, next) signature, care_home_id tenant isolation, middleware auth guards (isManager, isFinance, isStaff, isClinical), AppError for errors, auditLog for auditing. Frontend: TanStack React Query hooks pattern, api service objects with axios, inline styles for components, KPI cards with grid-4 class, badge classes for status, table/card layout patterns. Migrations use uuid-ossp extension, UUID PKs, care_home_id FK, created_at/updated_at timestamps.",
+  "relevant_files": [
+    "backend/src/routes/index.ts",
+    "backend/src/controllers/billing.controller.ts",
+    "backend/migrations/010_batch1_features.sql",
+    "frontend/src/App.tsx",
+    "frontend/src/services/api.ts",
+    "frontend/src/hooks/index.ts",
+    "frontend/src/types/index.ts",
+    "frontend/src/pages/Billing.tsx",
+    "frontend/src/pages/SmartRota.tsx",
+    "frontend/src/pages/Training.tsx",
+    "backend/src/middleware/auth.ts"
+  ],
+  "directory_structure": "backend/src/controllers/ - Express controllers, backend/src/routes/index.ts - all routes, backend/migrations/ - SQL migrations (001-010), frontend/src/pages/ - React page components, frontend/src/services/api.ts - API client, frontend/src/hooks/index.ts - React Query hooks, frontend/src/types/index.ts - TypeScript interfaces, frontend/src/App.tsx - routing and navigation"
+}

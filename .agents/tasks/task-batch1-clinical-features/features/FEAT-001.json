@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Database migrations for all 8 new features: NEWS2 vitals scoring, wound photography tracking, infection outbreak tracking, continence assessment, smart rota builder, natural language search, automated risk assessments (Waterlow/MUST/Falls), and medication interaction checker.",
+  "status": "completed",
+  "steps": [
+    "Create backend/migrations/010_batch1_features.sql with tables for: news2_assessments (id, care_home_id, resident_id, assessed_by, respiratory_rate, spo2, supplemental_oxygen, systolic_bp, pulse, consciousness, temperature, total_score, risk_level, escalation_action, escalation_triggered_at, notes, created_at), news2_escalations (id, care_home_id, assessment_id, resident_id, escalation_level, action_taken, responded_by, responded_at, status, created_at)",
+    "Add wound_assessments table (id, care_home_id, resident_id, assessed_by, wound_type, location_body_area, location_x, location_y, width_mm, height_mm, depth_mm, wound_bed, exudate_level, exudate_type, surrounding_skin, pain_level, photo_url, notes, status, created_at, updated_at)",
+    "Add infection_outbreaks table (id, care_home_id, outbreak_type, start_date, end_date, status, affected_count, isolation_protocol, notes, reported_by, created_at, updated_at), infection_cases table (id, care_home_id, outbreak_id, resident_id, symptoms, onset_date, isolation_start, isolation_end, status, notes, created_at)",
+    "Add continence_logs table (id, care_home_id, resident_id, logged_by, event_type, event_time, pad_status, location, notes, created_at), continence_assessments table (id, care_home_id, resident_id, assessed_by, pattern_analysis, recommended_schedule, pad_type, current_pad_usage, target_pad_usage, dignity_notes, created_at, updated_at)",
+    "Add rota_templates table (id, care_home_id, name, week_start, status, constraints, created_by, created_at, updated_at), rota_shifts table (id, care_home_id, template_id, staff_id, shift_date, shift_type, start_time, end_time, role_required, auto_generated, notes, created_at)",
+    "Add nl_search_queries table (id, care_home_id, user_id, query_text, parsed_intent, results_count, created_at)",
+    "Add risk_assessments table (id, care_home_id, resident_id, assessed_by, assessment_type (waterlow/must/falls), total_score, risk_level, factors, auto_populated, next_review_date, status, created_at, updated_at)",
+    "Add medication_interactions table (id, care_home_id, resident_id, medication_a_id, medication_b_id, interaction_type, severity, description, clinical_effect, recommendation, flagged_by, acknowledged_by, acknowledged_at, status, created_at)"
+  ],
+  "acceptance_criteria": [
+    "Migration file 010_batch1_features.sql exists and contains valid PostgreSQL DDL",
+    "All tables have UUID primary keys with uuid_generate_v4() defaults",
+    "All tables have care_home_id foreign key for tenant isolation",
+    "Appropriate indexes are created on frequently queried columns",
+    "CHECK constraints exist for status/enum columns"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/jubilant-waddle/backend && npx tsc --noEmit"
+  ],
+  "blocked_reason": null,
+  "findings": "Pre-existing TypeScript errors in auth.controller.ts, photos.controller.ts, upload.ts middleware (missing @types/compression, @types/multer, JWT type issues). These are unrelated to the SQL migration. SQL files are not compiled by tsc."
+}

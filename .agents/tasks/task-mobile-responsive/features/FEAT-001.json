@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Add comprehensive mobile CSS media queries and enhance tap targets in frontend/src/index.css, plus make the Login page mobile-friendly",
+  "status": "completed",
+  "steps": [
+    "In frontend/src/index.css, within the @media (max-width: 639px) phone breakpoint, add: .btn { min-height: 44px; } and .btn-sm { min-height: 38px; } to increase tap targets",
+    "In frontend/src/index.css, within the @media (max-width: 639px) phone breakpoint, add: .form-input { min-height: 44px; } for larger input tap targets",
+    "In frontend/src/index.css, add smooth scroll behavior for mobile: @media (max-width: 1023px) { html { scroll-behavior: smooth; } * { -webkit-tap-highlight-color: transparent; } }",
+    "In frontend/src/index.css, add a new responsive helper class .responsive-grid that uses CSS to override inline grid styles on mobile. Add: @media (max-width: 639px) { [style*='gridTemplateColumns'] { grid-template-columns: 1fr !important; } } - This uses attribute selector to force all inline gridTemplateColumns to single column on phone",
+    "In frontend/src/index.css, within the phone breakpoint add: .card { margin-bottom: 8px; } to give cards breathing room when stacked",
+    "In frontend/src/index.css, add at the tablet breakpoint @media (max-width: 1023px): [style*='gridTemplateColumns'][style*='repeat(4'] { grid-template-columns: repeat(2, 1fr) !important; } and [style*='gridTemplateColumns'][style*='repeat(5'] { grid-template-columns: repeat(2, 1fr) !important; } - this makes 4 and 5 column grids become 2 columns on tablet",
+    "In frontend/src/pages/Login.tsx, modify the outer flex container to become single-column on mobile by changing the outer div style to add flexDirection responsive behavior. Wrap the left branding panel in a className='login-left' div and the right form panel in a className='login-right' div. Add CSS rules in index.css: @media (max-width: 768px) { .login-left { display: none !important; } .login-right { flex: 1 !important; padding: 24px 20px !important; } } - This hides the branding panel and makes the form full-width on mobile",
+    "In frontend/src/pages/Login.tsx, add a compact mobile header that shows only on mobile (shows logo + CareVista name above the form) when .login-left is hidden. Add className='login-mobile-header' and CSS: .login-mobile-header { display: none; } @media (max-width: 768px) { .login-mobile-header { display: flex; ... } }",
+    "In frontend/src/pages/Login.tsx, change the demo accounts grid from gridTemplateColumns: 'repeat(2, 1fr)' to use a className with responsive override so it becomes single-column on small phones: add className='login-demo-grid' and CSS @media (max-width: 400px) { .login-demo-grid { grid-template-columns: 1fr !important; } }"
+  ],
+  "acceptance_criteria": [
+    "Running `cd /projects/sandbox/jubilant-waddle/frontend && npm run build` succeeds with no errors",
+    "Buttons have min-height 44px on screens under 640px via CSS",
+    "Form inputs have min-height 44px on screens under 640px via CSS",
+    "All inline gridTemplateColumns styles are forced to single column on phones via CSS attribute selector override",
+    "Login page hides left branding panel on screens under 768px and shows full-width form",
+    "Login page shows a compact mobile header with logo when on mobile"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Build passes cleanly. All CSS additions and Login.tsx changes verified via npm run build. No TypeScript errors."
+}

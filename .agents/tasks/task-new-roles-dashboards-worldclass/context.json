@@ -1,0 +1,31 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) - React 18 frontend with Express/TypeScript backend",
+  "language": "TypeScript",
+  "build_system": "Vite for frontend, tsc for backend. npm as package manager.",
+  "test_framework": "No test framework configured. Validation via build only.",
+  "build_command": "cd frontend && npm install && npm run build && cd ../backend && npm install && npm run build",
+  "test_command": "No tests configured - validate via successful build",
+  "verification_instructions": "1. Run frontend build: cd frontend && npm run build. 2. Run backend build: cd backend && npm run build. Both should complete without errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd frontend && npm install; cd backend && npm install",
+  "environment_constraints": "Open internet - npm packages available. No database running (validation is compile-time only).",
+  "contribution_requirements": "No CONTRIBUTING.md found. Follow existing code patterns.",
+  "key_patterns": "Roles defined in: 1) DB enum in migrations/001_init.sql (user_role type), 2) frontend/src/types/index.ts (UserRole type), 3) frontend/src/utils/formatters.ts (ROLE_LABELS), 4) frontend/src/pages/Login.tsx (DEMO_ACCOUNTS array), 5) frontend/src/App.tsx (ROLE_COLORS + NAV_ALL roles arrays), 6) frontend/src/pages/Dashboard.tsx (role router), 7) backend/src/utils/seed.ts (seed users). Dashboard pages live in frontend/src/pages/dashboards/ and follow patterns from ManagerDashboard, NurseDashboard, CarerDashboard, FinanceDashboard. Each dashboard imports hooks and renders role-specific KPIs/widgets.",
+  "relevant_files": [
+    "frontend/src/types/index.ts",
+    "frontend/src/utils/formatters.ts",
+    "frontend/src/pages/Login.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/pages/Dashboard.tsx",
+    "frontend/src/pages/dashboards/CarerDashboard.tsx",
+    "frontend/src/pages/dashboards/FinanceDashboard.tsx",
+    "frontend/src/pages/dashboards/ManagerDashboard.tsx",
+    "frontend/src/pages/dashboards/NurseDashboard.tsx",
+    "frontend/src/hooks/index.ts",
+    "frontend/src/services/api.ts",
+    "frontend/src/index.css",
+    "backend/migrations/001_init.sql",
+    "backend/src/utils/seed.ts"
+  ],
+  "directory_structure": "frontend/src/pages/dashboards/ - role-specific dashboard components; frontend/src/pages/ - page-level components; frontend/src/hooks/ - React Query hooks; frontend/src/store/ - Zustand stores; frontend/src/utils/ - formatters and helpers; frontend/src/services/ - API client; backend/src/controllers/ - Express route handlers; backend/src/utils/ - seed, migration utilities"
+}

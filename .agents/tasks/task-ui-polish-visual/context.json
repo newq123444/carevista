@@ -1,0 +1,24 @@
+{
+  "project_type": "React 18 + TypeScript + Vite SPA (frontend of a full-stack care home management app)",
+  "language": "TypeScript / TSX",
+  "build_system": "Vite with TypeScript (tsc + vite build)",
+  "test_framework": "No test framework configured in frontend - UI-only changes verified by build",
+  "build_command": "cd /projects/sandbox/jubilant-waddle/frontend && npm run build",
+  "test_command": "cd /projects/sandbox/jubilant-waddle/frontend && npm run build",
+  "verification_instructions": "Run npm run build in the frontend directory - TypeScript compilation + Vite bundle must succeed with no errors",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/jubilant-waddle/frontend && npm install",
+  "environment_constraints": "Open internet - npm install works. No test suite configured, build success is the verification.",
+  "contribution_requirements": "Commit locally only, do not push. Frontend-only changes.",
+  "key_patterns": "Components use inline styles extensively (React style objects). Global CSS in frontend/src/index.css uses CSS custom properties (--primary, --surface, etc.). Dark mode via [data-theme='dark'] selector. tsconfig strict is false, so loose typing is tolerated. No CSS modules or Tailwind - everything is inline or in index.css.",
+  "relevant_files": [
+    "frontend/src/index.css",
+    "frontend/src/pages/dashboards/CarerDashboard.tsx",
+    "frontend/src/pages/TaskBoard.tsx",
+    "frontend/src/pages/Residents.tsx",
+    "frontend/src/pages/CareNotes.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/pages/Login.tsx"
+  ],
+  "directory_structure": "frontend/src/pages/ contains page components. frontend/src/pages/dashboards/ has role-specific dashboards. frontend/src/components/ has shared components. frontend/src/index.css is the global stylesheet."
+}

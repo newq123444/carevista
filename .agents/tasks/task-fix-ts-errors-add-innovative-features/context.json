@@ -1,0 +1,32 @@
+{
+  "project_type": "Full-stack care home management platform (CareVista) - React/TypeScript frontend with Vite, Express/TypeScript backend",
+  "language": "TypeScript",
+  "build_system": "npm scripts - frontend uses tsc + vite build, backend uses tsc",
+  "test_framework": "No dedicated test framework detected",
+  "build_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "test_command": "N/A - no tests configured",
+  "verification_instructions": "1. Run 'cd frontend && npm run build' - should complete with zero TS errors. 2. Run 'cd backend && npm run build' - should complete with zero TS errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "1. cd frontend && npm install. 2. cd backend && npm install. 3. Install missing type declarations.",
+  "environment_constraints": "Open internet access - npm packages can be installed freely. No database or Redis running, so only compile-time verification is possible.",
+  "contribution_requirements": "None documented",
+  "key_patterns": "Frontend: Pages in src/pages/, components in src/components/, types in src/types/index.ts, hooks in src/hooks/, services in src/services/, store in src/store/. Backend: Controllers in src/controllers/, routes in single src/routes/index.ts, middleware in src/middleware/, models in src/models/, services in src/services/. All backend route handlers use (req, res, next) pattern with try/catch. Frontend uses TanStack React Query for data fetching, Zustand for state, React Router 6 for routing.",
+  "relevant_files": [
+    "frontend/src/pages/Emar.tsx",
+    "frontend/src/pages/CareNotes.tsx",
+    "frontend/src/pages/Incidents.tsx",
+    "frontend/src/pages/Training.tsx",
+    "frontend/src/types/index.ts",
+    "backend/src/controllers/auth.controller.ts",
+    "backend/src/controllers/photos.controller.ts",
+    "backend/src/middleware/upload.ts",
+    "backend/src/index.ts",
+    "backend/tsconfig.json",
+    "frontend/tsconfig.json",
+    "backend/package.json",
+    "frontend/package.json",
+    "frontend/src/App.tsx",
+    "backend/src/routes/index.ts"
+  ],
+  "directory_structure": "Root: frontend/, backend/, docker/, docker-compose.yml. Frontend: src/pages/ (60+ pages), src/components/, src/hooks/, src/services/, src/store/, src/types/index.ts. Backend: src/controllers/ (57 controllers), src/routes/index.ts (all routes), src/middleware/, src/models/, src/services/, src/types/."
+}

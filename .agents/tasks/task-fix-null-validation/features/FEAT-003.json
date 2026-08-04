@@ -1,0 +1,44 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Add NOT NULL field validation to all controller INSERT operations - Batch 3 (remaining controllers: portal, AI, reporting, misc). Add validation checks at the top of each handler function that performs an INSERT, returning HTTP 400 with a descriptive error message listing which fields are required.",
+  "status": "completed",
+  "steps": [
+    "Fix celebrations.controller.ts: createCelebration needs residentId, celebrationType, title, celebrationDate. addCelebrationTask needs celebrationId, title.",
+    "Fix competencyMatrix.controller.ts: createCompetency needs name, category. assignCompetency needs staffId, competencyId.",
+    "Fix competencySignoff.controller.ts: createSignoff needs staffId, competencyId, signoffType.",
+    "Fix elearning.controller.ts: createModule needs title, category, contentType. createQuiz needs moduleId, title, questions, passMarkPct. recordCompletion needs moduleId, staffId.",
+    "Fix familyPortal.controller.ts: generateDailySummary needs residentId. uploadFamilyPhoto needs caption validation only if present. generateWeeklyReport - internal automation, less critical.",
+    "Fix friendshipMapper.controller.ts: logObservation needs residentId, observedWith, interactionType.",
+    "Fix intergenerational.controller.ts: createProgramme needs name, partnerOrganisation. createVisit needs programmeId, visitDate. addParticipant needs visitId, residentId.",
+    "Fix invoicing.controller.ts: createRateUplift needs residentId, previousRatePence, newRatePence, effectiveDate. sendPaymentReminder needs invoiceId, reminderType.",
+    "Fix menuChoice.controller.ts: createMenuOption needs mealType, name. createDietaryProfile needs residentId. recordMenuChoice needs residentId, menuOptionId, mealDate, mealType.",
+    "Fix moodEnvironment.controller.ts: logIntervention needs residentId, interventionId.",
+    "Fix musicTherapy.controller.ts: createPreference needs residentId, genreId. startSession needs residentId.",
+    "Fix photoFrame.controller.ts: uploadPhoto needs residentId, photoUrl. logViewing needs photoId, residentId.",
+    "Fix purposePlanner.controller.ts: createRole needs name. createAssignment needs residentId, roleId. logEngagement needs assignmentId, residentId.",
+    "Fix qrRoom.controller.ts: createQrCode needs residentId, roomNumber.",
+    "Fix regulatoryReporting.controller.ts: already has validation for type - also needs formData validation.",
+    "Fix rehabGoals.controller.ts: createGoal needs residentId, title. addMilestone needs goalId, title. logProgress needs goalId, residentId, progressNotes.",
+    "Fix reportBuilder.controller.ts: createTemplate needs name, dataSource. runReport needs templateId.",
+    "Fix residentTablet.controller.ts: createRequest needs residentId, requestType.",
+    "Fix offlineSync.controller.ts: queueAction needs entityType, action, payload.",
+    "Fix boardPack.controller.ts: generateBoardPack needs reportMonth.",
+    "Fix smartHandover.controller.ts: generateHandover - internal, but recordAction needs handoverId, itemIndex, actionTaken.",
+    "Fix staffPerformance.controller.ts: recordMetrics needs appropriate fields.",
+    "Fix environmentalIntel.controller.ts: already has zone validation - SKIP if sufficient.",
+    "Fix residents.controller.ts: createResident needs firstName, lastName, dateOfBirth, roomNumber.",
+    "Fix tasks.controller.ts: bulk insert has conditional logic - add validation for name in template creation."
+  ],
+  "acceptance_criteria": [
+    "All controllers in backend/src/controllers/ that perform INSERT operations now validate required fields before executing the query",
+    "Each validation returns HTTP 400 with a JSON body containing an error field that lists the missing required fields",
+    "No existing validation is removed or weakened",
+    "Running npm run build in backend/ succeeds with no TypeScript errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Added validation to 21 controller files covering all INSERT operations in batch 3. environmentalIntel.controller.ts already had zone validation so was skipped per instructions. familyPortal generateDailySummary uses req.params.residentId (enforced by routing) and checks resident existence already. tasks.controller.ts template seeding uses hardcoded DEFAULT_TEMPLATES array not user input so no validation needed. regulatoryReporting already validates type and formData is internally constructed. The smartHandover recordAction validation handles itemIndex=0 case (falsy but valid) with explicit check."
+}

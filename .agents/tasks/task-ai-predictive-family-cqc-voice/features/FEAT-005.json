@@ -1,0 +1,23 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "Priority 2 continued: Family Portal - Frontend page with daily summaries, weekly wellbeing reports, photo gallery, and messaging. Enhance the existing FamilyPortal page or create a new comprehensive version.",
+  "status": "completed",
+  "steps": [
+    "Add TypeScript types to frontend/src/types/index.ts: FamilyDailySummary (id, resident_id, summary_date, meals_summary, activities_summary, mood_summary, care_notes_summary, photo_urls, generated_at), FamilyWeeklyReport (id, resident_id, week_start, week_end, report_content, wellbeing_score_avg, highlights, concerns, generated_at, sent_at), FamilyPhoto (id, resident_id, photo_url, caption, activity_session_id, uploaded_by_name, created_at), FamilyDashboardData (resident info, today_summary, recent_photos, unread_messages, wellbeing_score).",
+    "Add API client methods to frontend/src/services/api.ts: extend familyApi with getDashboard, getDailySummary, generateDailySummary, getWeeklyReport, generateWeeklyReports, listPhotos, uploadPhoto, sendUpdate.",
+    "Add React Query hooks to frontend/src/hooks/index.ts: useFamilyDashboard, useFamilyDailySummary, useGenerateDailySummary, useFamilyWeeklyReport, useGenerateWeeklyReports, useFamilyPhotos, useUploadFamilyPhoto.",
+    "Replace/enhance frontend/src/pages/FamilyPortal.tsx with a comprehensive family portal page with tabs: (1) Dashboard - select a resident, see today's summary (meals, activities, mood), latest photo, wellbeing score badge. (2) Daily Summaries - calendar-style list of daily summaries with generate button. (3) Weekly Reports - list of weekly reports with generate-all button, display report content. (4) Photo Gallery - grid of photos from activities with upload capability. (5) Messages - keep existing messaging functionality but improve UI. Follow existing inline-style patterns."
+  ],
+  "acceptance_criteria": [
+    "Enhanced FamilyPortal page has tabs for Dashboard, Daily Summaries, Weekly Reports, Photos, Messages",
+    "API client methods exist for all family portal endpoints",
+    "Hooks exist in hooks/index.ts",
+    "Frontend builds successfully with npm run build"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Build passes with exit code 0. All 18 pre-existing type errors are in other files (CareNotes, Emar, Incidents, Training). No errors from our modified files."
+}

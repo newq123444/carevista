@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Fix all frontend API path mismatches where frontend calls a different URL path than what is registered in the backend routes. Fix the residentTabletApi paths (frontend uses /resident-tablet/ but backend registers /tablet/). Fix benchmarkingApi.getDashboard (frontend calls /benchmarking but backend registers /benchmarking/dashboard). Fix elearningApi.getStaffProgress (frontend calls /elearning/staff/:staffId but backend registers /elearning/progress/:staffId). Fix emarApi.discontinue (frontend uses PATCH /medications/:id/discontinue but backend uses DELETE /medications/:id). Fix diabetesApi.getGlucosePatterns (frontend calls /diabetes/glucose/:residentId/patterns but backend registers /diabetes/patterns/:residentId). Fix palliativeCareApi.administerAnticipatoryMed (frontend calls /palliative/anticipatory-meds/:id/administer but backend registers /palliative/anticipatory-meds/:id without /administer sub-path). Fix benchmarkingApi.getMetricHistory (frontend calls /benchmarking/metric/:name but backend registers /benchmarking/metrics/:name with plural 'metrics').",
+  "status": "completed",
+  "steps": [
+    "In frontend/src/services/api.ts residentTabletApi: change '/resident-tablet/requests' to '/tablet/requests' (line 396, 397); change '/resident-tablet/requests/${id}/acknowledge' to '/tablet/requests/${id}' (line 398, backend uses PATCH to acknowledge); change '/resident-tablet/${residentId}/view' to '/tablet/residents/${residentId}' (line 399)",
+    "In frontend/src/services/api.ts benchmarkingApi: change getDashboard from '/benchmarking' to '/benchmarking/dashboard' (line 412); change getMetricHistory from '/benchmarking/metric/${metricName}' to '/benchmarking/metrics/${metricName}' (line 414)",
+    "In frontend/src/services/api.ts elearningApi: change getStaffProgress from '/elearning/staff/${staffId}' to '/elearning/progress/${staffId}' (line 442)",
+    "In frontend/src/services/api.ts emarApi: change discontinue from api.patch(`/medications/${id}/discontinue`, data) to api.delete(`/medications/${id}`) (line 42) -- backend uses DELETE method",
+    "In frontend/src/services/api.ts diabetesApi: change getGlucosePatterns from '/diabetes/glucose/${residentId}/patterns' to '/diabetes/patterns/${residentId}' (line 465)",
+    "In frontend/src/services/api.ts palliativeCareApi: change administerAnticipatoryMed from '/palliative/anticipatory-meds/${id}/administer' to '/palliative/anticipatory-meds/${id}' (line 478) -- backend does not have /administer sub-path"
+  ],
+  "acceptance_criteria": [
+    "All frontend API paths match their corresponding backend route registrations",
+    "residentTabletApi uses /tablet/ prefix matching backend routes",
+    "benchmarkingApi.getDashboard calls /benchmarking/dashboard",
+    "elearningApi.getStaffProgress calls /elearning/progress/:staffId",
+    "emarApi.discontinue uses api.delete() matching the DELETE route",
+    "diabetesApi.getGlucosePatterns calls /diabetes/patterns/:residentId",
+    "palliativeCareApi.administerAnticipatoryMed calls /palliative/anticipatory-meds/:id",
+    "Frontend TypeScript compiles cleanly: cd frontend && npx tsc --noEmit",
+    "Backend TypeScript compiles cleanly: cd backend && npx tsc --noEmit"
+  ],
+  "verification": [
+    "Run: cd frontend && npx tsc --noEmit (should succeed)",
+    "Run: cd backend && npx tsc --noEmit (should succeed)",
+    "Run: cd frontend && npm run build (should succeed)",
+    "Run: cd backend && npm run build (should succeed)"
+  ],
+  "blocked_reason": null,
+  "findings": "All 6 API path mismatches fixed. Additionally had to update frontend/src/hooks/index.ts useDiscontinueMedication hook to match the new single-argument signature of emarApi.discontinue (was passing {id, data} but now only needs {id}). All verification steps pass: tsc --noEmit for both frontend and backend, and npm run build for both."
+}

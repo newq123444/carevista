@@ -1,0 +1,29 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) - React frontend + Express/TypeScript backend",
+  "language": "TypeScript",
+  "build_system": "Vite for frontend, tsc for backend, npm package manager",
+  "test_framework": "No formal test framework found - manual verification via build",
+  "build_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "test_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "verification_instructions": "1. Run npm run build in frontend (tsc + vite). 2. Run npm run build in backend (tsc). Both must succeed.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd frontend && npm install; cd backend && npm install",
+  "environment_constraints": "Open internet available for npm packages. No database or Docker daemon running - validation is AST/compile only.",
+  "contribution_requirements": "Commit locally. Do not push. Use inline styles matching existing pattern (no CSS framework). Follow existing React Query hook patterns in frontend/src/hooks/index.ts.",
+  "key_patterns": "Frontend: Inline styles, React Query hooks in hooks/index.ts, Zustand auth store, api.ts service layer, pages in pages/ with dashboards in pages/dashboards/. Backend: Express controllers in controllers/, routes in routes/index.ts, raw SQL via pg query() helper, seed data in utils/seed.ts. Residents have a 'care_needs_summary' TEXT field that includes mobility info as free text. The mobility_notes field exists in TypeScript types but not in the SQL schema - mobility data is in the care_needs_summary.",
+  "relevant_files": [
+    "frontend/src/types/index.ts",
+    "frontend/src/hooks/index.ts",
+    "frontend/src/services/api.ts",
+    "frontend/src/pages/Dashboard.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/pages/dashboards/CarerDashboard.tsx",
+    "backend/src/routes/index.ts",
+    "backend/src/controllers/residents.controller.ts",
+    "backend/src/utils/seed.ts",
+    "backend/migrations/001_init.sql",
+    "frontend/src/pages/Residents.tsx",
+    "frontend/src/pages/ResidentDetail.tsx"
+  ],
+  "directory_structure": "Root: docker-compose.yml, frontend/, backend/. Frontend: src/App.tsx (routing), src/pages/ (page components), src/pages/dashboards/ (role dashboards), src/components/ (reusable widgets), src/hooks/index.ts (all hooks), src/services/api.ts (axios client), src/types/index.ts (types), src/store/auth.store.ts (Zustand). Backend: src/index.ts (entry), src/routes/index.ts (all routes), src/controllers/ (handlers), src/models/db.ts (pg pool), src/utils/seed.ts (demo data), migrations/ (SQL schema)."
+}

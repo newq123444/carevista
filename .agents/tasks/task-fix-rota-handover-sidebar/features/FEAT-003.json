@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Add a search/filter input at the top of the sidebar navigation in App.tsx that filters menu items as the user types. Since there are 50+ nav items, this helps users quickly find the page they need.",
+  "status": "completed",
+  "steps": [
+    "In frontend/src/App.tsx, inside the SidebarContent component, add a search input between the role badge section and the nav items scrollable area. The input should: (a) be always visible (not inside the scroll container), (b) have a placeholder like 'Search menu...', (c) update a local state variable (searchQuery), (d) include a clear (X) button that appears when text is entered.",
+    "Filter the NAV_ALL items: when searchQuery is non-empty, only show nav items whose label matches the query (case-insensitive). Section headers should be hidden when filtering. When searchQuery is empty, show all items as normal.",
+    "Style the search input to match the dark sidebar theme: dark background, light text, subtle border, appropriate padding. Should not show when sidebar is collapsed (isDesktop && collapsed).",
+    "Ensure the search still works on mobile/tablet drawer mode."
+  ],
+  "acceptance_criteria": [
+    "A search input is visible at the top of the sidebar navigation area",
+    "Typing in the search input filters nav items to only show matching ones",
+    "Clear button resets the filter and shows all items",
+    "Section headers are hidden when search is active",
+    "Search input is not visible when sidebar is collapsed on desktop",
+    "Frontend compiles without TypeScript errors"
+  ],
+  "verification": [
+    "Run 'cd /projects/sandbox/jubilant-waddle/frontend && npm run build' - should succeed"
+  ],
+  "blocked_reason": null,
+  "findings": "Added search input between role badge and nav items. Filters by label case-insensitively, hides section headers during search, clear button resets, hidden when collapsed."
+}

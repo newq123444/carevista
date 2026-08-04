@@ -1,0 +1,26 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) - React/Vite frontend + Express/PostgreSQL backend",
+  "language": "TypeScript",
+  "build_system": "npm with tsc for backend, Vite + tsc for frontend",
+  "test_framework": "No test framework configured - validation via build only",
+  "build_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "test_command": "No test command - use build verification only",
+  "verification_instructions": "1. Run 'cd /projects/sandbox/jubilant-waddle/frontend && npm run build' to verify frontend compiles. 2. Run 'cd /projects/sandbox/jubilant-waddle/backend && npm run build' to verify backend compiles.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd frontend && npm install; cd ../backend && npm install",
+  "environment_constraints": "Open internet - npm packages available. No database running so cannot run migrations; validate SQL syntax only. No test suite exists.",
+  "contribution_requirements": "Follow existing patterns exactly: controllers use req.user!.care_home_id for multi-tenancy, routes use authenticate/tenantGuard middleware globally then isStaff/isManager/isClinical per route, pages use inline styles, hooks use React Query with toast notifications.",
+  "key_patterns": "Backend: controllers export async functions (req,res,next), use query() from models/db, use AppError for errors. Routes: grouped in single index.ts with controller imports. Frontend: pages are single-file components with inline styles, hooks/index.ts has all React Query hooks, services/api.ts has all API client methods, types/index.ts has all interfaces, App.tsx has NAV_ALL array for sidebar + Routes for pages.",
+  "relevant_files": [
+    "backend/migrations/012_batch3_features.sql",
+    "backend/src/routes/index.ts",
+    "backend/src/controllers/diabetes.controller.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/types/index.ts",
+    "frontend/src/services/api.ts",
+    "frontend/src/hooks/index.ts",
+    "frontend/src/pages/DiabetesManagement.tsx",
+    "frontend/src/pages/WellbeingHub.tsx"
+  ],
+  "directory_structure": "backend/migrations/ - SQL migrations (001-012). backend/src/controllers/ - one file per feature domain. backend/src/routes/index.ts - all routes. frontend/src/pages/ - one file per page. frontend/src/hooks/index.ts - all React Query hooks. frontend/src/services/api.ts - all Axios API clients. frontend/src/types/index.ts - all TypeScript types."
+}

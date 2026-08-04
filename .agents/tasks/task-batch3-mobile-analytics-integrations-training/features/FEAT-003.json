@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Frontend pages, API services, hooks, types, and App.tsx integration for all 10 Batch 3 features. Each feature gets a full React page with inline styles matching existing UI patterns.",
+  "status": "completed",
+  "steps": [
+    "Add new API service objects to frontend/src/services/api.ts: offlineSyncApi, residentTabletApi, qrRoomApi, benchmarkingApi, boardPackApi, staffPerformanceApi, elearningApi, competencySignoffApi, diabetesApi, palliativeCareApi - each with methods matching their controller endpoints",
+    "Add new types to frontend/src/types/index.ts: OfflineSyncItem, ResidentTabletRequest, QrRoomCode, BenchmarkingKpi, BoardPackReport, StaffPerformanceMetric, ElearningModule, ElearningQuiz, ElearningCompletion, CompetencySignoff, GlucoseReading, InsulinDose, DiabetesAlert, Hba1cRecord, PalliativeCarePlan, ComfortRound, AnticipatoryMedication, FamilyCommunicationLog",
+    "Add React Query hooks to frontend/src/hooks/index.ts for all new features - following existing pattern of useQuery for GET endpoints and useMutation for POST/PATCH endpoints with queryClient invalidation and toast notifications",
+    "Create frontend/src/pages/OfflineMode.tsx: Show offline indicator status, list of pending sync items, sync button, conflict resolution UI. Include a service worker registration notice and auto-sync status.",
+    "Create frontend/src/pages/ResidentTablet.tsx: Large-button simplified interface with high contrast. Sections: Request Help (big red button), Rate Meals (thumbs up/down), Choose Activities (large cards), Request Video Call, Entertainment (music playlist, photo gallery). Use minimum 24px font size, large touch targets (min 64px), high contrast colors.",
+    "Create frontend/src/pages/QrRoomScanning.tsx: List of rooms with QR codes, generate QR code button, scan result view showing resident care plan summary, today's tasks, latest vitals, and quick-action buttons (log note, complete task).",
+    "Create frontend/src/pages/BenchmarkingDashboard.tsx: KPI cards showing metric value vs national average, color-coded performance (green=above avg, amber=near, red=below). Metrics: falls per 1000 bed days, medication errors, staff turnover, occupancy rate, CQC domain scores, complaint rates. Include percentile rank indicator.",
+    "Create frontend/src/pages/BoardPackGenerator.tsx: Monthly report generator with sections checklist (KPI summary, incident overview, staffing metrics, financial summary, compliance status, notable events). Preview mode, generate button, approval workflow, list of previous packs.",
+    "Create frontend/src/pages/StaffPerformanceInsights.tsx: Team-level anonymised view (bar charts of task completion, average response times) + individual view for supervision (select staff member, see their metrics). Toggle between team/individual views.",
+    "Create frontend/src/pages/ElearningModule.tsx: Module library with video placeholder cards, category filters, completion status badges. Quiz interface with multiple choice questions, score display, certificate generation on pass. Mandatory training tracker linked to staff profiles.",
+    "Create frontend/src/pages/CompetencySignoff.tsx: Assessment workflow - select staff member, select competency, record observation outcome (competent/not yet competent/requires training), evidence notes, sign-off button. List of pending and completed sign-offs. Link to competency matrix.",
+    "Create frontend/src/pages/DiabetesManagement.tsx: Glucose logging form (reading + meal timing), insulin dose tracker, hypo/hyper alerts list, HbA1c history, visual glucose pattern chart (simple table/grid showing readings over time by meal period).",
+    "Create frontend/src/pages/PalliativeCarePathway.tsx: End-of-life care plan form, comfort round scheduler and log, anticipatory medication tracking, preferred priorities documentation, family communication log, bereavement support resources section.",
+    "Update frontend/src/App.tsx: Add imports for all 10 new pages. Add nav items to NAV_ALL array in appropriate sections (OfflineMode in Tools, ResidentTablet in Care, QrRoomScanning in Care, BenchmarkingDashboard in Governance, BoardPackGenerator in Governance, StaffPerformanceInsights in Team, ElearningModule in Team, CompetencySignoff in Team, DiabetesManagement in Care, PalliativeCarePathway in Care). Add Route elements for each page."
+  ],
+  "acceptance_criteria": [
+    "All 10 new page components exist in frontend/src/pages/",
+    "All API services, hooks, and types are added",
+    "App.tsx has navigation items and routes for all 10 features",
+    "Frontend build (cd frontend && npm run build) passes with no TypeScript errors",
+    "ResidentTablet page uses large fonts (24px+) and high contrast colors for accessibility",
+    "All pages follow existing inline style patterns"
+  ],
+  "verification": ["cd /projects/sandbox/jubilant-waddle/frontend && npm run build"],
+  "blocked_reason": null,
+  "findings": "All 10 pages, API services, types, hooks, and App.tsx integration completed. Build passes with exit code 0. Pre-existing TS errors in CareNotes.tsx, Emar.tsx, Incidents.tsx, and Training.tsx remain (not introduced by this change). No errors in any new files. ResidentTablet uses 24px+ fonts and 64px+ touch targets with high contrast."
+}

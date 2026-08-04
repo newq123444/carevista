@@ -1,0 +1,28 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) with React frontend and Express/TypeScript backend",
+  "language": "TypeScript (both frontend and backend)",
+  "build_system": "npm for both; backend uses tsc, frontend uses vite + tsc",
+  "test_framework": "No formal test framework - validation is via TypeScript compilation (tsc) and build checks",
+  "build_command": "cd /projects/sandbox/jubilant-waddle/backend && npm run build && cd /projects/sandbox/jubilant-waddle/frontend && npm run build",
+  "test_command": "cd /projects/sandbox/jubilant-waddle/backend && npx tsc --noEmit && cd /projects/sandbox/jubilant-waddle/frontend && npx tsc --noEmit",
+  "verification_instructions": "1. Run backend tsc --noEmit to check TypeScript compilation. 2. Run frontend tsc --noEmit to check TypeScript compilation. 3. Run npm run build in both directories.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd backend && npm install; cd frontend && npm install",
+  "environment_constraints": "Open internet - npm packages can be installed. No running PostgreSQL/Redis so runtime testing not possible. Validation is via TypeScript compilation.",
+  "contribution_requirements": "Follow existing patterns: controllers in backend/src/controllers/, migrations numbered sequentially (next is 010), routes added to backend/src/routes/index.ts, frontend pages in frontend/src/pages/, hooks in frontend/src/hooks/index.ts, API services in frontend/src/services/api.ts, types in frontend/src/types/index.ts, routes in frontend/src/App.tsx with nav items in NAV_ALL array.",
+  "key_patterns": "Backend: Express controllers export async functions (req, res, next), use req.user!.care_home_id for tenant isolation, query() for DB access. Frontend: pages are React components with inline styles, hooks use React Query (useQuery/useMutation), api.ts has grouped service objects, App.tsx has NAV_ALL array for sidebar nav with role-based visibility.",
+  "relevant_files": [
+    "backend/src/routes/index.ts",
+    "backend/src/controllers/predictiveCare.controller.ts",
+    "backend/src/controllers/emar.controller.ts",
+    "backend/src/middleware/auth.ts",
+    "backend/migrations/009_voice_sbar.sql",
+    "frontend/src/App.tsx",
+    "frontend/src/hooks/index.ts",
+    "frontend/src/services/api.ts",
+    "frontend/src/types/index.ts",
+    "frontend/src/pages/PredictiveCare.tsx",
+    "frontend/src/pages/Emar.tsx"
+  ],
+  "directory_structure": "backend/src/controllers/ - API controllers; backend/src/routes/index.ts - all routes; backend/migrations/ - numbered SQL migrations; frontend/src/pages/ - page components; frontend/src/hooks/index.ts - React Query hooks; frontend/src/services/api.ts - axios API clients; frontend/src/types/index.ts - shared types; frontend/src/App.tsx - routing and nav"
+}

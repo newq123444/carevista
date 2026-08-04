@@ -1,0 +1,14 @@
+{
+  "task_id": "task-fix-ui-db-bugs-2",
+  "task_description": "Fix remaining DB validation errors (sleep_logs null resident_id), UI bugs (SmartRota raw JSON constraints, NaturalLanguageSearch blank cards, emoji HTML entity), and audit all pages for raw JSON rendering issues",
+  "status": "completed",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "skipped",
+    "test_quality": "skipped",
+    "docker_build": "skipped",
+    "summary": "Both backend (tsc) and frontend (tsc + vite build) compile and build successfully with zero errors. No test suite exists in this project."
+  }
+}

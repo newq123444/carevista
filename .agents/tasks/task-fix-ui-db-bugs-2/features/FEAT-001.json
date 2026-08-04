@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix sleep tracker DB validation, SmartRota raw JSON rendering for staff constraints, NaturalLanguageSearch blank result cards, emoji HTML entity rendering, and audit/fix all other pages dumping raw JSON via JSON.stringify in pre tags.",
+  "status": "completed",
+  "steps": [
+    "In backend/src/controllers/sleepTracker.controller.ts logSleep function: Add validation at the top of the try block (after extracting body fields) - if (!residentId || !sleepDate) return res.status(400).json({ error: 'residentId and sleepDate are required' }); This prevents the NOT NULL constraint violation on resident_id.",
+    "In frontend/src/pages/SmartRota.tsx: Replace the Staff Constraints panel section (around lines 236-250) that currently renders {c.message || c.description || JSON.stringify(c)} with properly formatted staff constraint cards. The backend returns objects with: user_id, staff_name, role, contract_hours, hourly_rate, hours_this_week, hoursThisWeek, contractHours, maxWeeklyHours, remainingHours, violations (string array), hasViolation (boolean). Render each as a card showing: staff_name, role (as a badge), contractHours + 'h contracted', hoursThisWeek + 'h this week', remainingHours + 'h remaining', and violations as red badges. Use green background for no violations, red/warning for violations.",
+    "In frontend/src/pages/NaturalLanguageSearch.tsx: Fix the renderResultCard function to be more robust. Add a check for resident_id field as a primary condition (since ALL backend search queries return resident_id + first_name + last_name). Also add a better generic fallback that extracts and displays key-value pairs nicely instead of raw JSON. For items with resident_id, show the resident card format even if first_name is null (use 'Unknown Resident' as fallback name). Also handle the medications array field by showing medication pills/badges.",
+    "In frontend/src/pages/NaturalLanguageSearch.tsx line 161: Replace the string '&#128337;' with the actual Unicode clock emoji character (use '\\ud83d\\udd51' or the literal emoji). This fixes the HTML entity showing as literal text instead of rendering as an emoji.",
+    "Fix raw JSON rendering in frontend/src/pages/IntergenerationalProgramme.tsx: Replace the two JSON.stringify pre blocks (safeguarding data and wellbeingImpact) with formatted card displays. For safeguarding: show dbs_required, risk_assessment_date, supervisor_required as labeled fields. For wellbeingImpact: show metrics as stat cards.",
+    "Fix raw JSON rendering in frontend/src/pages/MenuChoiceSystem.tsx: Replace dietaryProfile JSON dump with formatted display showing texture_requirement, cultural_needs, allergies, notes as labeled fields. Replace kitchenData JSON dump with formatted table/cards showing meal counts and requirements.",
+    "Fix raw JSON rendering in frontend/src/pages/DailyPurposePlanner.tsx: Replace report JSON dump with formatted engagement report showing total_sessions, avg_satisfaction, total_minutes etc. as stat cards.",
+    "Fix raw JSON rendering in frontend/src/pages/FriendshipMapper.tsx: Replace seating JSON dump with formatted card display showing table assignments and reasons.",
+    "Fix raw JSON rendering in frontend/src/pages/MusicTherapy.tsx: Replace effectivenessData JSON dump with formatted display showing session counts, avg mood improvement, most effective genres as stat cards.",
+    "Fix raw JSON rendering in frontend/src/pages/RehabGoalTracker.tsx: Replace report JSON dump with formatted progress report showing goals_count, completion_rate, milestones as stat cards."
+  ],
+  "acceptance_criteria": [
+    "sleepTracker.controller.ts returns 400 error if residentId or sleepDate is missing/falsy",
+    "SmartRota staff constraints render as formatted cards with staff name, role badge, hours info, and violation badges - never raw JSON",
+    "NaturalLanguageSearch results render resident data with name, room, risk level - never blank white cards",
+    "The clock emoji on the history toggle button renders as an actual emoji character, not literal text &#128337;",
+    "IntergenerationalProgramme, MenuChoiceSystem, DailyPurposePlanner, FriendshipMapper, MusicTherapy, and RehabGoalTracker no longer dump raw JSON via JSON.stringify in pre tags",
+    "All files compile cleanly: cd frontend && npx tsc --noEmit && cd ../backend && npx tsc --noEmit"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/jubilant-waddle/backend && npx tsc --noEmit",
+    "Run: cd /projects/sandbox/jubilant-waddle/frontend && npx tsc --noEmit",
+    "Run: cd /projects/sandbox/jubilant-waddle/frontend && npm run build",
+    "Run: cd /projects/sandbox/jubilant-waddle/backend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 10 steps completed successfully. Both backend and frontend compile cleanly with tsc --noEmit and full builds pass. The clock emoji was fixed using a Unicode escape sequence. All JSON.stringify/pre blocks replaced with formatted card displays using Object.entries iteration and inline styles matching existing patterns."
+}

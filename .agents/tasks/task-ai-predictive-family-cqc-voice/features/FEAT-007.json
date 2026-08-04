@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-007",
+  "type": "feat",
+  "description": "Priority 3 continued: CQC Compliance Automation - Frontend CQC readiness dashboard page with domain score visualization, evidence pack export, policy review tracking, and inspection preparation tools.",
+  "status": "completed",
+  "steps": [
+    "Add TypeScript types to frontend/src/types/index.ts: CqcDomainScore (id, domain, score, evidence_count, gaps_count, strengths, weaknesses, recommendations, calculated_at), CqcEvidencePack (id, domains_included, date_range_start, date_range_end, status, created_at, generated_by_name), PolicyReview (id, policy_id, policy_title, reviewer_name, review_date, next_review_date, status, changes_made), InspectionChecklist (id, title, domain, items, completed_items, total_items, status), ComplianceOverview (domain_scores, overdue_policies_count, expiring_training_count, open_actions_count, overall_readiness_score).",
+    "Add API client methods to frontend/src/services/api.ts: extend complianceApi with getCqcScores, calculateCqcScores, generateEvidencePack, getEvidencePacks, getPolicyReviews, createPolicyReview, getInspectionChecklist, updateChecklistItem, getOverview.",
+    "Add React Query hooks to frontend/src/hooks/index.ts: useCqcDomainScores, useCalculateCqcScores, useGenerateEvidencePack, useCqcEvidencePacks, usePolicyReviews, useCreatePolicyReview, useInspectionChecklist, useUpdateChecklistItem, useComplianceOverview.",
+    "Replace/enhance frontend/src/pages/Compliance.tsx with a comprehensive CQC compliance page with tabs: (1) CQC Readiness - 5 domain score cards (Safe, Effective, Caring, Responsive, Well-led) with circular progress indicators showing score 0-100, color-coded (red <40, amber 40-70, green >70), strengths/weaknesses bullets, 'Calculate Scores' button. (2) Evidence Packs - generate evidence packs for selected domains and date range, list existing packs with download. (3) Policy Reviews - table of all policies with review dates, overdue highlighting, create review button. (4) Inspection Prep - checklists per domain with checkable items, progress bar. (5) Actions - keep existing compliance actions. Follow existing inline-style patterns from AiInsights.tsx."
+  ],
+  "acceptance_criteria": [
+    "Enhanced Compliance page has tabs for CQC Readiness, Evidence Packs, Policy Reviews, Inspection Prep, Actions",
+    "Domain scores displayed with circular progress / visual indicators",
+    "Evidence pack generation UI works",
+    "API client methods and hooks exist for all CQC compliance endpoints",
+    "Frontend builds successfully with npm run build"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 4 files modified successfully. Frontend builds with exit code 0. No new type errors introduced. Pre-existing 18 type errors in other files (CareNotes, Emar, Incidents, Training) remain unchanged."
+}

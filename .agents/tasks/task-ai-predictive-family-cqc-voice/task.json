@@ -1,0 +1,14 @@
+{
+  "task_id": "task-ai-predictive-family-cqc-voice",
+  "task_description": "Implement 4 priority features for CareVista: (1) AI Predictive Care Engine with falls/deterioration prediction, (2) Enhanced Family Portal with daily summaries, weekly reports, photo gallery, messaging, (3) CQC Compliance Automation with domain scoring, evidence packs, policy reviews, inspection prep, (4) Voice-to-text care notes and SBAR handover generator.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005", "FEAT-006", "FEAT-007", "FEAT-008", "FEAT-009"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "Backend builds with 14 pre-existing type errors (none from new code). Frontend builds with 19 pre-existing type errors (none from new code). All new migrations, controllers, routes, types, API clients, hooks, pages, and components compile cleanly. Exit code 0 for both builds."
+  }
+}

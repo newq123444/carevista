@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Make all 3 backend controllers resilient to missing tables/columns by wrapping queries in try/catch blocks that return empty data on table-not-found errors, and fix the frontend pages to show friendly empty states with action buttons instead of crashing.",
+  "status": "completed",
+  "steps": [
+    "1. BACKEND - digitalTwin.controller.ts: The getDigitalTwin function already has resilience for wellbeing_logs. Extend this pattern to ALL queries that might fail due to missing tables. Wrap medications query, incidents query, key_worker query each in their own try/catch that returns [] on 'does not exist' errors. For getTimeline, the wellbeing fallback is already in place. No further changes needed there.",
+    "2. BACKEND - predictiveCare.controller.ts: Wrap the getRiskDashboard query in try/catch - if predictive_risk_scores table does not exist, return { dashboard: [], generatedAt: new Date().toISOString() }. Do the same for getRiskHistory, getAlerts, acknowledgeAlert. For calculateFallsRisk: wrap the INSERT INTO predictive_risk_scores in try/catch so it doesn't crash if the table is missing (just skip the insert). Same for calculateDeteriorationRisk. For calculateRiskInternal helper: wrap INSERT INTO predictive_risk_scores in try/catch. For runPredictiveAnalysis: wrap the INSERT INTO predictive_alerts in try/catch. The individual queries against existing tables (incidents, medications, care_notes, residents, med_administrations) are fine since those tables exist from migration 001. The main risk is predictive_risk_scores and predictive_alerts tables being missing (migration 006) and resident_weights (migration 014).",
+    "3. BACKEND - aiCarePlan.controller.ts: Wrap the INSERT INTO ai_care_plans in try/catch in generateCarePlan - if table is missing return a 503 with error message 'AI care plans table not available'. Wrap the SELECT from ai_care_plans in listCarePlans - if table missing return empty array []. Same for getCarePlan and approveCarePlan.",
+    "4. FRONTEND - PredictiveCare.tsx: Fix the data extraction bug - backend returns { dashboard: [...], generatedAt } but frontend checks Array.isArray(data) then data?.residents. Change to: (data?.dashboard ?? []). Add an enhanced empty state for the dashboard with an icon, explanatory message, and the existing Run Analysis button. Add error boundary wrapping around the main content.",
+    "5. FRONTEND - AiCarePlanWriter.tsx: The page already handles empty states reasonably well but needs: (a) Better empty state on the 'plans' tab when plans array is empty (show icon + message + direct user to Generate tab). (b) When generation fails, show a more helpful error message. (c) Add error boundary around main content.",
+    "6. FRONTEND - ResidentDigitalTwin.tsx: The page already has error handling (isTwinError). Add: (a) If twin data is returned but individual sections have no data, show 'No data available' within those sections instead of empty space. (b) Add an error boundary wrapper around the main content. (c) Ensure the timeline section shows a friendly empty state when timeline is null/empty."
+  ],
+  "acceptance_criteria": [
+    "Backend controllers NEVER crash (500 error) when predictive_risk_scores, predictive_alerts, ai_care_plans, or resident_weights tables are missing - they return empty data gracefully",
+    "Frontend PredictiveCare.tsx correctly reads data.dashboard from the API response",
+    "All 3 frontend pages show friendly empty states (icon + message + action guidance) instead of crashing when backend returns empty data",
+    "cd frontend && npm run build succeeds without TypeScript errors",
+    "cd backend && npm run build succeeds without TypeScript errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build",
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes build cleanly. The getRiskDashboard endpoint now returns fields matching the frontend PredictiveRiskDashboardItem type (resident_id, first_name, last_name, room_number, risk_level, falls_score, falls_generated_at, deterioration_score, deterioration_generated_at) instead of the camelCase format. The data.residents bug was fixed to data.dashboard. Error boundaries were added as class components since they require componentDidCatch lifecycle methods. Review follow-up (commit d7aa57e): Fixed name-splitting fragility by selecting r.first_name and r.last_name as separate columns instead of splitting concatenated resident_name. Fixed phantom plan ID issue by hiding Approve/Reject buttons when plan.id starts with 'temp-' and showing an informational note about database setup."
+}

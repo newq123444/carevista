@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Professional UI styling overhaul - refine colors, typography, spacing, and shadows to feel world-class and not childish",
+  "status": "completed",
+  "steps": [
+    "In frontend/src/index.css, update the :root CSS variables to use more muted, professional colors. Change --primary from #2563eb to #1e40af (deeper blue). Change --bg from #f0f2f7 to #f8f9fb (lighter, cleaner). Change --surface-2 from #f8fafc to #f1f5f9. Make shadows more subtle: --shadow-sm to '0 1px 2px rgba(0,0,0,.04)', --shadow to '0 2px 8px rgba(0,0,0,.05)', --shadow-lg to '0 8px 24px rgba(0,0,0,.06)'. Add a new variable --font-heading for headings with tighter letter-spacing.",
+    "Update the .card styles: reduce border-radius from var(--radius-lg) (14px) to 12px. Add transition on box-shadow for hover effects. Make .card-header more subtle with lighter borders.",
+    "Update button styles: make .btn-primary use a more refined gradient-free flat style with slightly rounded corners (8px). Remove excessive font-weight (use 600 instead of 700 for most buttons). Increase letter-spacing slightly for a more elegant feel.",
+    "Refine .page-title: reduce font-weight from 800 to 700. Use letter-spacing: -0.025em for a more professional headline look. Reduce font-size from 1.5rem to 1.35rem.",
+    "Update .sidebar styles: change background from #0f1623 to #111827 (a warmer dark tone). Make nav items have smoother hover states with opacity transitions rather than abrupt color changes.",
+    "Refine .modal styles: reduce --radius-xl from 20px to 16px for modals. Make modal-header padding more compact (16px 20px). Add a subtle top border accent on modals using var(--primary).",
+    "Refine form inputs: reduce min-height from 42px to 40px. Use a slightly warmer border color. Make focus ring more subtle (2px instead of 3px spread).",
+    "Update .badge styles: increase border-radius to 6px (pill shape is too playful). Use more muted background tones. Reduce font-size from 0.72rem to 0.7rem.",
+    "Add refined table styles: add subtle alternating row backgrounds. Tighten row padding slightly.",
+    "Ensure the dark mode variables are also updated to match the new professional palette."
+  ],
+  "acceptance_criteria": [
+    "CSS compiles without errors",
+    "Colors are more muted and professional (no bright candy-like colors)",
+    "Typography uses tighter letter-spacing and refined font weights",
+    "Shadows are subtle and refined, not heavy or childish",
+    "Cards, buttons, and modals look clean and enterprise-grade",
+    "Dark mode still works with the updated variables"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npx tsc --noEmit"
+  ],
+  "blocked_reason": null,
+  "findings": "All 10 steps implemented successfully. 19 pre-existing TS errors in other files (CareNotes, Emar, Incidents, Training) remain unchanged. CSS changes verified with tsc --noEmit."
+}

@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Frontend pages, types, API services, and hooks for NEWS2 Auto-Calculator, Wound Photography Timeline, Infection Outbreak Tracker, and Continence Assessment Tool (features 1-4)",
+  "status": "completed",
+  "steps": [
+    "Add TypeScript types to frontend/src/types/index.ts for: News2Assessment, News2Escalation, WoundAssessment, InfectionOutbreak, InfectionCase, ContinenceLog, ContinenceAssessment",
+    "Add API service objects to frontend/src/services/api.ts: news2Api (calculate, getHistory, getEscalations, respondToEscalation, getTrend), woundsApi (create, getTimeline, listActive, update, getBodyMap), infectionsApi (createOutbreak, list, getDetails, addCase, updateCase, updateOutbreak, getTimeline), continenceApi (logEvent, getResidentLog, getPatterns, createAssessment, getAssessment, getOverview)",
+    "Add React Query hooks to frontend/src/hooks/index.ts for all new API endpoints following existing patterns (useQuery for reads, useMutation with query invalidation for writes, toast notifications)",
+    "Create frontend/src/pages/News2Calculator.tsx - Full page with: vitals input form (respiratory rate, SpO2, supplemental O2 toggle, systolic BP, pulse, consciousness dropdown, temperature), real-time score calculation as values change, color-coded score display (green 0-4, amber 5-6, red 7+), escalation action display, history table with trend mini-chart using simple SVG, resident selector dropdown",
+    "Create frontend/src/pages/WoundTracker.tsx - Page with: wound photo upload with preview, body map SVG outline for marking wound location (front/back human silhouette with clickable regions), wound measurement form (width/height/depth, type, bed condition, exudate), timeline view showing photos side-by-side for healing comparison, status tracking (active/healing/healed)",
+    "Create frontend/src/pages/InfectionTracker.tsx - Page with: outbreak creation form (type: D&V/COVID/Flu/Other, protocol selection), affected residents list with add/remove, timeline visualization, isolation status indicators, notification triggers, resolution tracking with end date",
+    "Create frontend/src/pages/ContinenceAssessment.tsx - Page with: event logging form (type: continent/incontinent/pad_change, time, location), pattern chart showing events by hour-of-day across days, recommended toileting schedule display, pad usage statistics, dignity-focused language throughout",
+    "Register all 4 new pages in frontend/src/App.tsx: add imports, add Route elements, add NAV_ALL entries under appropriate sections with role-based access (NEWS2 and Wounds under Care section for clinical+staff roles, Infection under Governance for manager roles, Continence under Care for clinical+staff)"
+  ],
+  "acceptance_criteria": [
+    "All TypeScript types are exported and used by hooks/pages",
+    "All 4 pages render with proper layout following existing inline-style patterns",
+    "NEWS2 calculator shows real-time score as vitals are entered",
+    "Wound tracker has a clickable body map SVG",
+    "Infection tracker shows timeline of outbreak events",
+    "Continence page shows hourly pattern visualization",
+    "All pages are accessible from sidebar navigation",
+    "Frontend compiles without errors"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/jubilant-waddle/frontend && npx tsc --noEmit",
+    "Run: cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 4 frontend pages (News2Calculator, WoundTracker, InfectionTracker, ContinenceAssessment) compile cleanly. Types, API services, hooks, routes, and nav entries all added. Build succeeds (exit code 0) with dist output generated. Pre-existing TS errors in CareNotes.tsx, Emar.tsx, Incidents.tsx, and Training.tsx remain unchanged - these do not block the build. NEWS2 calculator implements real-time client-side scoring with color-coded risk display. Wound tracker has SVG body map with clickable regions. Infection tracker has dashboard stats, outbreak detail with timeline, and case management. Continence page uses dignity-focused language throughout."
+}

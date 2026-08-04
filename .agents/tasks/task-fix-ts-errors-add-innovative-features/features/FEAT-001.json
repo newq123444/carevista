@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix ALL TypeScript compilation errors in both frontend and backend so builds complete with zero errors",
+  "status": "completed",
+  "steps": [
+    "BACKEND FIX 1 - Install missing type declarations: Run 'cd backend && npm install --save-dev @types/compression @types/multer' to resolve TS7016 errors in src/index.ts and src/middleware/upload.ts",
+    "BACKEND FIX 2 - Fix src/controllers/auth.controller.ts line 153: The jwt.sign expiresIn option is being passed as a string but the newer @types/jsonwebtoken expects a StringValue type. Cast the expiresIn value: `{ expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as any }`",
+    "BACKEND FIX 3 - Fix src/controllers/photos.controller.ts: Add multer file type to Request. Either extend the Express Request type or use type assertion `(req as any).file` for the 6 occurrences of `req.file` on lines 13, 16, 52, 56, 109, 111. Better approach: create a type declaration or use `(req as Express.Request & { file?: Express.Multer.File })` pattern",
+    "BACKEND FIX 4 - Fix src/middleware/upload.ts: After installing @types/multer, the explicit 'any' parameters on lines 17 and 26 should resolve. If the Namespace 'global.Express' error persists on line 34, use multer.FileFilterCallback type properly or add a reference directive",
+    "FRONTEND FIX 1 - Fix src/pages/CareNotes.tsx lines 364, 366: Add 'care_needs_summary' to the Resident interface in src/types/index.ts (it is an optional string field)",
+    "FRONTEND FIX 2 - Fix src/pages/Emar.tsx: Multiple issues - (a) Lines 197, 216, 279, 293: variables are typed as 'unknown' - add proper type annotations or assertions for roundMeds/resMeds arrays. (b) Line 491: 'siteApplied' not in form type - add it to the form state type. (c) Lines 536-537, 592: 'site' not in medication form type - add 'site' as an optional field to the form state",
+    "FRONTEND FIX 3 - Fix src/pages/Incidents.tsx lines 42, 47, 55: Form state uses camelCase (residentId, incidentType, incidentDate) but template reads snake_case (resident_id, incident_type, incident_date). Fix form reads to use the correct camelCase property names that match the state definition",
+    "FRONTEND FIX 4 - Fix src/pages/Training.tsx lines 43, 48, 53, 55: Same pattern - form state uses camelCase (staffId, courseName, completedDate, expiryDate) but template reads snake_case (staff_id, course_name, completed_date, expiry_date). Fix form reads to use camelCase names matching the state",
+    "Verify both builds pass with zero errors: Run 'cd /projects/sandbox/jubilant-waddle/backend && npm run build' and 'cd /projects/sandbox/jubilant-waddle/frontend && npm run build'"
+  ],
+  "acceptance_criteria": [
+    "Running 'cd backend && npm run build' completes with exit code 0 and zero TypeScript errors",
+    "Running 'cd frontend && npm run build' completes with exit code 0 and zero TypeScript errors",
+    "No functional changes to application behavior - only type fixes and property name corrections"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build 2>&1 | grep -c 'error TS' should output 0",
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build 2>&1 | grep -c 'error TS' should output 0"
+  ],
+  "blocked_reason": null,
+  "findings": "All 14 backend errors and 19 frontend errors resolved. Backend needed @types/compression and @types/multer, a jwt.sign SignOptions cast, and MulterRequest interface for photo controllers. Frontend needed care_needs_summary on Resident type, camelCase property name fixes in Incidents/Training, and form state additions plus type assertions in Emar.tsx. Both builds pass with zero TS errors."
+}

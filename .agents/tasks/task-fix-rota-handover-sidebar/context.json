@@ -1,0 +1,29 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) with React frontend and Express/PostgreSQL backend",
+  "language": "TypeScript",
+  "build_system": "Vite (frontend), tsx (backend dev), tsc (backend build)",
+  "test_framework": "No dedicated test framework found; validation via build",
+  "build_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "test_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "verification_instructions": "Run frontend and backend builds. Both should compile without TypeScript errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd frontend && npm install; cd ../backend && npm install",
+  "environment_constraints": "Open internet - can install packages. Backend uses multer for file uploads (images only by default). AI service uses Anthropic SDK but ANTHROPIC_API_KEY may not be set.",
+  "contribution_requirements": "No CONTRIBUTING.md found. Follow existing patterns.",
+  "key_patterns": "Frontend: React hooks in src/hooks/index.ts using TanStack Query. API service in src/services/api.ts with axios. Pages in src/pages/. Backend: Controllers in src/controllers/. Routes in src/routes/index.ts. Database queries use raw pg via models/db.ts query() function. Multer middleware in src/middleware/upload.ts for file uploads. AI operations go through src/services/ai.service.ts runAiOperation().",
+  "relevant_files": [
+    "frontend/src/pages/SmartRota.tsx",
+    "frontend/src/pages/Schedule.tsx",
+    "frontend/src/pages/SbarHandover.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/hooks/index.ts",
+    "frontend/src/services/api.ts",
+    "backend/src/controllers/smartRota.controller.ts",
+    "backend/src/controllers/voiceSbar.controller.ts",
+    "backend/src/controllers/smartHandover.controller.ts",
+    "backend/src/services/ai.service.ts",
+    "backend/src/routes/index.ts",
+    "backend/src/middleware/upload.ts"
+  ],
+  "directory_structure": "frontend/src/pages/ - page components; frontend/src/hooks/ - TanStack Query hooks; frontend/src/services/ - API client; backend/src/controllers/ - Express controllers; backend/src/routes/ - route definitions; backend/src/services/ - services like AI; backend/src/middleware/ - auth, upload; backend/migrations/ - SQL migrations"
+}

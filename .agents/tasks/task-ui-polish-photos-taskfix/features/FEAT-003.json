@@ -1,0 +1,23 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Ensure resident profile photos display prominently next to names on the Carer Dashboard and Task Board",
+  "status": "completed",
+  "steps": [
+    "In frontend/src/pages/dashboards/CarerDashboard.tsx, the photo is already rendered next to names (around line 1017-1025) using `residentPhoto((res as any)?.photo_url)`. Since FEAT-001 adds photo_url to the Resident type, update the cast from `(res as any)?.photo_url` to `res?.photo_url`. Also increase the photo avatar size from 28x28 to 36x36 for better visibility. Add a subtle box-shadow to make photos more prominent.",
+    "In frontend/src/pages/TaskBoard.tsx, add resident photos next to names in the task board rows. Find the resident info section that renders the name via `<Link to={/residents/${rid}} ...>{first.resident_name}</Link>`. Before the name, add a photo avatar (or initials fallback) similar to CarerDashboard. Use the residents list from the useTasks response which includes resident_id. Add a useResidents hook call and display photos using the same `residentPhoto()` helper pattern. Import useResidents from hooks and the BACKEND constant pattern for photo URLs.",
+    "Ensure the photo displays consistently: 36px circle with object-fit:cover, 2px solid var(--border) border, and a fallback to initials in a colored circle when no photo is available."
+  ],
+  "acceptance_criteria": [
+    "Resident profile photos appear as 36px circular avatars next to resident names on the Carer Dashboard",
+    "Resident profile photos appear as 36px circular avatars next to resident names on the Task Board (/tasks page)",
+    "When no photo is uploaded, initials are shown in a styled circle as fallback",
+    "Photos are fetched using the correct backend URL prefix",
+    "TypeScript compiles without errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npx tsc --noEmit"
+  ],
+  "blocked_reason": null,
+  "findings": "Successfully added 36px circular photo avatars with box-shadow to both CarerDashboard and TaskBoard. Removed (res as any) cast in CarerDashboard since photo_url is now on the Resident type. Added useResidents hook and residentPhoto helper to TaskBoard. All 19 pre-existing TS errors in other files (CareNotes, Emar, Incidents, Training) remain unrelated to this change."
+}

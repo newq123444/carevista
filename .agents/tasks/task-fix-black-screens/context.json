@@ -1,0 +1,26 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) - React frontend + Node.js/Express backend + PostgreSQL",
+  "language": "TypeScript",
+  "build_system": "Vite (frontend), tsc (backend), npm scripts",
+  "test_framework": "No formal test framework configured",
+  "build_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "test_command": "No test command available - validate via build",
+  "verification_instructions": "1. Run frontend build: cd frontend && npm run build. 2. Run backend build: cd backend && npm run build. Both should succeed without errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd frontend && npm install && cd ../backend && npm install",
+  "environment_constraints": "Open internet access. No test database available for runtime validation - rely on TypeScript compilation and build checks.",
+  "contribution_requirements": "Commit locally, do not push.",
+  "key_patterns": "Frontend pages use @tanstack/react-query with api.get/post calls. Backend controllers follow try/catch with next(err) pattern. PostgreSQL JSONB columns are returned as pre-parsed objects by the pg driver. Routes defined in backend/src/routes/index.ts. No error boundary exists.",
+  "relevant_files": [
+    "frontend/src/pages/AiCarePlanWriter.tsx",
+    "frontend/src/pages/ConsentManager.tsx",
+    "frontend/src/pages/ResidentDigitalTwin.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/components/ErrorBoundary.tsx (to create)",
+    "backend/src/controllers/digitalTwin.controller.ts",
+    "backend/src/controllers/aiCarePlan.controller.ts",
+    "backend/src/controllers/consentManager.controller.ts",
+    "backend/src/utils/seed-demo.ts"
+  ],
+  "directory_structure": "frontend/src/pages/ - all page components; frontend/src/components/ - shared components; frontend/src/services/api.ts - Axios client; backend/src/controllers/ - API controllers; backend/src/routes/index.ts - route definitions; backend/src/utils/ - seed scripts; backend/migrations/ - SQL migrations"
+}

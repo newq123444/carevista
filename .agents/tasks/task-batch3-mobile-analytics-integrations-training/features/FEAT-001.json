@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Database migration 012_batch3_features.sql for all 10 new features: offline sync queue, resident tablet requests, QR room codes, benchmarking KPIs, board pack reports, staff performance metrics, e-learning modules/quizzes/certificates, competency sign-off assessments, diabetes management (glucose logs, insulin doses, HbA1c), and palliative care pathway tables.",
+  "status": "completed",
+  "steps": [
+    "Create backend/migrations/012_batch3_features.sql with CREATE EXTENSION IF NOT EXISTS uuid-ossp at the top",
+    "Add offline_sync_queue table: id UUID PK, care_home_id UUID FK, user_id UUID FK, entity_type VARCHAR(50), entity_id UUID, action VARCHAR(20) (create/update/delete), payload JSONB, status VARCHAR(20) (pending/synced/conflict), conflict_resolution JSONB, created_at TIMESTAMPTZ, synced_at TIMESTAMPTZ",
+    "Add resident_tablet_requests table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, request_type VARCHAR(50) (help/meal_rating/activity_choice/video_call/entertainment), payload JSONB, status VARCHAR(20) (pending/acknowledged/completed), created_at TIMESTAMPTZ, acknowledged_at TIMESTAMPTZ, acknowledged_by UUID",
+    "Add qr_room_codes table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, room_number VARCHAR(20), qr_code_data TEXT, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ. Add unique index on (care_home_id, room_number)",
+    "Add benchmarking_kpis table: id UUID PK, care_home_id UUID FK, period_start DATE, period_end DATE, metric_name VARCHAR(100), metric_value DECIMAL(12,4), national_average DECIMAL(12,4), peer_average DECIMAL(12,4), percentile_rank INT, created_at TIMESTAMPTZ. Index on (care_home_id, metric_name, period_start)",
+    "Add board_pack_reports table: id UUID PK, care_home_id UUID FK, report_month DATE, title VARCHAR(200), sections JSONB, status VARCHAR(20) (draft/final/approved), generated_by UUID FK, approved_by UUID, generated_at TIMESTAMPTZ, approved_at TIMESTAMPTZ",
+    "Add staff_performance_metrics table: id UUID PK, care_home_id UUID FK, staff_id UUID FK, period_start DATE, period_end DATE, task_completion_rate DECIMAL(5,2), care_note_quality_score DECIMAL(5,2), avg_response_time_minutes INT, training_completion_pct DECIMAL(5,2), notes_count INT, tasks_completed INT, tasks_assigned INT, created_at TIMESTAMPTZ. Index on (care_home_id, staff_id, period_start)",
+    "Add elearning_modules table: id UUID PK, care_home_id UUID FK, title VARCHAR(200), description TEXT, category VARCHAR(100), content_type VARCHAR(50) (video/document/interactive), content_url TEXT, duration_minutes INT, mandatory BOOLEAN DEFAULT FALSE, created_by UUID, created_at TIMESTAMPTZ",
+    "Add elearning_quizzes table: id UUID PK, module_id UUID FK, title VARCHAR(200), questions JSONB, pass_mark_pct INT DEFAULT 80, created_at TIMESTAMPTZ",
+    "Add elearning_completions table: id UUID PK, care_home_id UUID FK, module_id UUID FK, staff_id UUID FK, quiz_score INT, passed BOOLEAN, completed_at TIMESTAMPTZ, certificate_id VARCHAR(100), expiry_date DATE. Unique on (module_id, staff_id, completed_at)",
+    "Add competency_signoffs table: id UUID PK, care_home_id UUID FK, staff_id UUID FK, competency_id UUID, assessor_id UUID FK, observation_date DATE, outcome VARCHAR(20) (competent/not_yet_competent/requires_training), evidence_notes TEXT, further_training_needed TEXT, signed_off BOOLEAN DEFAULT FALSE, signed_off_at TIMESTAMPTZ, created_at TIMESTAMPTZ",
+    "Add glucose_readings table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, reading_value DECIMAL(5,1), reading_type VARCHAR(30) (before_breakfast/after_breakfast/before_lunch/after_lunch/before_dinner/after_dinner/bedtime/random), recorded_by UUID FK, recorded_at TIMESTAMPTZ, notes TEXT",
+    "Add insulin_doses table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, insulin_type VARCHAR(100), dose_units DECIMAL(5,1), injection_site VARCHAR(50), administered_by UUID FK, administered_at TIMESTAMPTZ, notes TEXT",
+    "Add diabetes_alerts table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, alert_type VARCHAR(30) (hypo/hyper), glucose_value DECIMAL(5,1), triggered_at TIMESTAMPTZ, acknowledged_by UUID, acknowledged_at TIMESTAMPTZ, actions_taken TEXT",
+    "Add hba1c_records table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, value DECIMAL(4,1), test_date DATE, recorded_by UUID FK, created_at TIMESTAMPTZ",
+    "Add palliative_care_plans table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, preferred_place_of_death VARCHAR(100), dnacpr_in_place BOOLEAN, advance_decision BOOLEAN, lasting_power_of_attorney BOOLEAN, spiritual_needs TEXT, preferred_priorities TEXT, comfort_measures TEXT, status VARCHAR(20) (active/completed/withdrawn), created_by UUID FK, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ",
+    "Add comfort_rounds table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, scheduled_time TIMESTAMPTZ, completed_time TIMESTAMPTZ, completed_by UUID FK, pain_score INT, comfort_notes TEXT, repositioned BOOLEAN, fluids_offered BOOLEAN, mouth_care BOOLEAN",
+    "Add anticipatory_medications table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, medication_name VARCHAR(200), indication VARCHAR(100), dose VARCHAR(100), route VARCHAR(50), location_stored VARCHAR(100), prescribed_by VARCHAR(200), prescribed_date DATE, administered_at TIMESTAMPTZ, administered_by UUID, notes TEXT",
+    "Add family_communication_log table: id UUID PK, care_home_id UUID FK, resident_id UUID FK, contact_name VARCHAR(200), contact_relationship VARCHAR(100), communication_type VARCHAR(50) (phone/in_person/video/email), summary TEXT, staff_id UUID FK, communication_date TIMESTAMPTZ, follow_up_needed BOOLEAN DEFAULT FALSE, follow_up_notes TEXT",
+    "Add appropriate indexes on care_home_id, resident_id, staff_id columns for all new tables"
+  ],
+  "acceptance_criteria": [
+    "File backend/migrations/012_batch3_features.sql exists and contains valid PostgreSQL DDL",
+    "All 18+ tables are created with proper FK references",
+    "Indexes exist for commonly queried columns",
+    "Backend build (npm run build) passes"
+  ],
+  "verification": ["cd /projects/sandbox/jubilant-waddle/backend && npm run build"],
+  "blocked_reason": null,
+  "findings": "Backend TypeScript build has pre-existing errors in auth.controller.ts, photos.controller.ts, index.ts, and upload.ts (missing @types/compression, @types/multer, jwt sign overload mismatch). These are unrelated to the SQL migration and exist on the base branch. The SQL migration file itself is valid DDL and does not affect the TypeScript compilation."
+}

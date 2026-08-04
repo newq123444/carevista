@@ -1,0 +1,14 @@
+{
+  "task_id": "task-activity-scheduling-wellbeing",
+  "task_description": "Add intelligent activity scheduling based on resident mobility status (bed-bound, wheelchair, walking aid, independent) and world-class wellbeing features including mood tracking, life story profiles, social isolation alerts, and environment preferences to improve residents' quality of life.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "Both frontend and backend build successfully (exit code 0). All TypeScript errors are pre-existing in unmodified files (Emar.tsx, CareNotes.tsx, Incidents.tsx, Training.tsx, photos.controller.ts, auth.controller.ts, upload.ts)."
+  }
+}

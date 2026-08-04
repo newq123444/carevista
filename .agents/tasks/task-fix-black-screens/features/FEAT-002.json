@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-002",
+  "type": "chore",
+  "description": "Verify seed-demo.ts already covers all required tables (ai_care_plans, consent_records, capacity_assessments, regulatory_notifications, smart_handovers, handover_actions, environmental_readings, admission_referrals, admission_matches) with 30 days of demo data. All tables are already seeded per exploration - but verify completeness and ensure all tables generate adequate volume of data spanning 30 days.",
+  "status": "completed",
+  "steps": [
+    "Step 1: Review backend/src/utils/seed-demo.ts to confirm all 9 tables are seeded. Based on exploration, ALL are already present: admission_referrals (line ~1755), admission_matches (line ~1771), ai_care_plans (line ~1792), consent_records (line ~1821), capacity_assessments (line ~1839), regulatory_notifications (line ~1855), smart_handovers (line ~1880), handover_actions (line ~1895), environmental_readings (line ~1910). Verify these generate 30 days of data.",
+    "Step 2: Check that environmental_readings generates data for the full 30 days. Currently it only generates 7 days of data (for day = 0; day < 7). Change this to 30 days to match the requirement. IMPORTANT: 30 days * 24 hours * 5 zones = 3600 rows which is a lot - use a sampling approach (every 4 hours instead of every hour) for days older than 7, or just increase to 30 days with reduced hourly frequency.",
+    "Step 3: Check that smart_handovers generates data for the full 30 days. Currently it only generates 7 days. Change this to 30 days of handover data.",
+    "Step 4: Verify that ai_care_plans, consent_records, regulatory_notifications, admission_referrals have date ranges spanning 30 days in their created_at fields. The current code uses daysAgo(randInt(3,15)), daysAgo(randInt(10,60)), etc. - these already cover 30 days or more. No changes needed for those.",
+    "Step 5: Run `cd backend && npm run build` to confirm seed-demo.ts compiles correctly after changes."
+  ],
+  "acceptance_criteria": [
+    "environmental_readings generates data spanning 30 days (not just 7)",
+    "smart_handovers generates data spanning 30 days (not just 7)",
+    "All 9 required tables remain seeded in seed-demo.ts",
+    "Backend builds successfully after changes: cd backend && npm run build"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Changed environmental_readings from 7 to 30 days with every-4-hours sampling for days 8-30. Changed smart_handovers from 7 to 30 days. All other tables already span 30+ days via daysAgo() calls with appropriate random ranges."
+}

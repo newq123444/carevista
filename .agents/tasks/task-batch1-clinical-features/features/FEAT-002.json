@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Backend controllers and routes for NEWS2 Auto-Calculator, Wound Photography Timeline, Infection Outbreak Tracker, and Continence Assessment Tool (features 1-4)",
+  "status": "completed",
+  "steps": [
+    "Create backend/src/controllers/news2.controller.ts with functions: calculateNews2Score (POST - takes vitals, calculates NEWS2 total, determines risk level, auto-escalates if needed), getAssessmentHistory (GET - list assessments for a resident with pagination), getEscalationHistory (GET - list escalations), respondToEscalation (PATCH - mark escalation as responded), getResidentTrend (GET - trend data for charting). NEWS2 scoring: RespRate <9 or >25 =3, 21-24=2, 12-20=0, 9-11=1; SpO2 >=96=0, 94-95=1, 92-93=2, <=91=3; SysBP >=220 or <=90=3, 91-100=2, 101-110=1, 111-219=0; Pulse >=131 or <=40=3, 41-50=1, 51-90=0, 91-110=1, 111-130=2; Consciousness Alert=0, else=3; Temp >=39.1=2, 38.1-39=1, 36.1-38=0, 35.1-36=1, <=35=3. Escalation: 0-4=low, 5-6=medium (notify nurse), 7+=high (notify nurse+manager, consider 999)",
+    "Create backend/src/controllers/wounds.controller.ts with functions: createWoundAssessment (POST - with photo upload), getWoundTimeline (GET - all assessments for a wound location on a resident), listActiveWounds (GET - all open wounds for the home), updateWoundAssessment (PATCH - update status/notes), getBodyMapOverview (GET - aggregated wound locations for a resident)",
+    "Create backend/src/controllers/infections.controller.ts with functions: createOutbreak (POST), listOutbreaks (GET), getOutbreakDetails (GET/:id - includes cases), addInfectionCase (POST - add resident to outbreak), updateCaseStatus (PATCH), updateOutbreakStatus (PATCH), getOutbreakTimeline (GET - timeline of events)",
+    "Create backend/src/controllers/continence.controller.ts with functions: logContinenceEvent (POST), getResidentLog (GET - events for a resident), getPatternAnalysis (GET - analyze patterns and suggest optimal times), createAssessment (POST - create/update assessment with recommendations), getAssessment (GET - current assessment for resident), getHomeOverview (GET - summary statistics)",
+    "Register all new routes in backend/src/routes/index.ts following existing patterns with appropriate auth middleware (isClinical for clinical assessments, isStaff for logging). Import controllers and add routes under clearly labeled comment sections."
+  ],
+  "acceptance_criteria": [
+    "All four controllers compile without TypeScript errors",
+    "Routes are registered in routes/index.ts with appropriate role guards",
+    "NEWS2 calculator implements correct NHS NEWS2 scoring algorithm",
+    "Wound controller supports file upload via multer middleware",
+    "Pattern analysis in continence controller uses time-based aggregation SQL",
+    "All controllers use req.user!.care_home_id for tenant isolation"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/jubilant-waddle/backend && npx tsc --noEmit"
+  ],
+  "blocked_reason": null,
+  "findings": "All 4 controllers compile cleanly. Pre-existing TS errors in auth.controller.ts, photos.controller.ts, upload.ts, and index.ts (missing @types/compression, @types/multer) remain unchanged. Used (req as any).file in wounds controller to avoid multer type issue (same pattern problem as photos.controller.ts). Continence assessment upsert uses check-then-insert/update pattern since the migration does not have a UNIQUE constraint on (care_home_id, resident_id). Routes are ordered with /continence/overview, /continence/log, and /continence/assessment BEFORE /:residentId routes to avoid path conflicts."
+}

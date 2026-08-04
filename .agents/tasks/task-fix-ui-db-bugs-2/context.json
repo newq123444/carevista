@@ -1,0 +1,28 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) - React frontend + Express backend",
+  "language": "TypeScript",
+  "build_system": "npm with Vite (frontend) and tsc (backend)",
+  "test_framework": "No test suite configured",
+  "build_command": "cd frontend && npm run build && cd ../backend && npm run build",
+  "test_command": "No tests to run",
+  "verification_instructions": "Build both frontend and backend with tsc/vite to confirm no compile errors",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd frontend && npm install && cd ../backend && npm install",
+  "environment_constraints": "Open internet access. No running database available for integration testing. Validation is via TypeScript compilation.",
+  "contribution_requirements": "No CONTRIBUTING.md. Code follows existing inline styles pattern in React components.",
+  "key_patterns": "Backend controllers in backend/src/controllers/*.controller.ts, frontend pages in frontend/src/pages/*.tsx, hooks in frontend/src/hooks/index.ts, API service in frontend/src/services/api.ts. Components use inline styles (no CSS modules). Backend uses Express with req.user!.care_home_id pattern.",
+  "relevant_files": [
+    "backend/src/controllers/sleepTracker.controller.ts",
+    "frontend/src/pages/SmartRota.tsx",
+    "frontend/src/pages/NaturalLanguageSearch.tsx",
+    "frontend/src/pages/IntergenerationalProgramme.tsx",
+    "frontend/src/pages/MenuChoiceSystem.tsx",
+    "frontend/src/pages/DailyPurposePlanner.tsx",
+    "frontend/src/pages/FriendshipMapper.tsx",
+    "frontend/src/pages/MusicTherapy.tsx",
+    "frontend/src/pages/RehabGoalTracker.tsx",
+    "backend/src/controllers/smartRota.controller.ts",
+    "backend/src/controllers/nlSearch.controller.ts"
+  ],
+  "directory_structure": "backend/src/controllers/ - Express route handlers; backend/src/routes/index.ts - route registration; frontend/src/pages/ - React page components; frontend/src/hooks/index.ts - React Query hooks; frontend/src/services/api.ts - Axios API client"
+}

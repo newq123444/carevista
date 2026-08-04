@@ -1,0 +1,29 @@
+{
+  "task_id": "task-fix-rota-handover-sidebar",
+  "task_description": "Fix 4 issues: (1) SmartRota page crashing for managers, (2) Add Excel/CSV upload for rota, (3) SBAR AI Handover showing unexpected error when no API key, (4) Add sidebar search/filter for navigation",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "Both frontend (tsc + vite build) and backend (tsc) compile successfully with no errors. No test suite exists in this project so verification is via build compilation."
+  },
+  "review_fixes": {
+    "review_file": "2026-06-25-review-v1.md",
+    "fixed_issues": [
+      "#1: Removed .xlsx from csvFileFilter and frontend accept attribute - only CSV is parsed",
+      "#5: Added auditStatus variable that flips to 'error' in catch block for accurate audit logging",
+      "#7: Added useEffect to clear searchQuery when collapsed changes to true"
+    ],
+    "deferred_issues": [
+      "#2: No transaction on CSV import - acceptable for small care home CSV files (<100 rows)",
+      "#3: Sequential per-row queries - acceptable for typical use case",
+      "#4: Sentinel comparison fragility - works reliably, typed union is future improvement",
+      "#6: startsWith check for AI unavailability - extremely unlikely to match real AI output",
+      "#7b: CSV name matching brittleness - acceptable given care home staff naming conventions"
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Install dependencies for both backend and frontend, verify existing build passes cleanly before making changes.",
+  "status": "completed",
+  "steps": [
+    "Run `cd /projects/sandbox/jubilant-waddle/backend && npm install` to install backend dependencies",
+    "Run `cd /projects/sandbox/jubilant-waddle/backend && npm run build` (tsc) to confirm the baseline builds cleanly",
+    "Run `cd /projects/sandbox/jubilant-waddle/frontend && npm install` to install frontend dependencies",
+    "Run `cd /projects/sandbox/jubilant-waddle/frontend && npm run build` (tsc && vite build) to confirm the baseline builds cleanly",
+    "If there are any pre-existing type errors, note them in findings but proceed (they pre-date our changes)"
+  ],
+  "acceptance_criteria": [
+    "Backend tsc compiles (or has only pre-existing errors documented)",
+    "Frontend tsc + vite build completes (or has only pre-existing errors documented)"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build",
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Pre-existing type errors found in both backend and frontend (these pre-date our changes):\n\nBACKEND errors (14 errors):\n- src/controllers/auth.controller.ts(153): jwt.sign overload mismatch (expiresIn type issue)\n- src/controllers/photos.controller.ts: Property 'file' does not exist on Request (6 occurrences)\n- src/index.ts(10): Missing @types/compression declaration\n- src/middleware/upload.ts: Missing @types/multer declaration, implicit 'any' parameters, Namespace 'global.Express' has no exported member 'Multer'\n\nFRONTEND errors (18 errors):\n- src/pages/CareNotes.tsx(354,356): Property 'care_needs_summary' does not exist on type 'Resident'\n- src/pages/Emar.tsx: Multiple issues - 'map'/'length' on unknown type, missing 'siteApplied' and 'site' properties\n- src/pages/Incidents.tsx(42,47,55): snake_case vs camelCase mismatch (resident_id vs residentId, incident_type vs incidentType, incident_date vs incidentDate)\n- src/pages/Training.tsx(43,48,53,55): snake_case vs camelCase mismatch (staff_id vs staffId, course_name vs courseName, completed_date vs completedDate, expiry_date vs expiryDate)\n\nAll errors are pre-existing and do not affect our new feature implementation. New code should avoid introducing additional type errors."
+}

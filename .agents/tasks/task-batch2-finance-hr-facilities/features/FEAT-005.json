@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "Frontend pages for HR features (features 4-6): Digital Recruitment Pipeline page (Kanban-style board with job postings, applications moving through stages, interview scheduling, DBS tracking), Competency Matrix page (visual grid of staff vs competencies with color-coded status, sign-off tracking, expiry alerts), and Sickness & Absence Analytics page (Bradford Factor display, absence pattern detection, return-to-work triggers, annual leave calendar view).",
+  "status": "completed",
+  "steps": [
+    "Create frontend/src/pages/RecruitmentPipeline.tsx with: job posting creation form (title, department, contract type, hours, salary range, description), Kanban board with columns (Applied, Screening, Interview, Offer, Hired) showing application cards that can be moved between stages, interview scheduling modal (date/time, interviewers, location), DBS check status tracking panel (pending/clear/flagged badges), pipeline overview stats at top (total applicants, in interview, offers made, positions filled). Use inline styles with flexbox for kanban columns.",
+    "Create frontend/src/pages/CompetencyMatrix.tsx with: competency management section (add/edit competencies like PEG feeds, insulin admin, syringe drivers, wound care), visual matrix grid (rows = staff members, columns = competencies, cells = color-coded status: green competent, amber expiring, red expired, grey not started), sign-off form (select staff, select competency, set date, add evidence notes), expiring competencies alert panel (list of staff with competencies expiring in next 30 days), filter by role/competency category.",
+    "Create frontend/src/pages/SicknessAbsence.tsx with: Bradford Factor dashboard (table of staff with their scores, color-coded thresholds: green 0-49, amber 50-199, red 200+), absence recording form (staff, type, dates, reason), pattern detection panel (highlights staff with recurring patterns like always Monday absences), return-to-work trigger list (staff who need RTW interview), annual leave section (calendar-style view showing staff leave periods), absence stats KPI cards (total days lost, average per employee, cost estimate).",
+    "Add all three pages to frontend/src/App.tsx: import statements, NAV_ALL entries in the Team section with appropriate roles (home_manager, deputy_manager, admin, super_admin, group_admin) and icons, and Route elements in the Routes block"
+  ],
+  "acceptance_criteria": [
+    "RecruitmentPipeline.tsx exists with Kanban board, job posting form, interview scheduling, and DBS tracking",
+    "CompetencyMatrix.tsx exists with visual grid, sign-off form, and expiry alerts",
+    "SicknessAbsence.tsx exists with Bradford Factor, pattern detection, and RTW tracking",
+    "All three pages are accessible via navigation in App.tsx",
+    "Frontend build succeeds without errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All pre-existing TypeScript errors in CareNotes.tsx, Emar.tsx, Incidents.tsx, Training.tsx remain unchanged. The Vite build (bundling) succeeds; only tsc strict checking fails on those pre-existing issues. New pages compile and bundle without errors."
+}

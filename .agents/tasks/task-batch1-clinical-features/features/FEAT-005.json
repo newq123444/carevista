@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "Frontend pages, types, API services, and hooks for Smart Rota Builder, Natural Language Search, Automated Risk Assessments, and Medication Interaction Checker (features 5-8)",
+  "status": "completed",
+  "steps": [
+    "Add TypeScript types to frontend/src/types/index.ts for: RotaTemplate, RotaShift, NlSearchResult, NlSearchQuery, RiskAssessment (Waterlow/MUST/Falls), MedicationInteraction",
+    "Add API service objects to frontend/src/services/api.ts: smartRotaApi (generate, getTemplate, listTemplates, updateShift, publish, getConstraints), nlSearchApi (search, getHistory), riskAssessmentsApi (calculateWaterlow, calculateMUST, calculateFalls, getResidentAssessments, getOverdue, getOverview), medInteractionsApi (check, getResidentInteractions, acknowledge, getAlerts)",
+    "Add React Query hooks to frontend/src/hooks/index.ts for all new API endpoints",
+    "Create frontend/src/pages/SmartRota.tsx - Page with: AI rota generation form (week selector, budget limit, constraints toggles), visual week grid showing days x staff with shift blocks color-coded by role, drag-drop placeholder (mouse drag to reposition shifts), staff constraint warnings (overtime, preferences violated), publish button to finalize",
+    "Create frontend/src/pages/NaturalLanguageSearch.tsx - Page with: prominent search bar with placeholder examples, query suggestions/autocomplete hints, results display as cards/table depending on result type (residents, incidents, medications), search history sidebar, loading state with 'thinking' animation",
+    "Create frontend/src/pages/RiskAssessments.tsx - Page with: overview dashboard showing all residents with traffic-light indicators (red/amber/green) for Waterlow/MUST/Falls scores, overdue review alerts list, individual assessment forms that auto-populate from existing data, scoring breakdown display, next review date tracking",
+    "Create frontend/src/pages/MedInteractionChecker.tsx - Page with: resident selector, active medications list, interaction alerts panel with severity badges (minor=blue, moderate=amber, major=red, contraindicated=purple), clinical effect description, recommendation display, acknowledge/review workflow, ability to trigger a fresh check",
+    "Register all 4 new pages in frontend/src/App.tsx: add imports, add Route elements, add NAV_ALL entries (Smart Rota under Team section for manager roles, NL Search under Tools for all staff, Risk Assessments under Care for clinical roles, Med Interactions under Care for clinical roles)"
+  ],
+  "acceptance_criteria": [
+    "All TypeScript types are exported and properly typed",
+    "All 4 pages render with proper layout following existing inline-style patterns",
+    "Smart Rota shows a visual week grid with shift blocks",
+    "NL Search has a prominent search bar and shows results",
+    "Risk Assessments shows traffic-light overview per resident",
+    "Med Interactions shows severity-coded alerts",
+    "All pages are accessible from sidebar navigation",
+    "Frontend compiles without errors"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/jubilant-waddle/frontend && npx tsc --noEmit",
+    "Run: cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 4 frontend pages (SmartRota, NaturalLanguageSearch, RiskAssessments, MedInteractionChecker) created. Types (RotaTemplate, RotaShift, NlSearchResult, NlSearchQuery, RiskAssessment, RiskOverviewItem, MedicationInteraction) added to types/index.ts. API services (smartRotaApi, nlSearchApi, riskAssessmentsApi, medInteractionsApi) added to services/api.ts. 16 hooks added to hooks/index.ts. All 4 pages registered in App.tsx with routes and NAV_ALL entries. Vite build succeeds (dist output generated). Pre-existing TS errors in CareNotes.tsx, Emar.tsx, Incidents.tsx, and Training.tsx remain unchanged from prior commits - these block tsc but not vite build. SmartRota has week grid with shift blocks color-coded by type, NL Search has prominent search bar with example chips, Risk Assessments has traffic-light overview, Med Interactions has severity-coded alerts with acknowledge workflow."
+}

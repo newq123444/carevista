@@ -1,0 +1,44 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Database migration 011_batch2_features.sql with all tables for Batch 2: automated invoicing enhancements (rate_uplifts, payment_reminders, revenue_dashboard_cache), occupancy forecasting (occupancy_records, occupancy_forecasts), staff cost analytics (staff_costs, cost_budgets), digital recruitment pipeline (job_postings, job_applications, interviews, dbs_checks), competency matrix (competencies, staff_competencies), sickness/absence analytics (absence_records, bradford_scores, return_to_work), fire log book (fire_tests, fire_drills, fire_equipment_checks, peeps), visitor sign-in (visitor_records, visitor_safeguarding), room turnover (room_turnovers, turnover_checklist_items), and custom report builder (report_templates, report_runs).",
+  "status": "completed",
+  "steps": [
+    "Create backend/migrations/011_batch2_features.sql with CREATE EXTENSION IF NOT EXISTS uuid-ossp at top",
+    "Add rate_uplifts table (id UUID PK, care_home_id FK, resident_id FK, previous_rate_pence INT, new_rate_pence INT, effective_date DATE, reason TEXT, approved_by UUID FK, status VARCHAR, created_at TIMESTAMPTZ)",
+    "Add payment_reminders table (id UUID PK, care_home_id FK, invoice_id UUID FK, reminder_type VARCHAR, sent_at TIMESTAMPTZ, channel VARCHAR, status VARCHAR, created_at TIMESTAMPTZ)",
+    "Add occupancy_records table (id UUID PK, care_home_id FK, record_date DATE, total_beds INT, occupied_beds INT, occupancy_pct DECIMAL, revenue_per_bed_pence INT, notes TEXT, created_at TIMESTAMPTZ)",
+    "Add occupancy_forecasts table (id UUID PK, care_home_id FK, forecast_date DATE, predicted_occupancy_pct DECIMAL, predicted_vacancies INT, revenue_impact_pence INT, confidence_level DECIMAL, suggested_actions JSONB, created_at TIMESTAMPTZ)",
+    "Add staff_costs table (id UUID PK, care_home_id FK, staff_id UUID FK, period_start DATE, period_end DATE, basic_hours DECIMAL, overtime_hours DECIMAL, basic_cost_pence INT, overtime_cost_pence INT, agency_cost_pence INT, is_agency BOOLEAN, created_at TIMESTAMPTZ)",
+    "Add cost_budgets table (id UUID PK, care_home_id FK, budget_month DATE, budget_pence INT, actual_pence INT, variance_pence INT, category VARCHAR, notes TEXT, created_at TIMESTAMPTZ)",
+    "Add job_postings table (id UUID PK, care_home_id FK, title VARCHAR, department VARCHAR, contract_type VARCHAR, hours_per_week DECIMAL, salary_range VARCHAR, description TEXT, requirements TEXT, status VARCHAR CHECK (draft/active/closed/filled), posted_at TIMESTAMPTZ, closes_at TIMESTAMPTZ, created_by UUID FK, created_at TIMESTAMPTZ)",
+    "Add job_applications table (id UUID PK, care_home_id FK, job_posting_id UUID FK, applicant_name VARCHAR, applicant_email VARCHAR, applicant_phone VARCHAR, cv_url TEXT, cover_letter TEXT, stage VARCHAR CHECK (applied/screening/interview/offer/hired/rejected), notes TEXT, applied_at TIMESTAMPTZ, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)",
+    "Add interviews table (id UUID PK, care_home_id FK, application_id UUID FK, scheduled_at TIMESTAMPTZ, duration_minutes INT, interviewers JSONB, location VARCHAR, notes TEXT, outcome VARCHAR CHECK (pending/pass/fail), created_at TIMESTAMPTZ)",
+    "Add dbs_checks table (id UUID PK, care_home_id FK, application_id UUID, staff_id UUID, person_name VARCHAR, dbs_type VARCHAR, certificate_number VARCHAR, issue_date DATE, status VARCHAR CHECK (pending/clear/flagged/expired), notes TEXT, created_at TIMESTAMPTZ)",
+    "Add competencies table (id UUID PK, care_home_id FK, name VARCHAR, category VARCHAR, description TEXT, requires_renewal BOOLEAN, renewal_months INT, created_at TIMESTAMPTZ)",
+    "Add staff_competencies table (id UUID PK, care_home_id FK, staff_id UUID FK, competency_id UUID FK, signed_off_by UUID FK, signed_off_date DATE, expiry_date DATE, status VARCHAR CHECK (competent/expired/in_training/not_started), evidence_notes TEXT, created_at TIMESTAMPTZ)",
+    "Add absence_records table (id UUID PK, care_home_id FK, staff_id UUID FK, absence_type VARCHAR, start_date DATE, end_date DATE, total_days DECIMAL, reason TEXT, self_certified BOOLEAN, fit_note_received BOOLEAN, return_to_work_date DATE, return_to_work_completed BOOLEAN, return_to_work_notes TEXT, created_by UUID FK, created_at TIMESTAMPTZ)",
+    "Add bradford_scores table (id UUID PK, care_home_id FK, staff_id UUID FK, calculated_date DATE, score INT, spells INT, total_days INT, period_start DATE, period_end DATE, created_at TIMESTAMPTZ)",
+    "Add fire_tests table (id UUID PK, care_home_id FK, test_type VARCHAR CHECK (weekly_alarm/quarterly_drill/annual_evacuation), test_date DATE, time_taken_seconds INT, all_clear BOOLEAN, issues_found TEXT, conducted_by UUID FK, witnesses JSONB, notes TEXT, created_at TIMESTAMPTZ)",
+    "Add fire_equipment_checks table (id UUID PK, care_home_id FK, equipment_type VARCHAR, location VARCHAR, check_date DATE, status VARCHAR CHECK (pass/fail/needs_attention), next_check_date DATE, checked_by UUID FK, notes TEXT, created_at TIMESTAMPTZ)",
+    "Add peeps table (id UUID PK, care_home_id FK, resident_id UUID FK, mobility_status VARCHAR, evacuation_method VARCHAR, assistance_required TEXT, equipment_needed TEXT, primary_helper UUID FK, secondary_helper UUID FK, review_date DATE, status VARCHAR CHECK (current/needs_review/archived), created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)",
+    "Add visitor_records table (id UUID PK, care_home_id FK, visitor_name VARCHAR, visitor_type VARCHAR CHECK (family/friend/contractor/professional/other), company VARCHAR, visiting_resident_id UUID, purpose TEXT, sign_in_time TIMESTAMPTZ, sign_out_time TIMESTAMPTZ, badge_number VARCHAR, car_registration VARCHAR, dbs_verified BOOLEAN, safeguarding_flag BOOLEAN, notes TEXT, created_at TIMESTAMPTZ)",
+    "Add visitor_safeguarding table (id UUID PK, care_home_id FK, visitor_name VARCHAR, visitor_type VARCHAR, restriction_type VARCHAR, reason TEXT, restricted_residents JSONB, active BOOLEAN DEFAULT TRUE, created_by UUID FK, created_at TIMESTAMPTZ)",
+    "Add room_turnovers table (id UUID PK, care_home_id FK, room_number VARCHAR, previous_resident_id UUID, vacated_date DATE, target_ready_date DATE, actual_ready_date DATE, status VARCHAR CHECK (vacated/in_progress/ready/allocated), assigned_to UUID FK, notes TEXT, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)",
+    "Add turnover_checklist_items table (id UUID PK, care_home_id FK, turnover_id UUID FK, task_name VARCHAR, category VARCHAR CHECK (cleaning/maintenance/decoration/inventory/admin), completed BOOLEAN DEFAULT FALSE, completed_by UUID FK, completed_at TIMESTAMPTZ, notes TEXT, created_at TIMESTAMPTZ)",
+    "Add report_templates table (id UUID PK, care_home_id FK, name VARCHAR, description TEXT, data_source VARCHAR, fields JSONB, filters JSONB, group_by JSONB, sort_by JSONB, schedule_cron VARCHAR, format VARCHAR CHECK (pdf/csv/excel/json), created_by UUID FK, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)",
+    "Add report_runs table (id UUID PK, care_home_id FK, template_id UUID FK, run_at TIMESTAMPTZ, parameters JSONB, row_count INT, status VARCHAR CHECK (pending/running/completed/failed), result_url TEXT, error TEXT, created_by UUID FK, created_at TIMESTAMPTZ)",
+    "Add appropriate indexes on care_home_id, status, created_at, and FK columns for all tables"
+  ],
+  "acceptance_criteria": [
+    "File backend/migrations/011_batch2_features.sql exists with valid SQL syntax",
+    "All tables have UUID primary keys, care_home_id foreign key, and created_at timestamp",
+    "All CHECK constraints and indexes are properly defined",
+    "Backend build (tsc) succeeds without errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Backend tsc build has pre-existing errors in auth.controller.ts, photos.controller.ts, index.ts, and upload.ts (missing type declarations for compression/multer and JWT typing issues). These are not related to the SQL migration. The migration file is valid SQL and does not affect TypeScript compilation."
+}

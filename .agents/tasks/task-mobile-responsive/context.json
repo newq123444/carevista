@@ -1,0 +1,32 @@
+{
+  "project_type": "React 18 + TypeScript + Vite SPA (CareVista care home management)",
+  "language": "TypeScript/React",
+  "build_system": "Vite with tsc type checking",
+  "test_framework": "None (no test files found)",
+  "build_command": "cd /projects/sandbox/jubilant-waddle/frontend && npm run build",
+  "test_command": "N/A - no tests configured",
+  "verification_instructions": "Run `cd /projects/sandbox/jubilant-waddle/frontend && npm run build` to verify TypeScript compilation and Vite build succeed",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/jubilant-waddle/frontend && npm install",
+  "environment_constraints": "Open internet - can install packages. No test suite exists.",
+  "contribution_requirements": "All styling is custom CSS in frontend/src/index.css + inline styles in components. No CSS frameworks.",
+  "key_patterns": "- Global CSS with media queries in index.css (breakpoints: <640px phone, 640-1023px tablet, >=1024px desktop)\n- Components use inline styles extensively with fixed pixel widths and grid layouts\n- App.tsx already has sidebar drawer, bottom nav, top bar for mobile\n- CSS utility classes: grid-2, grid-3, grid-4, grid-auto, hidden-mobile, hidden-tablet, show-mobile-only\n- Modals already go full-screen on phone\n- Tables already have horizontal scroll wrappers\n- Login page uses two-column flexbox split with percentage widths (no mobile override)\n- Dashboard pages use inline gridTemplateColumns with fixed column counts (no responsive behavior)\n- Buttons have min-height: 38px (need 44px on mobile)\n- Form inputs have min-height: 40px (need 44px on mobile)",
+  "relevant_files": [
+    "frontend/src/index.css",
+    "frontend/src/App.tsx",
+    "frontend/index.html",
+    "frontend/src/pages/Login.tsx",
+    "frontend/src/pages/Dashboard.tsx",
+    "frontend/src/pages/dashboards/ManagerDashboard.tsx",
+    "frontend/src/pages/dashboards/CarerDashboard.tsx",
+    "frontend/src/pages/dashboards/NurseDashboard.tsx",
+    "frontend/src/pages/dashboards/FinanceDashboard.tsx",
+    "frontend/src/pages/dashboards/CleaningDashboard.tsx",
+    "frontend/src/pages/dashboards/KitchenDashboard.tsx",
+    "frontend/src/pages/dashboards/MaintenanceDashboard.tsx",
+    "frontend/src/pages/CareNotes.tsx",
+    "frontend/src/pages/TaskBoard.tsx",
+    "frontend/src/pages/Residents.tsx"
+  ],
+  "directory_structure": "frontend/src/index.css - global styles\nfrontend/src/App.tsx - main layout with sidebar/bottom-nav/router\nfrontend/src/pages/ - 58+ page components\nfrontend/src/pages/dashboards/ - 7 role-based dashboards\nfrontend/src/components/ - shared components\nfrontend/src/hooks/ - custom hooks\nfrontend/src/store/ - Zustand stores\nfrontend/src/services/ - API layer\nfrontend/src/types/ - TypeScript types"
+}

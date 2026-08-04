@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Global CSS polish in frontend/src/index.css - add hover animations, gradients, transitions, badge improvements, and table striping plus sidebar active-state improvements",
+  "status": "completed",
+  "steps": [
+    "In frontend/src/index.css, add a card hover animation that uses transform: translateY(-2px) with an increased box-shadow (shadow-lg) on .card:hover, keeping the existing transition duration at 200ms",
+    "Add a gentle gradient to .page-header using a subtle background: linear-gradient(135deg, var(--primary-light), transparent) with appropriate padding and border-radius",
+    "Improve .btn styles by adding subtle background gradients - .btn-primary gets a linear-gradient(135deg, var(--primary), var(--primary-dark)), .btn-success gets a gradient variant, etc.",
+    "Add transition: all 0.2s ease to all interactive elements via a shared rule: .btn, .card, .badge, .form-input, a { transition: all 0.2s ease; }",
+    "Improve .badge styles to be pill-shaped (border-radius: 20px), slightly larger padding (3px 10px), and add subtle box-shadow on colored badges",
+    "Add subtle zebra striping to table rows - tbody tr:nth-child(even) with a slightly more visible striped pattern and a left-border-color indicator",
+    "Improve the sidebar active NavLink styling in the CSS: the .sidebar a with border-left should have a brighter, thicker (4px) left border and a more visible background highlight",
+    "Add section header separators in the sidebar - the section divider styling with a subtle line + spacing",
+    "Ensure sidebar nav icons get slightly larger treatment (add font-size bump to 18px for nav item icons within the sidebar context via inline style updates in App.tsx)",
+    "Add dark mode variants for the new hover/gradient styles"
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no TypeScript or Vite errors",
+    "Cards have a translateY(-2px) hover effect with increased shadow",
+    "Page headers have a subtle gradient background",
+    "Buttons have gradient backgrounds",
+    "All interactive elements have 0.2s ease transitions",
+    "Badges are pill-shaped with better colors",
+    "Table rows have subtle striped patterns",
+    "Sidebar active items have bright 4px left border and background highlight",
+    "Dark mode still works correctly for all new styles"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes are visual only. Build passes cleanly (tsc + vite). The existing dark mode table row rule was also updated to include border-left for consistency."
+}

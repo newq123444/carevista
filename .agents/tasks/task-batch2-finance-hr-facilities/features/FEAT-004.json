@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Frontend pages for Finance features (features 1-3): Automated Invoicing page (enhanced with rate uplifts, payment reminders, revenue dashboard), Occupancy Forecasting page (chart visualization, threshold alerts, marketing action suggestions), and Staff Cost Analytics page (overtime tracking, agency vs permanent, budget vs actual charts, cost per resident). Each page follows the existing pattern of KPI cards + data tables + forms with inline styles.",
+  "status": "completed",
+  "steps": [
+    "Create frontend/src/pages/AutomatedInvoicing.tsx with: revenue dashboard section (monthly revenue chart using divs for bars, payment status breakdown pie-style indicator, overdue alerts list), rate uplift tracking (table of uplifts with approve/reject actions), payment reminder system (send reminder button, history of sent reminders), enhanced invoice list with overdue highlighting. Use hooks from FEAT-003.",
+    "Create frontend/src/pages/OccupancyForecasting.tsx with: current occupancy KPI cards (beds total, occupied, vacancy %, revenue impact), occupancy trend chart (bar chart using divs, showing % over last 12 months), forecast section (predicted vacancies next 3 months with confidence), threshold alert (red warning when below 85%), suggested marketing actions panel. Use hooks from FEAT-003.",
+    "Create frontend/src/pages/StaffCostAnalytics.tsx with: cost KPI cards (total cost, overtime spend, agency cost, cost per resident per day), overtime vs basic hours chart (stacked bar using divs), agency vs permanent cost comparison, budget vs actual table with variance highlighting (green under, red over), export button (generates CSV download from data). Use hooks from FEAT-003.",
+    "Add all three pages to frontend/src/App.tsx: import statements, NAV_ALL entries in the Finance section (after the existing billing entry) with appropriate roles and icons, and Route elements in the Routes block"
+  ],
+  "acceptance_criteria": [
+    "AutomatedInvoicing.tsx exists with revenue dashboard, rate uplifts, and payment reminders",
+    "OccupancyForecasting.tsx exists with occupancy chart, forecasts, and threshold alerts",
+    "StaffCostAnalytics.tsx exists with cost breakdown charts and budget comparison",
+    "All three pages are accessible via navigation in App.tsx",
+    "Frontend build succeeds without errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Pre-existing TypeScript errors in CareNotes.tsx, Emar.tsx, Incidents.tsx, Training.tsx cause tsc to fail, but vite build succeeds (no new errors from this feature). All three pages compile and bundle correctly."
+}

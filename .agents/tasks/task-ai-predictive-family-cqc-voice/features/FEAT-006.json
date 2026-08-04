@@ -1,0 +1,22 @@
+{
+  "id": "FEAT-006",
+  "type": "feat",
+  "description": "Priority 3: CQC Compliance Automation - Backend migration, controller, and routes for a CQC readiness dashboard that continuously scores across 5 CQC domains (Safe, Effective, Caring, Responsive, Well-led), one-click evidence pack export, policy review tracking, and inspection preparation tools.",
+  "status": "completed",
+  "steps": [
+    "Create backend/migrations/008_cqc_compliance.sql with tables: (a) cqc_domain_scores (id, care_home_id, domain kloe_domain, score INTEGER 0-100, evidence_count INTEGER, gaps_count INTEGER, strengths JSONB, weaknesses JSONB, recommendations JSONB, calculated_at TIMESTAMPTZ), (b) cqc_evidence_packs (id, care_home_id, generated_by UUID REFERENCES users, domains_included kloe_domain[], date_range_start DATE, date_range_end DATE, content JSONB, pdf_url VARCHAR(500), status VARCHAR(20) DEFAULT 'generating', created_at TIMESTAMPTZ), (c) policy_reviews (id, care_home_id, policy_id UUID REFERENCES policies, reviewer_id UUID REFERENCES users, review_date DATE, next_review_date DATE, status VARCHAR(20), changes_made TEXT, notes TEXT, created_at TIMESTAMPTZ), (d) inspection_prep_checklists (id, care_home_id, title VARCHAR(300), domain kloe_domain, items JSONB, completed_items INTEGER DEFAULT 0, total_items INTEGER, status VARCHAR(20) DEFAULT 'in_progress', created_by UUID REFERENCES users, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ). Add indexes.",
+    "Create backend/src/controllers/cqcCompliance.controller.ts with functions: (1) calculateDomainScores - for each of the 5 CQC domains, queries relevant data (Safe: incidents, medication errors, falls, staffing levels, risk assessments; Effective: training compliance, care plan reviews, weight monitoring, health outcomes; Caring: family feedback, wellbeing scores, dignity indicators, life story completion; Responsive: activity participation, complaint resolution, person-centred care evidence; Well-led: audit completion, policy reviews, staff supervision, governance). Calculates a score 0-100 per domain and stores results. (2) getDomainScores - returns latest scores for all 5 domains. (3) generateEvidencePack - collects evidence for selected domains over a date range into a structured JSONB document with categories (policies, training records, incident reports, care plan samples, audit results). (4) getEvidencePacks - list generated packs. (5) getPolicyReviewStatus - returns all policies with review dates and overdue status. (6) createPolicyReview - records a policy review. (7) getInspectionChecklist - returns/creates an inspection preparation checklist for a domain. (8) updateChecklistItem - marks items complete. (9) getComplianceOverview - high-level dashboard data combining all scores, overdue policies, upcoming training expiries, open actions. Uses runAiOperation for AI-generated recommendations.",
+    "Register routes in backend/src/routes/index.ts under '// -- CQC Compliance' (extend existing compliance section): GET /compliance/cqc-scores (isManager), POST /compliance/cqc-scores/calculate (isManager), POST /compliance/evidence-pack (isManager), GET /compliance/evidence-packs (isManager), GET /compliance/policy-reviews (isManager), POST /compliance/policy-reviews (isManager), GET /compliance/inspection-checklist/:domain (isManager), PATCH /compliance/inspection-checklist/:id/item (isManager), GET /compliance/overview (isManager)."
+  ],
+  "acceptance_criteria": [
+    "Migration SQL file exists at backend/migrations/008_cqc_compliance.sql",
+    "Controller at backend/src/controllers/cqcCompliance.controller.ts compiles with tsc",
+    "Routes registered in backend/src/routes/index.ts",
+    "Backend builds successfully"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 3 files created/modified successfully. Backend builds with only 14 pre-existing errors (same as baseline). Migration creates 4 tables with proper constraints and indexes. Controller implements all 9 exported functions with comprehensive domain scoring logic. Routes registered in the compliance section of routes/index.ts after existing compliance/actions routes."
+}

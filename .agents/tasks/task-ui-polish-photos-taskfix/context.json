@@ -1,0 +1,25 @@
+{
+  "project_type": "Full-stack care home management app (CareVista) with React frontend and Node.js/Express backend",
+  "language": "TypeScript",
+  "build_system": "Vite for frontend, tsc for backend",
+  "test_framework": "No test framework configured (no test files found)",
+  "build_command": "cd /projects/sandbox/jubilant-waddle/frontend && npx tsc --noEmit",
+  "test_command": "cd /projects/sandbox/jubilant-waddle/frontend && npx tsc --noEmit",
+  "verification_instructions": "Run TypeScript type-check on frontend to verify no compilation errors",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/jubilant-waddle/frontend && npm install",
+  "environment_constraints": "Internet access available for npm packages. No database running so cannot test full app end-to-end, but can verify TypeScript compiles.",
+  "contribution_requirements": "No CONTRIBUTING.md found. Follow existing code patterns.",
+  "key_patterns": "All frontend code uses inline styles (no CSS-in-JS library). Components use React Query hooks from src/hooks/index.ts. Auth via Zustand store. Pages in src/pages/, dashboards in src/pages/dashboards/. CSS variables defined in src/index.css. The app uses custom CSS with Inter font, responsive breakpoints at 640px and 1024px.",
+  "relevant_files": [
+    "frontend/src/index.css",
+    "frontend/src/pages/dashboards/CarerDashboard.tsx",
+    "frontend/src/pages/TaskBoard.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/types/index.ts",
+    "frontend/src/utils/formatters.ts",
+    "frontend/src/pages/Dashboard.tsx",
+    "frontend/src/main.tsx"
+  ],
+  "directory_structure": "frontend/src/pages/ contains all page components. frontend/src/pages/dashboards/ has role-specific dashboards. frontend/src/hooks/index.ts has all React Query hooks. frontend/src/services/api.ts has Axios API client. frontend/src/store/auth.store.ts has Zustand auth store. frontend/src/index.css has all global styles."
+}

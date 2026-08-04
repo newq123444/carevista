@@ -1,0 +1,38 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Add three new roles (cleaning, kitchen, maintenance) across the entire stack: types, formatters, login page demo accounts, App.tsx navigation/colors, Dashboard.tsx router, and three dedicated dashboard pages with unique world-class features for each role.",
+  "status": "completed",
+  "steps": [
+    "1. Update frontend/src/types/index.ts: Add 'cleaning' | 'kitchen' | 'maintenance' to the UserRole union type.",
+    "2. Update frontend/src/utils/formatters.ts: Add entries to ROLE_LABELS for cleaning ('Cleaning Staff'), kitchen ('Kitchen Staff'), maintenance ('Maintenance Staff').",
+    "3. Update frontend/src/pages/Login.tsx: Add 3 new entries to DEMO_ACCOUNTS array - { email: 'cleaning@demo.carevista.co.uk', label: 'Cleaning Staff', icon: '🧹', color: '#14b8a6', role: 'cleaning', name: 'Grace Williams' }, { email: 'kitchen@demo.carevista.co.uk', label: 'Kitchen Staff', icon: '👨‍🍳', color: '#f97316', role: 'kitchen', name: 'Marcus Johnson' }, { email: 'maintenance@demo.carevista.co.uk', label: 'Maintenance Staff', icon: '🔧', color: '#64748b', role: 'maintenance', name: 'Robert Taylor' }.",
+    "4. Update frontend/src/App.tsx: Add the 3 new roles to ROLE_COLORS (cleaning: '#14b8a6', kitchen: '#f97316', maintenance: '#64748b'). Add the 3 new roles to relevant NAV_ALL items so they can see appropriate nav sections (they should see Overview/Dashboard, Policies, Family Portal, and a section relevant to their domain).",
+    "5. Update frontend/src/pages/Dashboard.tsx: Import the 3 new dashboard components and add routing logic for them: cleaning role -> CleaningDashboard, kitchen role -> KitchenDashboard, maintenance role -> MaintenanceDashboard.",
+    "6. Create frontend/src/pages/dashboards/CleaningDashboard.tsx: A world-class dashboard for cleaning staff featuring: (a) Interactive room cleaning schedule with color-coded status (clean/needs-attention/overdue), (b) Infection control zone tracker showing IPAC compliance scores, (c) Chemical stock level indicators with COSHH compliance badges, (d) Deep clean scheduling calendar, (e) Real-time task checklist for today's assigned rooms/areas, (f) Cleaning audit score tracker with trend visualization, (g) Laundry management section (soiled/clean/pending counts). Use inline styles matching the existing dashboard patterns (cards, KPI stats, etc). Import useAuthStore and useDashboard from existing hooks. Use mock/simulated data within the component for the cleaning-specific metrics.",
+    "7. Create frontend/src/pages/dashboards/KitchenDashboard.tsx: A world-class dashboard for kitchen staff featuring: (a) Real-time meal service status board (breakfast/lunch/dinner prep status), (b) Dietary requirements matrix showing all residents with their specific needs (diabetic, pureed, thickened fluids, allergies, etc.), (c) Food temperature logging interface with HACCP compliance indicators, (d) Weekly menu planner with nutritional scoring, (e) Stock/inventory status with expiry date warnings, (f) Kitchen hygiene audit scores, (g) Special event meal planning section. Use inline styles matching existing patterns. Import useResidents hook to display real resident dietary data. Use simulated data for kitchen-specific metrics.",
+    "8. Create frontend/src/pages/dashboards/MaintenanceDashboard.tsx: A world-class dashboard for maintenance staff featuring: (a) Facility maintenance request board with priority levels (urgent/high/medium/low), (b) Equipment service schedule with upcoming maintenance dates, (c) Health & Safety compliance checklist (fire systems, PAT testing, legionella checks, lift inspections), (d) Building systems status panel (heating, plumbing, electrical, fire alarms - all green/amber/red), (e) Work order tracker with completion stats, (f) Planned preventive maintenance calendar, (g) Contractor visit schedule. Use inline styles matching existing patterns. Import useAuthStore and useDashboard from existing hooks. Use simulated data for maintenance-specific metrics.",
+    "9. Update backend/migrations/001_init.sql: Add 'cleaning', 'kitchen', 'maintenance' values to the user_role ENUM type definition (the CREATE TYPE user_role AS ENUM line).",
+    "10. Update backend/src/utils/seed.ts: Add 3 new users to the usersData array: { email: 'cleaning@demo.carevista.co.uk', role: 'cleaning', first: 'Grace', last: 'Williams', phone: '07700 900009' }, { email: 'kitchen@demo.carevista.co.uk', role: 'kitchen', first: 'Marcus', last: 'Johnson', phone: '07700 900010' }, { email: 'maintenance@demo.carevista.co.uk', role: 'maintenance', first: 'Robert', last: 'Taylor', phone: '07700 900011' }. Also add corresponding entries to the staffData array with appropriate titles and rates."
+  ],
+  "acceptance_criteria": [
+    "frontend/src/types/index.ts includes 'cleaning', 'kitchen', 'maintenance' in UserRole union",
+    "frontend/src/utils/formatters.ts ROLE_LABELS has entries for all 3 new roles",
+    "frontend/src/pages/Login.tsx has 3 new demo account cards for the new roles",
+    "frontend/src/App.tsx has ROLE_COLORS entries for the 3 new roles",
+    "frontend/src/pages/Dashboard.tsx routes the 3 new roles to their respective dashboards",
+    "frontend/src/pages/dashboards/CleaningDashboard.tsx exists and exports a default component",
+    "frontend/src/pages/dashboards/KitchenDashboard.tsx exists and exports a default component",
+    "frontend/src/pages/dashboards/MaintenanceDashboard.tsx exists and exports a default component",
+    "Each new dashboard has at least 5 unique sections/widgets with rich UI",
+    "Backend seed.ts has demo users for all 3 new roles",
+    "Backend migrations include the new roles in the user_role enum",
+    "Running 'cd frontend && npm run build' succeeds without TypeScript errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build",
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Pre-existing TypeScript build errors exist in both frontend (CareNotes.tsx, Emar.tsx, Incidents.tsx, Training.tsx) and backend (auth.controller.ts, photos.controller.ts, compression/multer type issues). These errors are NOT caused by this feature - verified by stashing changes and confirming same errors on base state. The new dashboard files and all modified files compile cleanly. The acceptance criteria 'Running cd frontend && npm run build succeeds' was already failing before this change due to pre-existing issues in unrelated files."
+}

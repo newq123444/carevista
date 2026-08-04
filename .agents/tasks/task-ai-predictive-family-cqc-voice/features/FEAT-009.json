@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-009",
+  "type": "feat",
+  "description": "Priority 4 continued: Voice-to-text care notes and SBAR handover - Frontend pages for voice input on care notes and SBAR handover generation/viewing. Uses Web Speech API (browser native) for voice-to-text on the frontend.",
+  "status": "completed",
+  "steps": [
+    "Add TypeScript types to frontend/src/types/index.ts: VoiceTranscription (id, user_id, resident_id, audio_duration_seconds, transcription_text, confidence_score, care_note_id, status, created_at), SbarHandover (id, generated_by_name, shift_date, shift_type, situation, background, assessment, recommendation, residents_covered, key_concerns, status, approved_by_name, approved_at, created_at).",
+    "Add API client methods to frontend/src/services/api.ts: voiceApi object with transcribe, createNoteFromVoice, getHistory; sbarApi object with generate, list, get, approve.",
+    "Add React Query hooks to frontend/src/hooks/index.ts: useVoiceHistory, useCreateNoteFromVoice, useSbarHandovers, useGenerateSbar, useApproveSbar.",
+    "Create frontend/src/components/VoiceNoteInput.tsx: A reusable component that uses the Web Speech API (window.webkitSpeechRecognition or SpeechRecognition) for real-time voice-to-text. Shows a microphone button, live transcription text, and a 'Create Note' button. When 'Create Note' is pressed, calls the voice/create-note endpoint to AI-clean the text and create the care note. Include visual recording indicator (pulsing red dot) and waveform-style animation (CSS-only). Falls back to a textarea if Speech API not available.",
+    "Create frontend/src/pages/SbarHandover.tsx: A page with (1) Generate section - select shift date and shift type (day/evening/night), click generate to create SBAR handover. (2) Recent Handovers list - cards showing date, shift, status, with expand to see full SBAR sections. (3) Detail view - when a handover is selected, show the 4 SBAR sections (Situation, Background, Assessment, Recommendation) in styled cards with clear headers. Include 'Approve' button for managers. Follow existing inline-style patterns.",
+    "Integrate VoiceNoteInput into the existing CareNotes page (frontend/src/pages/CareNotes.tsx): Add a 'Voice Note' button/toggle that shows the VoiceNoteInput component above or beside the existing text note form.",
+    "Register SbarHandover page in frontend/src/App.tsx: (1) Add import. (2) Add nav item in NAV_ALL under 'Tools' section: { path: '/sbar-handover', label: 'SBAR Handover', icon: '📋', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','super_admin','group_admin'] }. (3) Add Route."
+  ],
+  "acceptance_criteria": [
+    "VoiceNoteInput component renders with microphone button and uses Web Speech API",
+    "SbarHandover page has generate, list, and detail views",
+    "Voice note button integrated into CareNotes page",
+    "Nav item and route for SBAR Handover registered",
+    "Frontend builds successfully with npm run build"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Build verification: vite build succeeds. tsc reports 19 pre-existing type errors (Emar.tsx, Incidents.tsx, Training.tsx, CareNotes.tsx care_needs_summary) - none from new code. All new files (VoiceNoteInput.tsx, SbarHandover.tsx, types, hooks, api) compile cleanly."
+}

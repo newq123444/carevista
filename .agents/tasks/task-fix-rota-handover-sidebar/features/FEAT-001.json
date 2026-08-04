@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix SmartRota page errors and add Excel/CSV upload for rota data. The SmartRota page crashes when data is empty or API fails because the hooks (useRotaTemplates, useRotaTemplate, useRotaConstraints) may return undefined/error states that are not handled gracefully. Additionally, add an Excel upload option allowing managers to upload a CSV file with columns (staff_name, date, shift_type) that gets parsed on the backend and stored as shifts.",
+  "status": "completed",
+  "steps": [
+    "In frontend/src/pages/SmartRota.tsx, add error handling: wrap all data access in null-safe patterns, add try/catch around handleGenerate, show user-friendly error states when API calls fail (using generateRota.isError, etc.), and handle empty template/shift arrays gracefully so the page never crashes.",
+    "In backend/src/controllers/smartRota.controller.ts, add defensive error handling in generateRota: wrap the staff_profiles JOIN query in a try/catch and return a helpful error message if rota_templates or staff_profiles tables are empty. Ensure listRotaTemplates and getRotaTemplate return empty arrays/null gracefully instead of crashing.",
+    "Add a new backend endpoint POST /smart-rota/upload-csv in backend/src/routes/index.ts that accepts a CSV file upload (multipart/form-data). Create a new function uploadRotaCsv in backend/src/controllers/smartRota.controller.ts that: (a) reads the uploaded file, (b) parses CSV rows with columns staff_name, date, shift_type (day/evening/night/off), (c) looks up staff by name, (d) inserts matching shifts into the 'shifts' table (the main schedule table, not rota_shifts) so staff can see them in the Schedule page. Use multer with a custom file filter that accepts .csv and .xlsx (text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet). For simplicity, parse as CSV (comma-delimited text). Return a summary of imported shifts.",
+    "In backend/src/middleware/upload.ts, export a new csvUpload multer instance (or adjust) that allows CSV/spreadsheet file types in addition to images. Alternatively, create inline multer config in the route.",
+    "In frontend/src/pages/SmartRota.tsx, add an 'Upload Excel Rota' section with a file input (accept='.csv,.xlsx') and a button. On submit, send the file as FormData to POST /smart-rota/upload-csv. Show success/error toast. Invalidate schedule queries on success.",
+    "In frontend/src/services/api.ts, add uploadCsv method to smartRotaApi.",
+    "In frontend/src/hooks/index.ts, add a useUploadRotaCsv mutation hook."
+  ],
+  "acceptance_criteria": [
+    "SmartRota page renders without crashing even when no templates exist and API returns empty data",
+    "SmartRota page shows user-friendly error message when rota generation fails",
+    "Upload CSV section is visible on the SmartRota page with a file input and Upload button",
+    "Uploading a valid CSV file with staff_name,date,shift_type columns creates shifts visible on the Schedule page",
+    "Backend returns appropriate error messages for malformed CSV or missing columns",
+    "Frontend and backend both compile without TypeScript errors"
+  ],
+  "verification": [
+    "Run 'cd /projects/sandbox/jubilant-waddle/frontend && npm run build' - should succeed",
+    "Run 'cd /projects/sandbox/jubilant-waddle/backend && npm run build' - should succeed"
+  ],
+  "blocked_reason": null,
+  "findings": "Added CSV upload endpoint, error handling in SmartRota page, multer CSV config. Backend and frontend build successfully."
+}

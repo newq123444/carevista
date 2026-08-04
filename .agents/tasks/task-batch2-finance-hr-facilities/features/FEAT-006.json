@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-006",
+  "type": "feat",
+  "description": "Frontend pages for Facilities features (features 7-10): Digital Fire Log Book page (weekly alarm tests, quarterly drills, equipment checks, PEEPs per resident), Visitor Sign-in System page (digital registration, fire roll, safeguarding checks, visit history), Room Turnover Manager page (checklist workflow, deep clean/maintenance/redecoration tracking, ready-for-admission status), and Custom Report Builder page (drag-and-drop style field selection, filters, date ranges, report generation/scheduling).",
+  "status": "completed",
+  "steps": [
+    "Create frontend/src/pages/FireLogBook.tsx with: fire dashboard KPI cards (last weekly test, next drill due, equipment status, PEEPs coverage %), weekly alarm test recording form (date, time taken, all clear yes/no, issues), quarterly drill log (participants, evacuation time, issues), equipment checks tab (extinguishers, emergency lighting with location, status, next check date), PEEPs management per resident (mobility status, evacuation method, assigned helpers, review dates). Use tabs or sections for different log types.",
+    "Create frontend/src/pages/VisitorSignIn.tsx with: current visitors panel (who is signed in right now with sign-out buttons), sign-in form (name, type, company, visiting resident, purpose, car reg, badge), fire roll view (all currently signed-in visitors formatted for emergency print), visit history table (searchable by visitor name or resident), safeguarding section (flagged visitors with restrictions, add/remove flags), contractor management (DBS verified badge, regular contractor list). Statistics cards at top (visitors today, avg daily, flagged visitors).",
+    "Create frontend/src/pages/RoomTurnoverManager.tsx with: turnover dashboard KPI cards (rooms vacated, in progress, ready for admission), create turnover form (room number, previous resident, vacated date, target ready date), turnover detail view with checklist (auto-generated items: deep clean, carpet cleaning, maintenance check, repaint walls, check furniture, inventory check, electrical test, final inspection), each item has checkbox completion with who/when, status progression bar (vacated -> in progress -> ready), overall turnovers list with filtering by status.",
+    "Create frontend/src/pages/ReportBuilder.tsx with: report template list (saved templates with run/edit/delete), template designer section: data source selector (residents, care notes, incidents, medications, staff, invoices, etc.), field picker (checkboxes for available columns from chosen source), filter builder (field + operator + value rows, add/remove), date range picker, group-by selector, sort options, format selector (PDF/CSV/Excel/JSON), schedule option (one-time or recurring). Report run history table showing past runs with download links. Preview section showing sample data.",
+    "Add all four pages to frontend/src/App.tsx: import statements, NAV_ALL entries (FireLogBook and VisitorSignIn in Governance section, RoomTurnover in Care section, ReportBuilder in Tools section) with appropriate roles and icons, and Route elements in the Routes block"
+  ],
+  "acceptance_criteria": [
+    "FireLogBook.tsx exists with test recording, equipment checks, and PEEPs management",
+    "VisitorSignIn.tsx exists with sign-in/out, fire roll, and safeguarding",
+    "RoomTurnoverManager.tsx exists with checklist workflow and status tracking",
+    "ReportBuilder.tsx exists with template designer and run history",
+    "All four pages are accessible via navigation in App.tsx",
+    "Frontend build succeeds without errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 4 pages created and integrated into App.tsx navigation and routes. Build succeeds (Vite bundle completes). Pre-existing tsc strict errors in CareNotes.tsx, Emar.tsx, Incidents.tsx, Training.tsx remain unchanged - these are the same issues documented in FEAT-005."
+}

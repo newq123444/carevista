@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Frontend API services, hooks, and TypeScript types for all 10 Batch 2 features. Add API client objects to frontend/src/services/api.ts, React Query hooks to frontend/src/hooks/index.ts, and type interfaces to frontend/src/types/index.ts.",
+  "status": "completed",
+  "steps": [
+    "Add to frontend/src/types/index.ts: interfaces for RateUplift, PaymentReminder, OccupancyRecord, OccupancyForecast, StaffCost, CostBudget, JobPosting, JobApplication, Interview, DbsCheck, Competency, StaffCompetency, AbsenceRecord, BradfordScore, FireTest, FireEquipmentCheck, Peep, VisitorRecord, VisitorSafeguarding, RoomTurnover, TurnoverChecklistItem, ReportTemplate, ReportRun",
+    "Add to frontend/src/services/api.ts: invoicingApi object with methods for rate uplifts, payment reminders, revenue dashboard",
+    "Add to frontend/src/services/api.ts: occupancyApi object with methods for recording, history, forecasts, dashboard",
+    "Add to frontend/src/services/api.ts: staffCostsApi object with methods for costs summary, cost per resident, budgets",
+    "Add to frontend/src/services/api.ts: recruitmentApi object with methods for job postings, applications, interviews, DBS checks, pipeline overview",
+    "Add to frontend/src/services/api.ts: competencyApi object with methods for competencies CRUD, staff competencies, matrix view, expiring",
+    "Add to frontend/src/services/api.ts: absenceApi object with methods for recording absences, Bradford scores, patterns, return to work",
+    "Add to frontend/src/services/api.ts: fireLogApi object with methods for fire tests, equipment checks, PEEPs, dashboard",
+    "Add to frontend/src/services/api.ts: visitorsApi object with methods for sign-in/out, history, safeguarding, fire roll, dashboard",
+    "Add to frontend/src/services/api.ts: roomTurnoverApi object with methods for turnovers CRUD, checklist items, dashboard",
+    "Add to frontend/src/services/api.ts: reportBuilderApi object with methods for templates CRUD, run reports, list runs, data sources",
+    "Add to frontend/src/hooks/index.ts: React Query hooks for all new APIs - useQuery for reads, useMutation for writes with queryClient invalidation and toast notifications, following the existing pattern exactly",
+    "Update the import statement at the top of frontend/src/hooks/index.ts to include all new API objects"
+  ],
+  "acceptance_criteria": [
+    "All new type interfaces are defined in frontend/src/types/index.ts",
+    "All new API objects are exported from frontend/src/services/api.ts",
+    "All new hooks are exported from frontend/src/hooks/index.ts",
+    "Frontend build (tsc && vite build) succeeds without errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All types, API objects, and hooks added successfully. The 19 TypeScript errors in the build are all pre-existing (in CareNotes.tsx, Emar.tsx, Incidents.tsx, Training.tsx) and unrelated to this feature. Verified by stashing changes and running build on base commit - identical errors."
+}

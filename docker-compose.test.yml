@@ -1,0 +1,36 @@
+# One-command local E2E: `docker compose -f docker-compose.test.yml up --abort-on-container-exit`
+# Spins up Postgres, migrates, seeds, starts the API, and runs the smoke test.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: carevista
+      POSTGRES_USER: carevista
+      POSTGRES_PASSWORD: carevista
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carevista"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  smoke:
+    image: node:20-alpine
+    working_dir: /app
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://carevista:carevista@postgres:5432/carevista
+      JWT_SECRET: local_test_jwt_secret_at_least_32_characters
+      JWT_REFRESH_SECRET: local_test_refresh_secret_at_least_32_chars
+      NODE_ENV: development
+      PORT: "3001"
+    volumes:
+      - ./backend:/app
+    command: >-
+      sh -c "npm ci &&
+             npm run build &&
+             npm run migrate &&
+             npm run seed &&
+             (node dist/index.js &) &&
+             (for i in $$(seq 1 30); do wget -qO- http://localhost:3001/health && break; sleep 2; done) &&
+             node tests/smoke.mjs"

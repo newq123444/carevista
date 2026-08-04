@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Visual polish for CarerDashboard, TaskBoard, Residents, CareNotes, and App.tsx sidebar - larger icons, progress indicators, color gradients on cards, and touch-friendly improvements",
+  "status": "completed",
+  "steps": [
+    "In frontend/src/pages/dashboards/CarerDashboard.tsx: (a) Replace the simple task summary count pills with colored progress bars - each status (Due, Overdue, Missed, Done) gets a horizontal bar showing percentage of total tasks. Use div elements with percentage widths and colored backgrounds. (b) Make category icons in the task chips larger (16px font-size) and add color based on category type using CATEGORY_COLOR-like mapping. (c) Add a subtle color gradient background to each resident task card based on completion status: green-tinted (background: linear-gradient(to right, #f0fdf408, white)) when all done, amber when overdue, red when missed. (d) Make the '+ Ad-hoc Note' button more prominent - larger padding, colored background (#2563eb10 with #2563eb border and text), add a pen/note icon (📝).",
+    "In frontend/src/pages/TaskBoard.tsx: (a) Add a visual progress ring/circle at the top showing overall completion percentage - use an SVG circle with stroke-dasharray/offset to create a circular progress indicator displaying counts.done/counts.total as percentage. Place it next to the existing page subtitle. (b) Change the STATUS badge styling in TaskChip to pill-shaped (borderRadius: 20px) with the appropriate status colors already defined - green=done, blue=in_progress, amber=due/overdue, red=missed. Ensure they have a min-width of 80px for touch targets. (c) Make action buttons (Generate Tasks, Refresh) larger with min-height 44px and larger padding for touch-friendliness.",
+    "In frontend/src/pages/Residents.tsx: (a) Change the avatar/initials circle from 44px to 48px width/height and increase font-size to 16px. (b) Add a colored risk indicator strip on the left side of each card - this already exists as borderLeft but make it 5px wide instead of 4px. (c) Make the room number badge more prominent - wrap 'Room {number}' in a styled span with background color, padding (2px 8px), border-radius 6px, font-weight 700, and a distinct color (--primary background).",
+    "In frontend/src/pages/CareNotes.tsx: (a) In the NoteCard component, increase the note type icon/badge size - make the .badge-primary containing the type label have larger font-size (0.82rem instead of 0.78rem). (b) For flagged notes, change the borderLeft from 4px solid var(--danger) to 5px, add a red-tinted background (#fef2f208), and prepend a visible flag icon (🚩) before the note content when n.flagged is true. (c) Improve timestamp readability - format the created_at date to show relative time (e.g. '2h ago') using a helper, with the full date on hover via title attribute. Use date-fns formatDistanceToNow already available in the project.",
+    "In frontend/src/App.tsx: (a) In the NavLink sidebar items, increase the icon span font-size from 1.1rem to 1.25rem (18px equivalent). (b) Make the active sidebar item borderLeft 4px wide (already is 3px, change to 4px) with full opacity on the roleColor (remove the 25 alpha suffix for background, use 20 instead for a brighter highlight). (c) Add a subtle separator line between section headers and navigation items by adjusting the section header div styling to include a borderBottom: '1px solid rgba(255,255,255,.08)' and paddingBottom: 8px."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no TypeScript or Vite errors",
+    "CarerDashboard shows colored progress bars for task status summary",
+    "CarerDashboard task category icons are larger and colored",
+    "CarerDashboard resident cards have gradient backgrounds based on completion",
+    "CarerDashboard Ad-hoc Note button is prominent with color and icon",
+    "TaskBoard has a circular SVG progress ring showing completion percentage",
+    "TaskBoard task chips are pill-shaped with status-appropriate colors",
+    "TaskBoard action buttons are larger and touch-friendly",
+    "Residents page avatars are 48px with 16px font",
+    "Residents risk strip is 5px wide",
+    "Residents room number has a styled badge",
+    "CareNotes flagged notes have distinct visual treatment with red border and background tint",
+    "CareNotes timestamps use relative time format",
+    "Sidebar icons are 18px (1.25rem)",
+    "Sidebar active items have 4px bright border with stronger background"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/jubilant-waddle/frontend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes built successfully with no TypeScript or Vite errors. The warning about chunk size (>500KB) is pre-existing and unrelated to our changes."
+}

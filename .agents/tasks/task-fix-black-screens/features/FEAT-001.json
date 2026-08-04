@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix the three black-screen pages (/ai-care-plans, /consent-manager, /digital-twin) and add a global React error boundary to prevent any future black screens.",
+  "status": "completed",
+  "steps": [
+    "Step 1: Fix frontend/src/pages/ResidentDigitalTwin.tsx - The backend controller (digitalTwin.controller.ts) queries 'engagement_level' and 'logged_at' columns from wellbeing_logs. If migration 014 hasn't been applied, these queries fail with 500 errors. The frontend page has NO error handling for failed queries - if the initial residents query fails, `residents?.map(...)` is fine (undefined), but when a resident is selected and the twin/timeline queries fail, the component may try to render `twin.personal.name` etc. on undefined data. Fix: Add error state handling to the useQuery calls. Show user-friendly error messages when API calls fail. Add null safety for all data access (twin?.personal?.name etc.).",
+    "Step 2: Fix frontend/src/pages/ConsentManager.tsx - This page has NO error state handling. If the API call to `/consents/expiring/all` or `/consents/:residentId` fails (500 error from missing table or column), the unhandled error could crash the component. Fix: Add error state handling for all useQuery calls. Show user-friendly error messages. Ensure the expiring tab shows a graceful message when API fails.",
+    "Step 3: Fix frontend/src/pages/AiCarePlanWriter.tsx - The `plans` query to `/ai/care-plans` has no error handling in the UI for the GET query (only the mutation has error display). If the plans list query fails, `plans?.map(...)` returns undefined which is fine, BUT if `selectedPlan.content` is a JSON string instead of an object (JSONB double-serialization issue), accessing `selectedPlan.content.cqc_domains` would throw. Fix: Add a safe content parser that handles both string and object content. Add error state displays for all queries.",
+    "Step 4: Fix backend/src/controllers/digitalTwin.controller.ts - The getDigitalTwin function queries `engagement_level, logged_at` from wellbeing_logs. The getTimeline function also queries engagement_level. If migration 014 columns don't exist, these queries crash. Fix: Make the queries resilient - catch errors from these optional queries and return empty arrays instead of crashing. Also change 'engagement_level' to use a conditional check, or just select all columns with SELECT * and pick what's needed.",
+    "Step 5: Create frontend/src/components/ErrorBoundary.tsx - Create a React class component error boundary that catches rendering errors and displays a friendly error message with a 'Try Again' button instead of a black screen. Style it consistently with the app design (card-based, using CSS vars).",
+    "Step 6: Wrap the Routes in frontend/src/App.tsx with the new ErrorBoundary component - Import ErrorBoundary and wrap the <Routes> section so any page crash shows the error UI instead of a blank screen."
+  ],
+  "acceptance_criteria": [
+    "Frontend builds successfully with `cd frontend && npm run build`",
+    "Backend builds successfully with `cd backend && npm run build`",
+    "ResidentDigitalTwin.tsx displays error messages when API calls fail instead of crashing",
+    "ConsentManager.tsx displays error messages when API calls fail instead of crashing",
+    "AiCarePlanWriter.tsx safely handles both string and object content fields, and shows errors for failed queries",
+    "digitalTwin.controller.ts gracefully handles missing columns by catching query errors for optional data",
+    "ErrorBoundary component exists at frontend/src/components/ErrorBoundary.tsx",
+    "App.tsx wraps Routes with ErrorBoundary to catch any rendering errors globally"
+  ],
+  "verification": [
+    "cd /projects/sandbox/jubilant-waddle/frontend && npm run build",
+    "cd /projects/sandbox/jubilant-waddle/backend && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes build successfully. ErrorBoundary uses class component as React 18 requires. Backend digitalTwin controller uses nested try/catch fallback pattern for missing columns. Environmental readings use every-4-hours sampling for days 8-30 to keep row count reasonable (840+690=1530 rows vs 3600 if every hour for 30 days)."
+}

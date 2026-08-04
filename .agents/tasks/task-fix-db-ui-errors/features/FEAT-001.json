@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Create migration 014 to add all missing database tables that controllers reference but no migration defines. Also add missing columns to existing tables (wellbeing_logs needs logged_at + engagement_level aliases, residents needs height_cm/care_type/allergies/dietary_requirements/key_worker_id, family_messages needs sender_id/recipient_name/recipient_email/subject/direction, invoices needs total_amount alias, care_notes needs a category column or view).",
+  "status": "completed",
+  "steps": [
+    "Create backend/migrations/014_missing_tables_and_columns.sql with the following new tables: admission_referrals (care_home_id, name, date_of_birth, referral_source, care_needs JSONB, medical_history, mobility, behavior, preferences JSONB, urgency, status, decision_notes, decided_by UUID, decided_at TIMESTAMPTZ, created_by UUID, created_at), admission_matches (care_home_id, referral_id UUID nullable, overall_score INT, recommendation VARCHAR, reasoning JSONB, care_needs JSONB, created_by UUID, created_at), ai_care_plans (care_home_id, resident_id, content JSONB, status VARCHAR default 'draft', version INT, review_notes TEXT, reviewed_by UUID, reviewed_at TIMESTAMPTZ, generated_by UUID, created_at), consent_records (care_home_id, resident_id, category VARCHAR, description TEXT, consent_given_by VARCHAR, relationship VARCHAR, review_date DATE, capacity_assessed BOOLEAN, notes TEXT, status VARCHAR default 'active', recorded_by UUID, created_at, updated_at), capacity_assessments (care_home_id, consent_id UUID, has_capacity BOOLEAN, assessment_details TEXT, assessed_by UUID, recorded_by UUID, created_at), regulatory_notifications (care_home_id, type VARCHAR, resident_id UUID, incident_id UUID, form_data JSONB, status VARCHAR default 'draft', deadline TIMESTAMPTZ, submission_ref VARCHAR, submitted_at TIMESTAMPTZ, submitted_by UUID, created_by UUID, created_at), smart_handovers (care_home_id, shift_type VARCHAR, critical_items JSONB, full_summary JSONB, generated_by UUID, status VARCHAR default 'active', created_at), handover_actions (care_home_id, handover_id UUID, item_index INT, action_taken TEXT, outcome TEXT, recorded_by UUID, created_at), environmental_readings (care_home_id, zone VARCHAR, noise_level DECIMAL, light_level DECIMAL, temperature DECIMAL, humidity DECIMAL, air_quality DECIMAL, recorded_at TIMESTAMPTZ, recorded_by UUID), cd_register (care_home_id, resident_id, medication_name VARCHAR, dose VARCHAR, quantity DECIMAL, administered_by UUID, witnessed_by UUID, balance DECIMAL, notes TEXT, administration_time TIMESTAMPTZ, created_at), resident_belongings (care_home_id, resident_id, photo_url VARCHAR, description TEXT, category VARCHAR default 'general', recorded_by UUID, created_at), resident_weights (care_home_id, resident_id, weight_kg DECIMAL, bmi DECIMAL, must_score INT, recorded_by UUID, notes TEXT, created_at)",
+    "In the same migration, ALTER TABLE residents ADD COLUMN IF NOT EXISTS height_cm DECIMAL(5,1); ALTER TABLE residents ADD COLUMN IF NOT EXISTS care_type VARCHAR(50); ALTER TABLE residents ADD COLUMN IF NOT EXISTS allergies TEXT; ALTER TABLE residents ADD COLUMN IF NOT EXISTS dietary_requirements TEXT; ALTER TABLE residents ADD COLUMN IF NOT EXISTS key_worker_id UUID REFERENCES users(id);",
+    "ALTER TABLE family_messages ADD COLUMN IF NOT EXISTS sender_id UUID REFERENCES users(id); ALTER TABLE family_messages ADD COLUMN IF NOT EXISTS recipient_name VARCHAR(200); ALTER TABLE family_messages ADD COLUMN IF NOT EXISTS recipient_email VARCHAR(200); ALTER TABLE family_messages ADD COLUMN IF NOT EXISTS direction VARCHAR(20) DEFAULT 'outbound';",
+    "ALTER TABLE wellbeing_logs ADD COLUMN IF NOT EXISTS logged_at TIMESTAMPTZ; -- then UPDATE wellbeing_logs SET logged_at = created_at WHERE logged_at IS NULL; This gives controllers access to logged_at which they reference.",
+    "ALTER TABLE wellbeing_logs ADD COLUMN IF NOT EXISTS engagement_level VARCHAR(20); -- controllers reference this instead of social_engagement",
+    "Add appropriate indexes to all new tables (at minimum: care_home_id, created_at DESC)"
+  ],
+  "acceptance_criteria": [
+    "The file backend/migrations/014_missing_tables_and_columns.sql exists and is valid SQL",
+    "All 12 missing tables are defined with correct columns matching controller usage",
+    "All ALTER TABLE statements for residents, family_messages, wellbeing_logs are included",
+    "All tables have UUID primary keys with DEFAULT uuid_generate_v4()",
+    "All tables have care_home_id FK referencing care_homes(id)",
+    "Backend TypeScript compiles cleanly with npx tsc --noEmit"
+  ],
+  "verification": [
+    "Run: cd backend && npx tsc --noEmit (should succeed with no errors)"
+  ],
+  "blocked_reason": null,
+  "findings": "Migration 014 created with all 12 missing tables and ALTER TABLE statements for residents (height_cm, care_type, allergies, dietary_requirements, key_worker_id, status), family_messages (sender_id, recipient_name, recipient_email, direction), and wellbeing_logs (logged_at, engagement_level). Also added residents.status column since controllers reference r.status='active' but only r.active boolean existed. Backend compiles cleanly with tsc --noEmit."
+}

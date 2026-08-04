@@ -1,0 +1,14 @@
+{
+  "task_id": "task-batch2-finance-hr-facilities",
+  "task_description": "Batch 2 features for CareVista: 10 new modules covering Finance (Automated Invoicing, Occupancy Forecasting, Staff Cost Analytics), HR (Digital Recruitment Pipeline, Competency Matrix, Sickness & Absence Analytics), and Facilities (Digital Fire Log Book, Visitor Sign-in System, Room Turnover Manager, Custom Report Builder). Full backend APIs with migrations, controllers, routes, and full frontend pages integrated into navigation.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005", "FEAT-006"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "Both frontend (vite build) and backend (tsc) builds succeed with exit code 0. All pre-existing type errors in CareNotes.tsx, Emar.tsx, Incidents.tsx, Training.tsx (frontend) and auth.controller.ts, photos.controller.ts, index.ts, upload.ts (backend) remain unchanged. No new errors introduced. All 10 new controller .js files appear in backend/dist/controllers/, all 10 new page components are bundled in frontend/dist/."
+  }
+}
