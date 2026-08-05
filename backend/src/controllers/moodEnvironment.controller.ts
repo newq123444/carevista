@@ -49,10 +49,32 @@ export async function recordIntervention(req: Request, res: Response, next: Next
   try {
     const careHomeId = req.user!.care_home_id;
     const userId = req.user!.id;
-    const { residentId, interventionId, moodBefore, moodAfter, effectiveness, notes } = req.body;
+    const b = req.body;
+    const residentId = b.residentId || b.resident_id;
+    let interventionId = b.interventionId || b.intervention_id;
+    const interventionName = b.interventionType || b.intervention_type || b.interventionName || b.name;
+    const moodBefore = b.moodBefore ?? b.mood_before;
+    const moodAfter = b.moodAfter ?? b.mood_after;
+    const effectiveness = b.effectiveness;
+    const notes = b.notes;
 
-    if (!residentId || !interventionId) {
-      return res.status(400).json({ error: 'residentId and interventionId are required' });
+    if (!residentId || (!interventionId && !interventionName)) {
+      return res.status(400).json({ error: 'A resident and an intervention are required' });
+    }
+
+    // Resolve a free-text intervention to a catalog entry (find or create).
+    if (!interventionId && interventionName) {
+      const found = await query(
+        'SELECT id FROM mood_interventions WHERE care_home_id = $1 AND lower(name) = lower($2) LIMIT 1',
+        [careHomeId, interventionName]);
+      if (found.rows[0]) {
+        interventionId = found.rows[0].id;
+      } else {
+        const created = await query(
+          'INSERT INTO mood_interventions (care_home_id, name, category) VALUES ($1, $2, $3) RETURNING id',
+          [careHomeId, interventionName, 'general']);
+        interventionId = created.rows[0].id;
+      }
     }
 
     const { rows: [record] } = await query(

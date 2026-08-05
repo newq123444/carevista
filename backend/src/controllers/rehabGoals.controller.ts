@@ -97,10 +97,14 @@ export async function logProgress(req: Request, res: Response, next: NextFunctio
   try {
     const careHomeId = req.user!.care_home_id;
     const userId = req.user!.id;
-    const { goalId, milestoneId, residentId, progressNotes, score, celebration, familyNotified } = req.body;
-
+    let { goalId, milestoneId, residentId, progressNotes, score, celebration, familyNotified } = req.body;
+    // Derive the goal from the milestone when only the milestone is known.
+    if (!goalId && milestoneId) {
+      const { rows: [m] } = await query('SELECT goal_id FROM rehab_milestones WHERE id = $1 AND care_home_id = $2', [milestoneId, careHomeId]);
+      goalId = m?.goal_id;
+    }
     if (!goalId || !residentId || !progressNotes) {
-      return res.status(400).json({ error: 'goalId, residentId, and progressNotes are required' });
+      return res.status(400).json({ error: 'A resident, a goal, and progress notes are required' });
     }
 
     const { rows: [log] } = await query(

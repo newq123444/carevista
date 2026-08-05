@@ -62,3 +62,23 @@ export function guardWriteBody(req: Request, res: Response, next: NextFunction) 
   }
   next();
 }
+
+
+// Accept camelCase or snake_case request-body keys interchangeably. Controllers
+// read camelCase; many frontend forms send snake_case. This adds the missing
+// alias for every top-level key (additive — never overwrites an existing key),
+// eliminating the whole class of field-name mismatches.
+const _skip = new Set(['__proto__', 'constructor', 'prototype']);
+const _toCamel = (k: string) => k.replace(/_([a-z0-9])/g, (_m, c) => c.toUpperCase());
+const _toSnake = (k: string) => k.replace(/([A-Z])/g, (m) => '_' + m.toLowerCase());
+export function normalizeBody(req: Request, _res: Response, next: NextFunction) {
+  const b = req.body;
+  if (b && typeof b === 'object' && !Array.isArray(b)) {
+    for (const k of Object.keys(b)) {
+      if (_skip.has(k)) continue;
+      if (k.includes('_')) { const c = _toCamel(k); if (c !== k && !(c in b)) (b as any)[c] = (b as any)[k]; }
+      if (/[A-Z]/.test(k)) { const sn = _toSnake(k); if (sn !== k && !(sn in b)) (b as any)[sn] = (b as any)[k]; }
+    }
+  }
+  next();
+}

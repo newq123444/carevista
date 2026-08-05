@@ -74,7 +74,7 @@ import * as environmentalIntelCtrl from '../controllers/environmentalIntel.contr
 import * as housekeepingCtrl from '../controllers/housekeeping.controller';
 import * as homeCtrl from '../controllers/home.controller';
 import { upload, csvUpload } from '../middleware/upload'; // getBillingSummary added
-import { validateBody, guardWriteBody } from '../middleware/validate';
+import { validateBody, guardWriteBody, normalizeBody } from '../middleware/validate';
 import * as schemas from '../schemas';
 import * as aiService from '../services/ai.service';
 import { query, withTransaction } from '../models/db';
@@ -85,6 +85,7 @@ const router = Router();
 
 // Baseline write-body validation on every POST/PUT/PATCH (defence-in-depth)
 router.use(guardWriteBody);
+router.use(normalizeBody);
 
 // ── Auth (public) ─────────────────────────────────────────────────────────
 router.post('/auth/login', authCtrl.login);
