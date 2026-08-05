@@ -870,7 +870,7 @@ router.get('/mood-environment/history/:residentId',        isStaff, moodEnvironm
 router.get('/mood-environment/effectiveness',              isStaff, moodEnvironmentCtrl.getEffectivenessReport);
 
 // ── Digital Photo Frame Feed ──────────────────────────────────────────
-router.post('/photo-frame/photos',                         isStaff, photoFrameCtrl.uploadPhoto);
+router.post('/photo-frame/photos',                         isStaff, upload.single('photo'), photoFrameCtrl.uploadPhoto);
 router.get('/photo-frame/photos/:residentId',              isStaff, photoFrameCtrl.listPhotos);
 router.patch('/photo-frame/photos/:id/approve',            isStaff, photoFrameCtrl.approvePhoto);
 router.patch('/photo-frame/photos/:id/reject',             isStaff, photoFrameCtrl.rejectPhoto);

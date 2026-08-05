@@ -7,10 +7,16 @@ import { AppError } from '../utils/errors';
 export async function uploadPhoto(req: Request, res: Response, next: NextFunction) {
   try {
     const careHomeId = req.user!.care_home_id;
-    const { residentId, photoUrl, caption, uploadedByName, uploadedByEmail, showOnDate } = req.body;
+    const b = req.body;
+    const residentId = b.residentId || b.resident_id;
+    const photoUrl = req.file ? `/uploads/residents/${req.file.filename}` : (b.photoUrl || b.photo_url);
+    const caption = b.caption;
+    const uploadedByName = b.uploadedByName || b.uploaded_by_name || `${req.user!.first_name} ${req.user!.last_name}`;
+    const uploadedByEmail = b.uploadedByEmail || b.uploaded_by_email || null;
+    const showOnDate = b.showOnDate || b.show_on_date || null;
 
     if (!residentId || !photoUrl) {
-      return res.status(400).json({ error: 'residentId and photoUrl are required' });
+      return res.status(400).json({ error: 'A resident and a photo are required' });
     }
 
     const { rows: [photo] } = await query(
