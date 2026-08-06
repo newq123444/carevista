@@ -506,10 +506,10 @@ export interface FamilyDashboardData {
     room_number: string;
     photo_url: string | null;
   };
-  today_summary: FamilyDailySummary | null;
-  recent_photos: FamilyPhoto[];
-  unread_messages: number;
-  latest_wellbeing: any;
+  todaySummary: FamilyDailySummary | null;
+  recentPhotos: FamilyPhoto[];
+  unreadMessageCount: number;
+  latestWellbeing: any;
 }
 
 // ── CQC Compliance ────────────────────────────────────────────────────────

@@ -83,7 +83,7 @@ export default function ElearningModule() {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {mandatoryData.slice(0, 5).map((item: any, i: number) => (
               <span key={i} style={{ padding: '4px 10px', background: '#fff', borderRadius: 6, fontSize: '0.8rem', border: '1px solid #fde68a' }}>
-                {item.title || item.module_title}: {item.completion_rate || '0'}% complete
+                {item.title || item.module_title}: {Math.round(item.complianceRate ?? item.completion_rate ?? 0)}% complete
               </span>
             ))}
           </div>

@@ -129,11 +129,11 @@ function DashboardTab({ residentId }: { residentId: string }) {
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
             <div style={{ textAlign: 'center', padding: '8px 16px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#16a34a' }}>{dashboard.latest_wellbeing?.mood || 'N/A'}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#16a34a' }}>{dashboard.latestWellbeing?.mood || 'N/A'}</div>
               <div style={{ fontSize: 11, color: '#15803d' }}>Wellbeing</div>
             </div>
             <div style={{ textAlign: 'center', padding: '8px 16px', borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#0d9488' }}>{dashboard.unread_messages}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#0d9488' }}>{dashboard.unreadMessageCount}</div>
               <div style={{ fontSize: 11, color: '#0d9488' }}>Unread Messages</div>
             </div>
           </div>
@@ -141,33 +141,33 @@ function DashboardTab({ residentId }: { residentId: string }) {
       </div>
 
       {/* Today's Summary */}
-      {dashboard.today_summary && (
+      {dashboard.todaySummary && (
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Today's Summary</h3></div>
           <div className="card-body">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {dashboard.today_summary.meals_summary && (
+              {dashboard.todaySummary.meals_summary && (
                 <div style={{ padding: 12, borderRadius: 8, background: '#fefce8', border: '1px solid #fef08a' }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#a16207', marginBottom: 4 }}>🍽 Meals</div>
-                  <div style={{ fontSize: 13 }}>{dashboard.today_summary.meals_summary}</div>
+                  <div style={{ fontSize: 13 }}>{dashboard.todaySummary.meals_summary}</div>
                 </div>
               )}
-              {dashboard.today_summary.activities_summary && (
+              {dashboard.todaySummary.activities_summary && (
                 <div style={{ padding: 12, borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#15803d', marginBottom: 4 }}>🎨 Activities</div>
-                  <div style={{ fontSize: 13 }}>{dashboard.today_summary.activities_summary}</div>
+                  <div style={{ fontSize: 13 }}>{dashboard.todaySummary.activities_summary}</div>
                 </div>
               )}
-              {dashboard.today_summary.mood_summary && (
+              {dashboard.todaySummary.mood_summary && (
                 <div style={{ padding: 12, borderRadius: 8, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#0d9488', marginBottom: 4 }}>😊 Mood</div>
-                  <div style={{ fontSize: 13 }}>{dashboard.today_summary.mood_summary}</div>
+                  <div style={{ fontSize: 13 }}>{dashboard.todaySummary.mood_summary}</div>
                 </div>
               )}
-              {dashboard.today_summary.care_notes_summary && (
+              {dashboard.todaySummary.care_notes_summary && (
                 <div style={{ padding: 12, borderRadius: 8, background: '#faf5ff', border: '1px solid #e9d5ff' }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#7e22ce', marginBottom: 4 }}>📝 Care Notes</div>
-                  <div style={{ fontSize: 13 }}>{dashboard.today_summary.care_notes_summary}</div>
+                  <div style={{ fontSize: 13 }}>{dashboard.todaySummary.care_notes_summary}</div>
                 </div>
               )}
             </div>
@@ -176,12 +176,12 @@ function DashboardTab({ residentId }: { residentId: string }) {
       )}
 
       {/* Recent Photos */}
-      {dashboard.recent_photos && dashboard.recent_photos.length > 0 && (
+      {dashboard.recentPhotos && dashboard.recentPhotos.length > 0 && (
         <div className="card">
           <div className="card-header"><h3 style={{ margin: 0, fontSize: 14 }}>Recent Photos</h3></div>
           <div className="card-body">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-              {dashboard.recent_photos.slice(0, 6).map((photo: FamilyPhoto) => (
+              {dashboard.recentPhotos.slice(0, 6).map((photo: FamilyPhoto) => (
                 <div key={photo.id} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '1', background: '#f1f5f9' }}>
                   <img src={photo.photo_url} alt={photo.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   {photo.caption && (

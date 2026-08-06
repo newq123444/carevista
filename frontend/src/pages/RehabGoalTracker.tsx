@@ -20,7 +20,7 @@ export default function RehabGoalTracker() {
 
   const [goalForm, setGoalForm] = useState({ category: 'mobility', title: '', description: '', target_date: '', priority: 'medium' });
   const [milestoneForm, setMilestoneForm] = useState({ goal_id: '', title: '', description: '', target_date: '' });
-  const [progressForm, setProgressForm] = useState({ milestone_id: '', progress_notes: '', score: '5' });
+  const [progressForm, setProgressForm] = useState({ goal_id: '', milestone_id: '', progress_notes: '', score: '5' });
 
   const residentList = Array.isArray(residents) ? residents : [];
   const goalList = Array.isArray(goals) ? goals : [];
@@ -41,8 +41,8 @@ export default function RehabGoalTracker() {
 
   const handleLogProgress = (e: React.FormEvent) => {
     e.preventDefault();
-    logProgressMutation.mutate({ milestone_id: progressForm.milestone_id, resident_id: selectedResident, progress_notes: progressForm.progress_notes, score: parseInt(progressForm.score) }, {
-      onSuccess: () => { setShowProgressForm(false); setProgressForm({ milestone_id: '', progress_notes: '', score: '5' }); }
+    logProgressMutation.mutate({ goal_id: progressForm.goal_id, milestone_id: progressForm.milestone_id || undefined, resident_id: selectedResident, progress_notes: progressForm.progress_notes, score: parseInt(progressForm.score) }, {
+      onSuccess: () => { setShowProgressForm(false); setProgressForm({ goal_id: '', milestone_id: '', progress_notes: '', score: '5' }); }
     });
   };
 
@@ -193,10 +193,20 @@ export default function RehabGoalTracker() {
           </div>
           {showProgressForm && (
             <form onSubmit={handleLogProgress} style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', marginBottom: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 12, marginBottom: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 2fr', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Milestone ID</label>
-                  <input type="text" value={progressForm.milestone_id} onChange={e => setProgressForm(f => ({ ...f, milestone_id: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Goal</label>
+                  <select value={progressForm.goal_id} onChange={e => setProgressForm(f => ({ ...f, goal_id: e.target.value, milestone_id: '' }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                    <option value="">Select a goal…</option>
+                    {goalList.map((g: any) => <option key={g.id} value={g.id}>{g.title}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Milestone (optional)</label>
+                  <select value={progressForm.milestone_id} onChange={e => setProgressForm(f => ({ ...f, milestone_id: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                    <option value="">— none —</option>
+                    {(goalList.find((g: any) => g.id === progressForm.goal_id)?.milestones || []).map((m: any) => <option key={m.id} value={m.id}>{m.title}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Score (1-10)</label>

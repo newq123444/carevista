@@ -134,8 +134,11 @@ export default function PhotoFrameFeed() {
           <form onSubmit={handleSchedule} style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Photo ID</label>
-                <input type="text" value={scheduleForm.photo_id} onChange={e => setScheduleForm(f => ({ ...f, photo_id: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} placeholder="Photo ID" />
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Photo</label>
+                <select value={scheduleForm.photo_id} onChange={e => setScheduleForm(f => ({ ...f, photo_id: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                  <option value="">Select a photo…</option>
+                  {photoList.map((p: any) => <option key={p.id} value={p.id}>{p.caption || `Photo ${new Date(p.created_at).toLocaleDateString('en-GB')}`}</option>)}
+                </select>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Show On Date</label>

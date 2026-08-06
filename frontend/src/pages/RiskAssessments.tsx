@@ -87,18 +87,18 @@ export default function RiskAssessments() {
               {overview.length === 0 ? (
                 <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#94a3b8' }}>No assessment data available</td></tr>
               ) : (
-                overview.map(r => (
-                  <tr key={r.resident_id} style={{ cursor: 'pointer' }} onClick={() => { setSelectedResidentId(r.resident_id); setTab('calculate'); }}>
-                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 500, fontSize: '0.85rem', color: '#1e293b' }}>{r.first_name} {r.last_name}</td>
-                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: '0.85rem', color: '#64748b' }}>{r.room_number}</td>
+                overview.map((r: any) => (
+                  <tr key={r.residentId} style={{ cursor: 'pointer' }} onClick={() => { setSelectedResidentId(r.residentId); setTab('calculate'); }}>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 500, fontSize: '0.85rem', color: '#1e293b' }}>{r.residentName}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: '0.85rem', color: '#64748b' }}>{r.roomNumber}</td>
                     <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                      <TrafficLight score={r.waterlow_score} level={r.waterlow_level} />
+                      <TrafficLight score={r.waterlow?.score} level={r.waterlow?.riskLevel} />
                     </td>
                     <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                      <TrafficLight score={r.must_score} level={r.must_level} />
+                      <TrafficLight score={r.must?.score} level={r.must?.riskLevel} />
                     </td>
                     <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                      <TrafficLight score={r.falls_score} level={r.falls_level} />
+                      <TrafficLight score={r.falls?.score} level={r.falls?.riskLevel} />
                     </td>
                   </tr>
                 ))
