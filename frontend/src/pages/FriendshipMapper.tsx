@@ -5,12 +5,14 @@ export default function FriendshipMapper() {
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'observe' | 'network' | 'seating' | 'isolated'>('observe');
   const [showForm, setShowForm] = useState(false);
+  const [minConnections, setMinConnections] = useState(2);
+  const [tableSize, setTableSize] = useState(4);
 
   const { data: residents } = useResidents();
   const { data: connections = [] } = useFriendshipConnections(selectedResident);
   const { data: network } = useFriendshipNetwork();
-  const { data: seating } = useSeatingSuggestions();
-  const { data: isolated = [] } = useIsolatedResidents();
+  const { data: seating } = useSeatingSuggestions(tableSize);
+  const { data: isolated = [] } = useIsolatedResidents(minConnections);
 
   const observationMutation = useRecordFriendshipObservation();
 
@@ -20,6 +22,7 @@ export default function FriendshipMapper() {
   const connectionList = Array.isArray(connections) ? connections : [];
   const isolatedList = Array.isArray(isolated) ? isolated : [];
   const networkData = network || { nodes: [], edges: [] };
+  const selectedName = (() => { const r = residentList.find((x: any) => x.id === selectedResident); return r ? `${r.first_name} ${r.last_name}` : 'Selected resident'; })();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,8 +117,8 @@ export default function FriendshipMapper() {
               {connectionList.map((c: any) => (
                 <div key={c.id} style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #e5e7eb', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <span style={{ fontWeight: 500 }}>{c.resident_a_name} &harr; {c.resident_b_name}</span>
-                    <span style={{ marginLeft: 12, fontSize: '0.82rem', color: '#6b7280' }}>Interactions: {c.interaction_count}</span>
+                    <span style={{ fontWeight: 500 }}>{selectedName} &harr; {c.friend_name}</span>
+                    <span style={{ marginLeft: 12, fontSize: '0.82rem', color: '#6b7280', textTransform: 'capitalize' }}>{c.relationship_type || 'connection'}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 60, height: 6, background: '#e5e7eb', borderRadius: 3 }}>
@@ -155,57 +158,63 @@ export default function FriendshipMapper() {
 
       {activeTab === 'seating' && (
         <div>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 16 }}>Seating Suggestions</h2>
-          {seating && typeof seating === 'object' ? (
-            <div style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-              {Array.isArray(seating) ? (
-                <div style={{ display: 'grid', gap: 12 }}>
-                  {(seating as any[]).map((item: any, i: number) => (
-                    <div key={i} style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
-                        {Object.entries(item).filter(([k]) => k !== 'id' && k !== 'care_home_id').map(([key, value]) => (
-                          <div key={key}>
-                            <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'capitalize', marginBottom: 2 }}>{key.replace(/_/g, ' ')}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#1e293b', fontWeight: 500 }}>
-                              {value == null ? '-' : typeof value === 'object' ? (Array.isArray(value) ? value.join(', ') : JSON.stringify(value)) : String(value)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-                  {Object.entries(seating as Record<string, any>).filter(([k]) => k !== 'id' && k !== 'care_home_id').map(([key, value]) => (
-                    <div key={key} style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                      <div style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500, textTransform: 'capitalize', marginBottom: 4 }}>{key.replace(/_/g, ' ')}</div>
-                      <div style={{ fontSize: '0.9rem', color: '#1e293b', fontWeight: 600 }}>
-                        {value == null ? '-' : typeof value === 'object' ? (Array.isArray(value) ? value.join(', ') : JSON.stringify(value)) : String(value)}
-                      </div>
-                    </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Seating Suggestions</h2>
+            <label style={{ fontSize: '0.85rem', color: '#374151' }}>People per table:{' '}
+              <select value={tableSize} onChange={e => setTableSize(parseInt(e.target.value))} style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+          </div>
+          {seating && Array.isArray((seating as any).tables) && (seating as any).tables.length > 0 ? (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+                {(seating as any).tables.map((t: any, i: number) => (
+                  <div key={i} style={{ padding: 14, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }}>
+                    <div style={{ fontWeight: 700, marginBottom: 6, color: '#0d9488' }}>🍽️ Table {i + 1}</div>
+                    <div style={{ fontSize: '0.9rem', color: '#1e293b' }}>{(t.residents || []).join(', ')}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 6 }}>{t.rationale}</div>
+                  </div>
+                ))}
+              </div>
+              {Array.isArray((seating as any).keepApart) && (seating as any).keepApart.length > 0 && (
+                <div style={{ marginTop: 16, padding: 14, background: '#fef2f2', borderRadius: 12, border: '1px solid #fecaca' }}>
+                  <div style={{ fontWeight: 600, color: '#b91c1c', marginBottom: 6 }}>Keep apart</div>
+                  {(seating as any).keepApart.map((k: any, i: number) => (
+                    <div key={i} style={{ fontSize: '0.85rem', color: '#7f1d1d' }}>{k.a} &harr; {k.b}</div>
                   ))}
                 </div>
               )}
-            </div>
-          ) : <p style={{ color: '#6b7280' }}>No seating suggestions available yet. Record more observations to generate suggestions.</p>}
+            </>
+          ) : <p style={{ color: '#6b7280' }}>No seating suggestions yet. Record a few positive interactions and tables will be suggested automatically.</p>}
         </div>
       )}
 
       {activeTab === 'isolated' && (
         <div>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 16 }}>Isolated Residents</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Isolated Residents</h2>
+            <label style={{ fontSize: '0.85rem', color: '#374151' }}>Flag if fewer than{' '}
+              <select value={minConnections} onChange={e => setMinConnections(parseInt(e.target.value))} style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+              </select> connections
+            </label>
+          </div>
           {isolatedList.length > 0 ? (
             isolatedList.map((r: any) => (
-              <div key={r.id || r.resident_id} style={{ padding: 14, background: '#fef2f2', borderRadius: 10, border: '1px solid #fecaca', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div key={r.id} style={{ padding: 14, background: '#fef2f2', borderRadius: 10, border: '1px solid #fecaca', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: '1.5rem' }}>⚠️</span>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{r.resident_name || r.first_name + ' ' + r.last_name}</div>
-                  <div style={{ fontSize: '0.82rem', color: '#dc2626' }}>Low social interaction detected</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600 }}>{r.name} <span style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.82rem' }}>· Room {r.room_number}</span></div>
+                  <div style={{ fontSize: '0.82rem', color: '#dc2626' }}>
+                    {r.connection_count === 0 ? 'No recorded social connections' : `${r.connection_count} connection${r.connection_count === 1 ? '' : 's'}`}
+                    {r.days_since != null ? ` · last interaction ${r.days_since} day${r.days_since === 1 ? '' : 's'} ago` : ' · no interactions logged'}
+                  </div>
                 </div>
+                <button onClick={() => { setSelectedResident(r.id); setActiveTab('observe'); setShowForm(true); }} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #0d9488', background: '#f0fdfa', color: '#0d9488', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Log interaction</button>
               </div>
             ))
-          ) : <p style={{ color: '#6b7280' }}>No isolated residents detected. All residents have adequate social connections.</p>}
+          ) : <p style={{ color: '#6b7280' }}>No isolated residents at this threshold. All residents have adequate social connections.</p>}
         </div>
       )}
     </div>

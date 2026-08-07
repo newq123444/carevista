@@ -1130,11 +1130,11 @@ export function useFriendshipConnections(residentId: string) {
 export function useFriendshipNetwork() {
   return useQuery({ queryKey: ['friendship-mapper', 'network'], queryFn: () => friendshipMapperApi.getNetwork().then(r => r.data) });
 }
-export function useSeatingSuggestions() {
-  return useQuery({ queryKey: ['friendship-mapper', 'seating'], queryFn: () => friendshipMapperApi.getSeatingSuggestions().then(r => r.data) });
+export function useSeatingSuggestions(tableSize?: number) {
+  return useQuery({ queryKey: ['friendship-mapper', 'seating', tableSize], queryFn: () => friendshipMapperApi.getSeatingSuggestions(tableSize).then(r => r.data) });
 }
-export function useIsolatedResidents() {
-  return useQuery({ queryKey: ['friendship-mapper', 'isolated'], queryFn: () => friendshipMapperApi.getIsolatedResidents().then(r => r.data) });
+export function useIsolatedResidents(minConnections?: number) {
+  return useQuery({ queryKey: ['friendship-mapper', 'isolated', minConnections], queryFn: () => friendshipMapperApi.getIsolatedResidents(minConnections).then(r => r.data) });
 }
 
 // ── Purpose Planner (Quality of Life) ────────────────────────────────────

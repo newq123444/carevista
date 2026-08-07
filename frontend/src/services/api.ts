@@ -510,8 +510,8 @@ export const friendshipMapperApi = {
   recordObservation:   (data: object) => api.post('/friendship-mapper/observations', data),
   getConnections:      (residentId: string) => api.get(`/friendship-mapper/connections/${residentId}`),
   getNetwork:          () => api.get('/friendship-mapper/network'),
-  getSeatingSuggestions: () => api.get('/friendship-mapper/seating-suggestions'),
-  getIsolatedResidents:  () => api.get('/friendship-mapper/isolated'),
+  getSeatingSuggestions: (tableSize?: number) => api.get('/friendship-mapper/seating-suggestions', { params: tableSize ? { tableSize } : {} }),
+  getIsolatedResidents:  (minConnections?: number) => api.get('/friendship-mapper/isolated', { params: minConnections ? { minConnections } : {} }),
 };
 
 // ── Purpose Planner (Quality of Life) ────────────────────────────────────
