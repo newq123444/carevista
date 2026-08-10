@@ -1,5 +1,6 @@
 // src/pages/CareNotes.tsx — Full-featured care notes with meals, co-authoring, signatures
 import React, { useState, useRef } from 'react';
+import { useLang } from '../i18n';
 import { useSearchParams } from 'react-router-dom';
 import { useCareNotes, useCreateNote, useResidents, useColleagues } from '../hooks';
 import { formatDateTime, NOTE_TYPE_LABELS, truncate } from '../utils/formatters';
@@ -157,6 +158,7 @@ function NoteCard({ note: n, staff }: { note: any; staff: any[] }) {
 }
 
 export default function CareNotes() {
+  const { t } = useLang();
   const [searchParams] = useSearchParams();
   const [residentFilter, setResidentFilter] = useState(searchParams.get('resident_id') || '');
   const [typeFilter, setTypeFilter] = useState('');
@@ -181,7 +183,7 @@ export default function CareNotes() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Care Notes</h1>
+          <h1 className="page-title">{t('Care Notes')}</h1>
           <p className="page-subtitle">{notes.length} notes shown</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -255,6 +257,7 @@ function CreateNoteModal({ residents, staff, defaultResidentId, onClose }: {
   defaultResidentId: string;
   onClose: () => void;
 }) {
+  const { t } = useLang();
   const createNote = useCreateNote();
   const signatureRef = useRef<HTMLInputElement>(null);
 
@@ -398,7 +401,7 @@ function CreateNoteModal({ residents, staff, defaultResidentId, onClose }: {
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Meal</label>
+                    <label className="form-label">{t('Meal')}</label>
                     <select className="form-input" value={form.meal} onChange={e => set('meal', e.target.value)}>
                       {Object.entries(MEAL_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
@@ -410,7 +413,7 @@ function CreateNoteModal({ residents, staff, defaultResidentId, onClose }: {
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Appetite</label>
+                    <label className="form-label">{t('Appetite')}</label>
                     <select className="form-input" value={form.appetite} onChange={e => set('appetite', e.target.value)}>
                       <option value="">Select…</option>
                       {APPETITE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
@@ -491,7 +494,7 @@ function CreateNoteModal({ residents, staff, defaultResidentId, onClose }: {
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Mood</label>
+                    <label className="form-label">{t('Mood')}</label>
                     <select className="form-input" value={form.mood} onChange={e => set('mood', e.target.value)}>
                       <option value="">—</option>
                       {MOOD_OPTIONS.map(m => <option key={m}>{m}</option>)}
@@ -651,7 +654,7 @@ function CreateNoteModal({ residents, staff, defaultResidentId, onClose }: {
               This record is legally binding and stored permanently.
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+              <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
               <button type="submit" className="btn btn-primary" disabled={createNote.isPending}>
                 {createNote.isPending ? 'Saving…' : '✍ Sign & Save Note'}
               </button>

@@ -1,5 +1,6 @@
 // src/pages/PredictiveCare.tsx — AI Predictive Care Dashboard
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { usePredictiveRiskDashboard, usePredictiveAlerts, useResidentRiskHistory, useRunPredictiveAnalysis, useAcknowledgePredictiveAlert, useResidents } from '../hooks';
 import type { PredictiveRiskDashboardItem, PredictiveAlert } from '../types';
 
@@ -85,6 +86,7 @@ function PredictiveCareInner() {
 
 // ── Risk Dashboard Tab ────────────────────────────────────────────────────
 function RiskDashboardTab() {
+  const { t } = useLang();
   const { data, isLoading, error } = usePredictiveRiskDashboard();
   const runAnalysis = useRunPredictiveAnalysis();
 
@@ -132,11 +134,11 @@ function RiskDashboardTab() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left' }}>
-                <th style={{ padding: '10px 12px', fontWeight: 600 }}>Resident</th>
-                <th style={{ padding: '10px 12px', fontWeight: 600 }}>Room</th>
+                <th style={{ padding: '10px 12px', fontWeight: 600 }}>{t('Resident')}</th>
+                <th style={{ padding: '10px 12px', fontWeight: 600 }}>{t('Room')}</th>
                 <th style={{ padding: '10px 12px', fontWeight: 600 }}>Risk Level</th>
                 <th style={{ padding: '10px 12px', fontWeight: 600, textAlign: 'center' }}>Falls Score</th>
-                <th style={{ padding: '10px 12px', fontWeight: 600, textAlign: 'center' }}>Deterioration</th>
+                <th style={{ padding: '10px 12px', fontWeight: 600, textAlign: 'center' }}>{t('Deterioration')}</th>
                 <th style={{ padding: '10px 12px', fontWeight: 600 }}>Last Analyzed</th>
               </tr>
             </thead>
@@ -248,7 +250,7 @@ function ResidentDetailTab() {
   const [selectedId, setSelectedId] = useState('');
   const { data: history, isLoading } = useResidentRiskHistory(selectedId);
 
-  const historyItems: Array<{ id: string; risk_type: string; score: number; generated_at: string; factors: Record<string, any> }> = Array.isArray(history) ? history : (history?.scores ?? []);
+  const historyItems: Array<{ id: string; risk_type: string; score: number; generated_at: string; factors: Record<string, any> }> = Array.isArray(history) ? history : ((history as any)?.history ?? (history as any)?.scores ?? []);
 
   const fallsHistory = historyItems.filter(h => h.risk_type === 'falls').slice(0, 20);
   const deteriorationHistory = historyItems.filter(h => h.risk_type === 'deterioration').slice(0, 20);

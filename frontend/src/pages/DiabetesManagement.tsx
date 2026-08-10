@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useGlucoseReadings, useLogGlucose, useInsulinDoses, useLogInsulinDose, useHba1cHistory, useRecordHba1c, useDiabetesAlerts, useAcknowledgeDiabetesAlert, useGlucosePatterns, useResidents } from '../hooks';
 
 export default function DiabetesManagement() {
+  const { t } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'glucose' | 'insulin' | 'hba1c' | 'alerts' | 'patterns'>('glucose');
   const [showGlucoseForm, setShowGlucoseForm] = useState(false);
@@ -109,7 +111,7 @@ export default function DiabetesManagement() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Notes</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Notes')}</label>
                   <input type="text" value={glucoseForm.notes} onChange={e => setGlucoseForm(f => ({ ...f, notes: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>

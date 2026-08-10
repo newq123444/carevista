@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useRecordFriendshipObservation, useFriendshipConnections, useFriendshipNetwork, useSeatingSuggestions, useIsolatedResidents, useResidents } from '../hooks';
 
 export default function FriendshipMapper() {
+  const { t } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'observe' | 'network' | 'seating' | 'isolated'>('observe');
   const [showForm, setShowForm] = useState(false);
@@ -85,8 +87,8 @@ export default function FriendshipMapper() {
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Interaction Type</label>
                   <select value={form.interaction_type} onChange={e => setForm(f => ({ ...f, interaction_type: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                     <option value="conversation">Conversation</option>
-                    <option value="activity">Activity</option>
-                    <option value="meal">Meal</option>
+                    <option value="activity">{t('Activity')}</option>
+                    <option value="meal">{t('Meal')}</option>
                     <option value="spontaneous">Spontaneous</option>
                     <option value="conflict">Conflict</option>
                   </select>
@@ -104,11 +106,11 @@ export default function FriendshipMapper() {
                   <input type="text" value={form.context} onChange={e => setForm(f => ({ ...f, context: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} placeholder="e.g. lounge, garden" />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Notes</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Notes')}</label>
                   <input type="text" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>
-              <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>Record</button>
+              <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>{t('Record')}</button>
             </form>
           )}
           {selectedResident && (

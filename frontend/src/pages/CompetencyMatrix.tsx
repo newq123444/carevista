@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useLang } from '../i18n';
 import {
   useCompetencies, useCreateCompetency, useStaffCompetencies,
   useUpdateStaffCompetency, useCompetencyMatrix, useExpiringCompetencies, useStaff,
@@ -11,6 +12,7 @@ const CATEGORIES = [
 ];
 
 export default function CompetencyMatrix() {
+  const { t } = useLang();
   const { data: competencies } = useCompetencies();
   const { data: staffCompetencies } = useStaffCompetencies();
   const { data: matrix } = useCompetencyMatrix();
@@ -144,7 +146,7 @@ export default function CompetencyMatrix() {
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>Description</label>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>{t('Description')}</label>
                     <textarea className="input" rows={3} value={competencyForm.description} onChange={e => setCompetencyForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe the competency requirements..." />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -158,7 +160,7 @@ export default function CompetencyMatrix() {
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button type="button" className="btn btn-ghost" onClick={() => setShowAddForm(false)}>Cancel</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => setShowAddForm(false)}>{t('Cancel')}</button>
                     <button type="submit" className="btn btn-primary" disabled={createCompetency.isPending}>
                       {createCompetency.isPending ? 'Creating...' : 'Create Competency'}
                     </button>
@@ -193,7 +195,7 @@ export default function CompetencyMatrix() {
                     <textarea className="input" rows={3} value={signOffNotes} onChange={e => setSignOffNotes(e.target.value)} placeholder="Add evidence notes..." />
                   </div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button type="button" className="btn btn-ghost" onClick={() => setShowSignOff(null)}>Cancel</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => setShowSignOff(null)}>{t('Cancel')}</button>
                     <button type="submit" className="btn btn-primary" disabled={updateStaffCompetency.isPending}>
                       {updateStaffCompetency.isPending ? 'Saving...' : 'Sign Off'}
                     </button>
@@ -225,7 +227,7 @@ export default function CompetencyMatrix() {
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, fontSize: '0.78rem' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} /> Competent</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} /> Expiring</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} /> Expired</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} /> {t('Expired')}</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: '#9ca3af', display: 'inline-block' }} /> Not Started</span>
           </div>
         </div>
@@ -290,7 +292,7 @@ export default function CompetencyMatrix() {
                 <thead>
                   <tr>
                     <th>Staff Member</th>
-                    <th>Competency</th>
+                    <th>{t('Competency')}</th>
                     <th>Expiry Date</th>
                     <th>Days Remaining</th>
                   </tr>

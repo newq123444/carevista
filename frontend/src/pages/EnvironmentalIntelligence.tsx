@@ -1,11 +1,13 @@
 // src/pages/EnvironmentalIntelligence.tsx - Environmental Intelligence
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 
 const metricIcons: Record<string, string> = { noise: '🔊', light: '💡', temperature: '🌡️', humidity: '💧', air: '🌬️' };
 
 export default function EnvironmentalIntelligence() {
+  const { t } = useLang();
   const [tab, setTab] = useState<'dashboard' | 'log' | 'recommendations'>('dashboard');
   const [form, setForm] = useState({ zone: '', noiseLevel: '', lightLevel: '', temperature: '', humidity: '', airQuality: '' });
   const queryClient = useQueryClient();
@@ -55,7 +57,7 @@ export default function EnvironmentalIntelligence() {
 
       {tab === 'dashboard' && (
         <div>
-          {isLoading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading environmental data...</div>}
+          {isLoading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>{t('Loading')}…</div>}
           
           {dashboard?.current?.length > 0 ? (
             <div style={{ display: 'grid', gap: 16 }}>
@@ -133,10 +135,10 @@ export default function EnvironmentalIntelligence() {
       {tab === 'log' && (
         <form onSubmit={handleLog} style={{ maxWidth: 500 }}>
           <div className="card" style={{ padding: 24 }}>
-            <h3 style={{ margin: '0 0 16px' }}>Log Environmental Reading</h3>
+            <h3 style={{ margin: '0 0 16px' }}>{t('Log Environmental Reading')}</h3>
             <div style={{ display: 'grid', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>Zone / Room *</label>
+                <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>{t('Zone / Room')} *</label>
                 <input value={form.zone} onChange={e => setForm({ ...form, zone: e.target.value })} required placeholder="e.g. Room 1, Lounge, Dining Room" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

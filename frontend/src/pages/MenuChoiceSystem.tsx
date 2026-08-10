@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { RecordView } from '../components/ui';
 import { useMenuOptions, useCreateMenuOption, useMenuDietaryProfile, useUpdateMenuDietaryProfile, useSubmitMenuChoice, useKitchenDashboard, useResidentMenuChoices, useResidents } from '../hooks';
 
 export default function MenuChoiceSystem() {
+  const { t } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'menu' | 'dietary' | 'kitchen' | 'history'>('menu');
   const [showOptionForm, setShowOptionForm] = useState(false);
@@ -74,10 +76,10 @@ export default function MenuChoiceSystem() {
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Meal Type</label>
                   <select value={optionForm.meal_type} onChange={e => setOptionForm(f => ({ ...f, meal_type: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
-                    <option value="breakfast">Breakfast</option>
-                    <option value="lunch">Lunch</option>
-                    <option value="dinner">Dinner</option>
-                    <option value="snack">Snack</option>
+                    <option value="breakfast">{t('Breakfast')}</option>
+                    <option value="lunch">{t('Lunch')}</option>
+                    <option value="dinner">{t('Dinner')}</option>
+                    <option value="snack">{t('Snack')}</option>
                   </select>
                 </div>
                 <div>
@@ -85,12 +87,12 @@ export default function MenuChoiceSystem() {
                   <input type="text" value={optionForm.name} onChange={e => setOptionForm(f => ({ ...f, name: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Date</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Date')}</label>
                   <input type="date" value={optionForm.available_date} onChange={e => setOptionForm(f => ({ ...f, available_date: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Description</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Description')}</label>
                 <input type="text" value={optionForm.description} onChange={e => setOptionForm(f => ({ ...f, description: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
               </div>
               <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>Create Option</button>
@@ -139,7 +141,7 @@ export default function MenuChoiceSystem() {
                   <input type="text" value={dietaryForm.allergies} onChange={e => setDietaryForm(f => ({ ...f, allergies: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} placeholder="e.g. nuts, dairy" />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Notes</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Notes')}</label>
                   <input type="text" value={dietaryForm.notes} onChange={e => setDietaryForm(f => ({ ...f, notes: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>

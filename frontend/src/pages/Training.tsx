@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useTraining, useStaff, useAddTraining } from '../hooks';
 import { formatDate } from '../utils/formatters';
 
 const COURSES = ['Manual Handling','Fire Safety','Infection Control','Safeguarding Adults','Dementia Care','First Aid','Medication Administration','COSHH','Food Hygiene','Mental Capacity Act'];
 
 export default function Training() {
+  const { t } = useLang();
   const { data: training = [], isLoading } = useTraining();
   const { data: staff = [] } = useStaff();
   const addTraining = useAddTraining();
@@ -69,7 +71,7 @@ export default function Training() {
         ))}
       </div>
 
-      {isLoading ? <div style={{ padding: 40, textAlign: 'center' }}>Loading…</div> : (
+      {isLoading ? <div style={{ padding: 40, textAlign: 'center' }}>{t('Loading…')}</div> : (
         <div className="card">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>

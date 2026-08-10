@@ -1,25 +1,33 @@
 // src/pages/OccupancyForecasting.tsx
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useOccupancyHistory, useRecordOccupancy, useOccupancyForecasts, useGenerateOccupancyForecast, useOccupancyDashboard } from '../hooks';
 import { formatDate } from '../utils/formatters';
 import type { OccupancyRecord, OccupancyForecast } from '../types';
 
 export default function OccupancyForecasting() {
+  const { t } = useLang();
   const [showRecordForm, setShowRecordForm] = useState(false);
 
   const { data: dashboard } = useOccupancyDashboard();
   const { data: history = [], isLoading: loadingHistory } = useOccupancyHistory();
   const { data: forecasts = [], isLoading: loadingForecasts } = useOccupancyForecasts();
   const generateForecast = useGenerateOccupancyForecast();
+  const recordLive = useRecordOccupancy();
 
   const dash = dashboard || {} as any;
-  const totalBeds = dash.total_beds || 0;
-  const occupiedBeds = dash.occupied_beds || 0;
+  // Live figures come straight from the resident record (source of truth);
+  // `current` is the last manually recorded snapshot used for history/forecasts.
+  const live = dash.live || {};
+  const totalBeds = live.totalBeds ?? Number(dash.current?.total_beds) ?? 0;
+  const occupiedBeds = live.occupiedBeds ?? Number(dash.current?.occupied_beds) ?? 0;
   const vacancyRate = totalBeds > 0 ? ((totalBeds - occupiedBeds) / totalBeds * 100) : 0;
-  const revenueImpact = dash.revenue_impact_pence || 0;
-  const occupancyRate = totalBeds > 0 ? (occupiedBeds / totalBeds * 100) : 0;
+  const revenueImpact = dash.revenue?.avg_daily_revenue_pence || 0;
+  const occupancyRate = live.occupancyPct ?? (totalBeds > 0 ? (occupiedBeds / totalBeds * 100) : 0);
+  const inSync = dash.inSync !== false;
+  const lastRecord = dash.current;
 
-  const isLowOccupancy = occupancyRate < 85;
+  const isLowOccupancy = totalBeds > 0 && occupancyRate < 85;
 
   const historyRecords = (history as OccupancyRecord[]).slice(0, 12);
   const maxOccupancy = 100;
@@ -39,9 +47,35 @@ export default function OccupancyForecasting() {
           <button className="btn btn-secondary" onClick={handleGenerateForecast} disabled={generateForecast.isPending}>
             {generateForecast.isPending ? 'Generating...' : 'Generate Forecast'}
           </button>
+          <button className="btn btn-secondary" onClick={() => recordLive.mutate({})} disabled={recordLive.isPending || !totalBeds}>
+            {recordLive.isPending ? 'Syncing…' : 'Sync today from residents'}
+          </button>
           <button className="btn btn-primary" onClick={() => setShowRecordForm(true)}>+ Record Occupancy</button>
         </div>
       </div>
+
+      {totalBeds === 0 && (
+        <div style={{ padding: '14px 18px', background: 'rgba(217,119,6,.08)', border: '1px solid #f59e0b', borderRadius: 12, marginBottom: 16 }}>
+          <strong>No registered bed count set for this home.</strong>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Set it in Home Settings so occupancy can be calculated against real capacity.</div>
+        </div>
+      )}
+
+      {totalBeds > 0 && !inSync && (
+        <div style={{ padding: '14px 18px', background: 'rgba(37,99,235,.07)', border: '1px solid #93c5fd', borderRadius: 12, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <strong>Live occupancy is {occupiedBeds} of {totalBeds} beds ({occupancyRate.toFixed(1)}%).</strong>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+              {lastRecord
+                ? `The last recorded snapshot was ${lastRecord.occupied_beds}/${lastRecord.total_beds} on ${new Date(lastRecord.record_date).toLocaleDateString('en-GB')}.`
+                : 'No occupancy snapshot has been recorded yet.'} Sync to add today's figure to the history and forecasts.
+            </div>
+          </div>
+          <button className="btn btn-primary" onClick={() => recordLive.mutate({})} disabled={recordLive.isPending}>
+            {recordLive.isPending ? 'Syncing…' : 'Sync now'}
+          </button>
+        </div>
+      )}
 
       {/* Threshold Warning */}
       {isLowOccupancy && (
@@ -185,6 +219,7 @@ export default function OccupancyForecasting() {
 }
 
 function RecordOccupancyModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLang();
   const record = useRecordOccupancy();
   const [form, setForm] = useState({
     record_date: new Date().toISOString().slice(0, 10),
@@ -238,12 +273,12 @@ function RecordOccupancyModal({ onClose }: { onClose: () => void }) {
               </div>
             )}
             <div className="form-group">
-              <label className="form-label">Notes</label>
+              <label className="form-label">{t('Notes')}</label>
               <textarea className="form-input" rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Optional notes..." />
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={record.isPending}>{record.isPending ? 'Saving...' : 'Record'}</button>
           </div>
         </form>

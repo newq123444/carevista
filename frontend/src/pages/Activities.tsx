@@ -1,5 +1,6 @@
 // src/pages/Activities.tsx - Activity Scheduling with Mobility-Based Filtering
 import React, { useState, useMemo } from 'react';
+import { useLang } from '../i18n';
 import { useActivities, useSessions, useCreateActivity, useCreateSession, useSessionParticipants, useAddParticipant, useUpdateParticipant, useEligibleResidents, useWellbeingDashboard, useResidents } from '../hooks';
 import type { Activity, ActivitySession, ActivityParticipant, WellbeingStats } from '../types';
 
@@ -205,6 +206,7 @@ function CalendarView({ dates, weekLabel, weekOffset, setWeekOffset, sessionsByD
 
 // ── Activity Library ──────────────────────────────────────────────────────
 function ActivityLibrary({ activities }: { activities: Activity[] }) {
+  const { t } = useLang();
   const [filter, setFilter] = useState('all');
   const filtered = filter === 'all' ? activities : activities.filter(a => a.category === filter);
 
@@ -212,7 +214,7 @@ function ActivityLibrary({ activities }: { activities: Activity[] }) {
     <div>
       {/* Category filter */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-        <button onClick={() => setFilter('all')} style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${filter === 'all' ? '#3b82f6' : 'var(--border, #e2e8f0)'}`, background: filter === 'all' ? '#3b82f610' : 'transparent', color: filter === 'all' ? '#3b82f6' : 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>All</button>
+        <button onClick={() => setFilter('all')} style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${filter === 'all' ? '#3b82f6' : 'var(--border, #e2e8f0)'}`, background: filter === 'all' ? '#3b82f610' : 'transparent', color: filter === 'all' ? '#3b82f6' : 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>{t('All')}</button>
         {CATEGORIES.map(cat => (
           <button key={cat} onClick={() => setFilter(cat)} style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${filter === cat ? CATEGORY_COLORS[cat] : 'var(--border, #e2e8f0)'}`, background: filter === cat ? CATEGORY_COLORS[cat] + '15' : 'transparent', color: filter === cat ? CATEGORY_COLORS[cat] : 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' }}>
             {CATEGORY_ICONS[cat]} {cat}
@@ -334,6 +336,7 @@ function KpiCard({ icon, value, label, sublabel, color }: { icon: string; value:
 
 // ── Session Detail Modal ──────────────────────────────────────────────────
 function SessionDetailModal({ session, onClose }: { session: ActivitySession; onClose: () => void }) {
+  const { t } = useLang();
   const { data: participants = [] } = useSessionParticipants(session.id);
   const { data: eligibleResidents = [] } = useEligibleResidents(session.activity_id);
   const addParticipant = useAddParticipant();
@@ -392,7 +395,7 @@ function SessionDetailModal({ session, onClose }: { session: ActivitySession; on
                       <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{r.first_name} {r.last_name}</span>
                       <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginLeft: 6 }}>Rm {r.room_number} · {r.mobility_status?.replace('_', ' ')}</span>
                     </div>
-                    <button onClick={() => addParticipant.mutate({ sessionId: session.id, data: { resident_id: r.id } })} style={{ padding: '4px 10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 5, fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}>Add</button>
+                    <button onClick={() => addParticipant.mutate({ sessionId: session.id, data: { resident_id: r.id } })} style={{ padding: '4px 10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 5, fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}>{t('Add')}</button>
                   </div>
                 ))}
                 {(eligibleResidents as any[]).filter(r => !participantIds.has(r.id)).length === 0 && (
@@ -422,8 +425,8 @@ function SessionDetailModal({ session, onClose }: { session: ActivitySession; on
                 {session.status !== 'completed' && (
                   <select value={p.attendance} onChange={e => updateParticipant.mutate({ sessionId: session.id, residentId: p.resident_id, data: { attendance: e.target.value } })} style={{ padding: '4px 8px', borderRadius: 5, border: '1px solid var(--border, #e2e8f0)', fontSize: '0.72rem', background: 'var(--bg-card, white)' }}>
                     <option value="registered">Registered</option>
-                    <option value="attended">Attended</option>
-                    <option value="declined">Declined</option>
+                    <option value="attended">{t('Attended')}</option>
+                    <option value="declined">{t('Declined')}</option>
                     <option value="unable">Unable</option>
                   </select>
                 )}
@@ -441,6 +444,7 @@ function SessionDetailModal({ session, onClose }: { session: ActivitySession; on
 
 // ── Create Activity Modal ─────────────────────────────────────────────────
 function CreateActivityModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLang();
   const createActivity = useCreateActivity();
   const [form, setForm] = useState({
     name: '', description: '', category: 'social', activity_type: 'social',
@@ -466,7 +470,7 @@ function CreateActivityModal({ onClose }: { onClose: () => void }) {
             <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border, #e2e8f0)', fontSize: '0.85rem', boxSizing: 'border-box' }} placeholder="e.g. Morning Chair Yoga" />
           </div>
           <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Description</label>
+            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>{t('Description')}</label>
             <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border, #e2e8f0)', fontSize: '0.85rem', resize: 'vertical', boxSizing: 'border-box' }} placeholder="Describe the activity..." />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -507,7 +511,7 @@ function CreateActivityModal({ onClose }: { onClose: () => void }) {
             </label>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px', background: 'var(--bg-secondary, #f1f5f9)', border: '1px solid var(--border, #e2e8f0)', borderRadius: 8, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px', background: 'var(--bg-secondary, #f1f5f9)', border: '1px solid var(--border, #e2e8f0)', borderRadius: 8, fontSize: '0.85rem', cursor: 'pointer' }}>{t('Cancel')}</button>
             <button type="submit" disabled={!form.name || createActivity.isPending} style={{ flex: 1, padding: '10px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', opacity: !form.name ? 0.5 : 1 }}>
               {createActivity.isPending ? 'Creating...' : 'Create Activity'}
             </button>
@@ -520,6 +524,7 @@ function CreateActivityModal({ onClose }: { onClose: () => void }) {
 
 // ── Create Session Modal ──────────────────────────────────────────────────
 function CreateSessionModal({ activities, selectedActivityId, onClose }: { activities: Activity[]; selectedActivityId: string; onClose: () => void }) {
+  const { t } = useLang();
   const createSession = useCreateSession();
   const [form, setForm] = useState({
     activity_id: selectedActivityId || '',
@@ -570,7 +575,7 @@ function CreateSessionModal({ activities, selectedActivityId, onClose }: { activ
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px', background: 'var(--bg-secondary, #f1f5f9)', border: '1px solid var(--border, #e2e8f0)', borderRadius: 8, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px', background: 'var(--bg-secondary, #f1f5f9)', border: '1px solid var(--border, #e2e8f0)', borderRadius: 8, fontSize: '0.85rem', cursor: 'pointer' }}>{t('Cancel')}</button>
             <button type="submit" disabled={!form.activity_id || createSession.isPending} style={{ flex: 1, padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', opacity: !form.activity_id ? 0.5 : 1 }}>
               {createSession.isPending ? 'Scheduling...' : 'Schedule Session'}
             </button>

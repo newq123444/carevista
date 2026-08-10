@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { usePalliativeCarePlan, useCreatePalliativeCarePlan, useUpdatePalliativeCarePlan, useComfortRounds, useScheduleComfortRound, useCompleteComfortRound, useAnticipatoryMeds, useAddAnticipatoryMed, useAdministerAnticipatoryMed, useFamilyCommunications, useLogFamilyCommunication, useResidents } from '../hooks';
 
 export default function PalliativeCarePathway() {
+  const { t } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'care-plan' | 'comfort' | 'meds' | 'family' | 'resources'>('care-plan');
   const [showCarePlanForm, setShowCarePlanForm] = useState(false);
@@ -169,11 +171,11 @@ export default function PalliativeCarePathway() {
                   <input type="datetime-local" value={comfortForm.scheduled_time} onChange={e => setComfortForm(f => ({ ...f, scheduled_time: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Notes</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Notes')}</label>
                   <input type="text" value={comfortForm.notes} onChange={e => setComfortForm(f => ({ ...f, notes: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>
-              <button type="submit" disabled={scheduleComfortMutation.isPending} style={{ padding: '8px 16px', background: '#059669', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>Schedule</button>
+              <button type="submit" disabled={scheduleComfortMutation.isPending} style={{ padding: '8px 16px', background: '#059669', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>{t('Schedule')}</button>
             </form>
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -187,7 +189,7 @@ export default function PalliativeCarePathway() {
                     <span style={{ marginLeft: 8, padding: '2px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 600, background: round.status === 'completed' ? '#dcfce7' : round.status === 'missed' ? '#fee2e2' : '#fef9c3', color: round.status === 'completed' ? '#166534' : round.status === 'missed' ? '#991b1b' : '#854d0e' }}>{round.status}</span>
                   </div>
                   {round.status === 'scheduled' && (
-                    <button onClick={() => completeComfortMutation.mutate({ id: round.id, data: { status: 'completed' } })} style={{ padding: '6px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem' }}>Complete</button>
+                    <button onClick={() => completeComfortMutation.mutate({ id: round.id, data: { status: 'completed' } })} style={{ padding: '6px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem' }}>{t('Complete')}</button>
                   )}
                 </div>
                 {round.notes && <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>{round.notes}</p>}
@@ -218,11 +220,11 @@ export default function PalliativeCarePathway() {
                   <input type="text" value={medForm.indication} onChange={e => setMedForm(f => ({ ...f, indication: e.target.value }))} required placeholder="e.g. Pain, Nausea, Secretions" style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Dose</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Dose')}</label>
                   <input type="text" value={medForm.dose} onChange={e => setMedForm(f => ({ ...f, dose: e.target.value }))} required placeholder="e.g. 2.5mg-5mg" style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Route</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Route')}</label>
                   <select value={medForm.route} onChange={e => setMedForm(f => ({ ...f, route: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                     <option value="subcutaneous">Subcutaneous</option>
                     <option value="sublingual">Sublingual</option>
@@ -244,7 +246,7 @@ export default function PalliativeCarePathway() {
                     <span style={{ fontWeight: 600 }}>{med.medication_name}</span>
                     <span style={{ marginLeft: 8, color: '#6b7280', fontSize: '0.85rem' }}>{med.dose} {med.route}</span>
                   </div>
-                  <button onClick={() => administerMedMutation.mutate({ id: med.id, data: { administered_at: new Date().toISOString() } })} style={{ padding: '6px 12px', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem' }}>Administer</button>
+                  <button onClick={() => administerMedMutation.mutate({ id: med.id, data: { administered_at: new Date().toISOString() } })} style={{ padding: '6px 12px', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem' }}>{t('Administer')}</button>
                 </div>
                 <div style={{ marginTop: 8, fontSize: '0.85rem', color: '#6b7280' }}>
                   <span>Indication: {med.indication}</span>
@@ -284,7 +286,7 @@ export default function PalliativeCarePathway() {
                 </div>
               </div>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Summary</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Summary')}</label>
                 <textarea value={familyForm.summary} onChange={e => setFamilyForm(f => ({ ...f, summary: e.target.value }))} rows={3} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, cursor: 'pointer' }}>

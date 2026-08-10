@@ -1,5 +1,6 @@
 // src/pages/dashboards/ManagerDashboard.tsx — Animated KPI dashboard
 import React, { useEffect, useRef, useState } from 'react';
+import { useLang } from '../../i18n';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import { useDashboard, useIncidents, useComplianceActions, useInvoices, useResidents, useStaff, useTraining, useHousekeepingSummary, useKitchenDashboard, useRoomTurnoverDashboard } from '../../hooks';
@@ -55,6 +56,7 @@ function KpiCard({ label, value, sub, icon, color, link, trend }: any) {
 }
 
 export default function ManagerDashboard() {
+  const { t } = useLang();
   const { user }     = useAuthStore();
   const { data: dash, isLoading } = useDashboard();
   const { data: rawIncidents = [] }   = useIncidents({ status: 'open', limit: 10 });
@@ -224,9 +226,9 @@ export default function ManagerDashboard() {
               );
             })}
             <div style={{ padding: '8px 14px', fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 12 }}>
-              <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#16a34a', marginRight: 4 }} />Good</span>
+              <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#16a34a', marginRight: 4 }} />{t('Good')}</span>
               <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#d97706', marginRight: 4 }} />Requires attention</span>
-              <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#dc2626', marginRight: 4 }} />Overdue</span>
+              <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#dc2626', marginRight: 4 }} />{t('Overdue')}</span>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 // src/pages/AutomatedInvoicing.tsx
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useRateUplifts, useCreateRateUplift, useApproveRateUplift, usePaymentReminders, useSendPaymentReminder, useRevenueDashboard, useResidents } from '../hooks';
 import { formatDate, formatPence } from '../utils/formatters';
 import type { RateUplift, PaymentReminder, Resident } from '../types';
@@ -13,6 +14,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function AutomatedInvoicing() {
+  const { t } = useLang();
   const [tab, setTab] = useState<'dashboard' | 'uplifts' | 'reminders'>('dashboard');
   const [showUpliftForm, setShowUpliftForm] = useState(false);
 
@@ -24,11 +26,14 @@ export default function AutomatedInvoicing() {
   const sendReminder = useSendPaymentReminder();
 
   const dash = dashboard || {} as any;
-  const monthlyRevenue = dash.monthly_revenue_pence || 0;
-  const outstanding = dash.outstanding_pence || 0;
-  const overdueCount = dash.overdue_count || 0;
-  const averageRate = dash.average_rate_pence || 0;
-  const monthlyBreakdown = dash.monthly_breakdown || [];
+  const totals = dash.totals || {};
+  const monthlyBreakdown = (dash.monthlyRevenue || []) as any[];
+  // Current month's revenue = most recent entry in the monthly series
+  const monthlyRevenue = Number(monthlyBreakdown[0]?.revenue_pence) || 0;
+  const outstanding = Number(totals.outstanding_pence) || 0;
+  const overdueCount = Number(totals.overdue_count) || 0;
+  const invoiceCount = Number(monthlyBreakdown[0]?.invoice_count) || 0;
+  const averageRate = invoiceCount > 0 ? Math.round(monthlyRevenue / invoiceCount) : 0;
 
   const maxRevenue = Math.max(...(monthlyBreakdown.length ? monthlyBreakdown.map((m: any) => m.revenue_pence || 0) : [1]));
 
@@ -117,13 +122,13 @@ export default function AutomatedInvoicing() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Resident</th>
+                  <th>{t('Resident')}</th>
                   <th>Previous Rate</th>
                   <th>New Rate</th>
                   <th>Effective Date</th>
                   <th>Reason</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>{t('Status')}</th>
+                  <th>{t('Actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,13 +169,13 @@ export default function AutomatedInvoicing() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Invoice</th>
-                  <th>Resident</th>
+                  <th>{t('Invoice')}</th>
+                  <th>{t('Resident')}</th>
                   <th>Payer</th>
                   <th>Amount Due</th>
                   <th>Due Date</th>
                   <th>Days Overdue</th>
-                  <th>Status</th>
+                  <th>{t('Status')}</th>
                   <th>Last Reminder</th>
                   <th>Action</th>
                 </tr>
@@ -214,6 +219,7 @@ export default function AutomatedInvoicing() {
 }
 
 function CreateUpliftModal({ residents, onClose }: { residents: Resident[]; onClose: () => void }) {
+  const { t } = useLang();
   const create = useCreateRateUplift();
   const [form, setForm] = useState({
     resident_id: '',
@@ -287,7 +293,7 @@ function CreateUpliftModal({ residents, onClose }: { residents: Resident[]; onCl
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={create.isPending}>{create.isPending ? 'Creating...' : 'Submit Rate Uplift'}</button>
           </div>
         </form>

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useLang } from '../i18n';
 import { useGenerateRota, useRotaTemplates, useRotaTemplate, useUpdateRotaShift, usePublishRota, useRotaConstraints, useUploadRotaCsv } from '../hooks';
 import type { RotaTemplate, RotaShift } from '../types';
 
@@ -11,6 +12,7 @@ const SHIFT_COLORS: Record<string, string> = {
 };
 
 export default function SmartRota() {
+  const { t } = useLang();
   const [weekStart, setWeekStart] = useState('');
   const [rotaName, setRotaName] = useState('');
   const [budgetLimit, setBudgetLimit] = useState('');
@@ -260,7 +262,7 @@ export default function SmartRota() {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569', width: 180 }}>Staff</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569', width: 180 }}>{t('Staff')}</th>
                   {DAYS.map(d => (
                     <th key={d} style={{ padding: '10px 8px', textAlign: 'center', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>{d}</th>
                   ))}
@@ -377,8 +379,8 @@ export default function SmartRota() {
               <input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem' }} />
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setEditingShift(null)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#475569', cursor: 'pointer', fontSize: '0.85rem' }}>Cancel</button>
-              <button onClick={handleSaveShift} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#7c3aed', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>Save</button>
+              <button onClick={() => setEditingShift(null)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#475569', cursor: 'pointer', fontSize: '0.85rem' }}>{t('Cancel')}</button>
+              <button onClick={handleSaveShift} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#7c3aed', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>{t('Save')}</button>
             </div>
           </div>
         </div>

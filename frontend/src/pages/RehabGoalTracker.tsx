@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { RecordView } from '../components/ui';
 import { useCreateRehabGoal, useResidentRehabGoals, useAddRehabMilestone, useUpdateRehabMilestoneProgress, useLogRehabProgress, useCelebrateRehabMilestone, useRehabReport, useResidents } from '../hooks';
 
 export default function RehabGoalTracker() {
+  const { t } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'goals' | 'milestones' | 'progress' | 'report'>('goals');
   const [showGoalForm, setShowGoalForm] = useState(false);
@@ -78,7 +80,7 @@ export default function RehabGoalTracker() {
       {activeTab === 'goals' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Goals</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{t('Goals')}</h2>
             <button onClick={() => setShowGoalForm(!showGoalForm)} disabled={!selectedResident} style={{ padding: '8px 16px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', opacity: selectedResident ? 1 : 0.5 }}>+ New Goal</button>
           </div>
           {showGoalForm && (
@@ -90,7 +92,7 @@ export default function RehabGoalTracker() {
                     <option value="mobility">Mobility</option>
                     <option value="independence">Independence</option>
                     <option value="cognitive">Cognitive</option>
-                    <option value="social">Social</option>
+                    <option value="social">{t('Social')}</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
@@ -103,16 +105,16 @@ export default function RehabGoalTracker() {
                   <input type="date" value={goalForm.target_date} onChange={e => setGoalForm(f => ({ ...f, target_date: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Priority</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Priority')}</label>
                   <select value={goalForm.priority} onChange={e => setGoalForm(f => ({ ...f, priority: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
+                    <option value="low">{t('Low')}</option>
+                    <option value="medium">{t('Medium')}</option>
+                    <option value="high">{t('High')}</option>
                   </select>
                 </div>
               </div>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Description</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Description')}</label>
                 <input type="text" value={goalForm.description} onChange={e => setGoalForm(f => ({ ...f, description: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
               </div>
               <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>Create Goal</button>
@@ -165,7 +167,7 @@ export default function RehabGoalTracker() {
             <form onSubmit={handleAddMilestone} style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', marginBottom: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Goal</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Goal')}</label>
                   <select value={milestoneForm.goal_id} onChange={e => setMilestoneForm(f => ({ ...f, goal_id: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                     <option value="">Select goal...</option>
                     {goalList.map((g: any) => <option key={g.id} value={g.id}>{g.title}</option>)}
@@ -196,7 +198,7 @@ export default function RehabGoalTracker() {
             <form onSubmit={handleLogProgress} style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', marginBottom: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 2fr', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Goal</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Goal')}</label>
                   <select value={progressForm.goal_id} onChange={e => setProgressForm(f => ({ ...f, goal_id: e.target.value, milestone_id: '' }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                     <option value="">Select a goal…</option>
                     {goalList.map((g: any) => <option key={g.id} value={g.id}>{g.title}</option>)}

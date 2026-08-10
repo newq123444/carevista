@@ -1,5 +1,6 @@
 // src/pages/ReportBuilder.tsx
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useReportTemplates, useCreateReportTemplate, useUpdateReportTemplate, useDeleteReportTemplate, useRunReport, useReportRuns, useReportDataSources } from '../hooks';
 
 const DATA_SOURCES = [
@@ -29,6 +30,7 @@ interface FilterRow {
 }
 
 export default function ReportBuilder() {
+  const { t } = useLang();
   const [view, setView] = useState<'templates' | 'designer' | 'history'>('templates');
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
 
@@ -225,8 +227,8 @@ export default function ReportBuilder() {
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn btn-primary btn-sm" onClick={() => handleRunTemplate(tmpl)}>Run</button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleEditTemplate(tmpl)}>Edit</button>
-                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteTemplate(tmpl.id)}>Delete</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleEditTemplate(tmpl)}>{t('Edit')}</button>
+                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteTemplate(tmpl.id)}>{t('Delete')}</button>
                     </div>
                   </div>
                 </div>
@@ -249,7 +251,7 @@ export default function ReportBuilder() {
                 <input type="text" value={designerForm.name} onChange={e => setDesignerForm({ ...designerForm, name: e.target.value })} placeholder="Monthly Residents Report" style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }} />
               </div>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Description</label>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('Description')}</label>
                 <input type="text" value={designerForm.description} onChange={e => setDesignerForm({ ...designerForm, description: e.target.value })} placeholder="Brief description..." style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }} />
               </div>
             </div>
@@ -312,14 +314,14 @@ export default function ReportBuilder() {
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Group By</label>
                 <select value={designerForm.group_by} onChange={e => setDesignerForm({ ...designerForm, group_by: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
-                  <option value="">None</option>
+                  <option value="">{t('None')}</option>
                   {designerForm.columns.map(col => <option key={col} value={col}>{col.replace(/_/g, ' ')}</option>)}
                 </select>
               </div>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Sort By</label>
                 <select value={designerForm.sort_by} onChange={e => setDesignerForm({ ...designerForm, sort_by: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
-                  <option value="">None</option>
+                  <option value="">{t('None')}</option>
                   {availableFields.map(f => <option key={f} value={f}>{f.replace(/_/g, ' ')}</option>)}
                 </select>
               </div>
@@ -347,7 +349,7 @@ export default function ReportBuilder() {
 
             {/* Schedule */}
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 8 }}>Schedule</label>
+              <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 8 }}>{t('Schedule')}</label>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.85rem', cursor: 'pointer' }}>
                   <input type="radio" name="schedule" value="one-time" checked={designerForm.schedule === 'one-time'} onChange={e => setDesignerForm({ ...designerForm, schedule: e.target.value })} />
@@ -359,9 +361,9 @@ export default function ReportBuilder() {
                 </label>
                 {designerForm.schedule === 'recurring' && (
                   <select value={designerForm.schedule_frequency} onChange={e => setDesignerForm({ ...designerForm, schedule_frequency: e.target.value })} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.85rem' }}>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
+                    <option value="daily">{t('Daily')}</option>
+                    <option value="weekly">{t('Weekly')}</option>
+                    <option value="monthly">{t('Monthly')}</option>
                   </select>
                 )}
               </div>
@@ -373,7 +375,7 @@ export default function ReportBuilder() {
                 {editingTemplate ? 'Update Template' : 'Save Template'}
               </button>
               <button className="btn btn-secondary" onClick={handleRunNow} disabled={runReport.isPending}>Run Now</button>
-              <button className="btn btn-ghost" onClick={() => { setView('templates'); setEditingTemplate(null); resetDesigner(); }}>Cancel</button>
+              <button className="btn btn-ghost" onClick={() => { setView('templates'); setEditingTemplate(null); resetDesigner(); }}>{t('Cancel')}</button>
             </div>
           </div>
         </div>
@@ -387,7 +389,7 @@ export default function ReportBuilder() {
             <div className="table-container">
               <table className="table">
                 <thead>
-                  <tr><th>Template</th><th>Run Date</th><th>Status</th><th>Row Count</th><th>Actions</th></tr>
+                  <tr><th>{t('Template')}</th><th>Run Date</th><th>{t('Status')}</th><th>Row Count</th><th>{t('Actions')}</th></tr>
                 </thead>
                 <tbody>
                   {(runs as any[]).length === 0 ? (
@@ -400,7 +402,7 @@ export default function ReportBuilder() {
                       <td>{run.row_count ?? '-'}</td>
                       <td>
                         {run.status === 'completed' && (
-                          <button className="btn btn-ghost btn-sm">Download</button>
+                          <button className="btn btn-ghost btn-sm">{t('Download')}</button>
                         )}
                       </td>
                     </tr>

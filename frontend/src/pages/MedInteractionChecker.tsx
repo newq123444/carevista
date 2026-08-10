@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useMedInteractionAlerts, useCheckMedInteractions, useResidentMedInteractions, useAcknowledgeMedInteraction, useResidents } from '../hooks';
 import type { MedicationInteraction } from '../types';
 
@@ -19,6 +20,7 @@ function SeverityBadge({ severity }: { severity: string }) {
 }
 
 export default function MedInteractionChecker() {
+  const { t } = useLang();
   const [selectedResidentId, setSelectedResidentId] = useState('');
 
   const { data: alertsData } = useMedInteractionAlerts();
@@ -61,7 +63,7 @@ export default function MedInteractionChecker() {
       {/* Dashboard Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,.1)' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Active Alerts</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>{t('Active Alerts')}</div>
           <div style={{ fontSize: '2rem', fontWeight: 700, color: activeAlerts.length > 0 ? '#dc2626' : '#10b981' }}>{activeAlerts.length}</div>
         </div>
         <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,.1)' }}>
@@ -69,7 +71,7 @@ export default function MedInteractionChecker() {
           <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1e293b' }}>{uniqueResidents}</div>
         </div>
         <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,.1)' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>Last Check</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>{t('Last Check')}</div>
           <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>{alerts.length > 0 ? new Date(alerts[0].flagged_at || alerts[0].created_at).toLocaleString() : 'Never'}</div>
         </div>
       </div>
@@ -90,7 +92,7 @@ export default function MedInteractionChecker() {
                     {alert.room_number && <span style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: 8 }}>Room {alert.room_number}</span>}
                   </div>
                   <button onClick={() => handleAcknowledge(alert.id)} disabled={acknowledgeMutation.isPending} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #d1d5db', background: '#fff', color: '#475569', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>
-                    Acknowledge
+                    {t('Acknowledge')}
                   </button>
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#1e293b', marginBottom: 4 }}>
@@ -119,7 +121,7 @@ export default function MedInteractionChecker() {
         <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, color: '#1e293b' }}>Resident Interaction Check</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', marginBottom: 20, flexWrap: 'wrap' }}>
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Select Resident</label>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>{t('Select Resident')}</label>
             <select value={selectedResidentId} onChange={e => setSelectedResidentId(e.target.value)} style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem', minWidth: 280 }}>
               <option value="">Choose a resident...</option>
               {residentList.map((r: any) => (
@@ -160,7 +162,7 @@ export default function MedInteractionChecker() {
                     )}
                     {interaction.status === 'active' && (
                       <button onClick={() => handleAcknowledge(interaction.id)} style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, border: '1px solid #d1d5db', background: '#fff', color: '#475569', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>
-                        Acknowledge
+                        {t('Acknowledge')}
                       </button>
                     )}
                   </div>

@@ -1,5 +1,6 @@
 // src/pages/WoundTracker.tsx — Wound Photography Timeline & Body Map
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useResidents, useActiveWounds, useCreateWound, useWoundTimeline, useWoundBodyMap, useUpdateWound } from '../hooks';
 import type { Resident, WoundAssessment } from '../types';
 
@@ -25,6 +26,7 @@ const BODY_REGIONS: { id: string; label: string; path: string }[] = [
 ];
 
 export default function WoundTracker() {
+  const { t } = useLang();
   const [tab, setTab] = useState<'active' | 'bodymap' | 'new'>('active');
   const { data: residents = [] } = useResidents();
   const { data: activeWounds } = useActiveWounds();
@@ -218,7 +220,7 @@ export default function WoundTracker() {
                             </div>
                             {item.photo_url && (
                               <div style={{ marginTop: 8 }}>
-                                <img src={item.photo_url} alt="Wound" style={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }} />
+                                <img src={item.photo_url} alt={t('Wound')} style={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }} />
                               </div>
                             )}
                             {item.notes && <div style={{ marginTop: 6, fontSize: '0.8rem', color: '#6b7280' }}>{item.notes}</div>}
@@ -319,7 +321,7 @@ export default function WoundTracker() {
               </div>
 
               <div style={{ marginBottom: 14 }}>
-                <label style={{ fontWeight: 500, display: 'block', marginBottom: 4, fontSize: '0.85rem' }}>Notes</label>
+                <label style={{ fontWeight: 500, display: 'block', marginBottom: 4, fontSize: '0.85rem' }}>{t('Notes')}</label>
                 <textarea value={formNotes} onChange={e => setFormNotes(e.target.value)} rows={3} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d1d5db', resize: 'vertical' }} />
               </div>
 

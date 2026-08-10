@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import {
   useComplianceActions, useCreateComplianceAction, useUpdateComplianceAction,
   useCqcDomainScores, useCalculateCqcScores, useGenerateEvidencePack,
@@ -51,6 +52,7 @@ export default function Compliance() {
 
 // ── Tab 1: CQC Readiness ──────────────────────────────────────────────────
 function CqcReadinessTab() {
+  const { t } = useLang();
   const { data: scores = [], isLoading: scoresLoading } = useCqcDomainScores();
   const { data: overview } = useComplianceOverview();
   const calculateScores = useCalculateCqcScores();
@@ -116,7 +118,7 @@ function CqcReadinessTab() {
                 {/* Strengths */}
                 {d.strengths && d.strengths.length > 0 && (
                   <div style={{ marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', marginBottom: 4 }}>Strengths</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', marginBottom: 4 }}>{t('Strengths')}</div>
                     {d.strengths.slice(0, 3).map((s, i) => (
                       <div key={i} style={{ fontSize: 12, color: '#15803d', paddingLeft: 10, marginBottom: 2 }}>+ {s}</div>
                     ))}
@@ -136,7 +138,7 @@ function CqcReadinessTab() {
                 {/* Recommendations */}
                 {d.recommendations && d.recommendations.length > 0 && (
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#0d9488', marginBottom: 4 }}>Recommendations</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#0d9488', marginBottom: 4 }}>{t('Recommendations')}</div>
                     {d.recommendations.slice(0, 3).map((r, i) => (
                       <div key={i} style={{ fontSize: 12, color: '#0d9488', paddingLeft: 10, marginBottom: 2 }}>&#8226; {r}</div>
                     ))}
@@ -256,6 +258,7 @@ function EvidencePacksTab() {
 
 // ── Tab 3: Policy Reviews ─────────────────────────────────────────────────
 function PolicyReviewsTab() {
+  const { t } = useLang();
   const { data: reviews = [], isLoading } = usePolicyReviews();
   const { data: policies = [] } = usePolicies();
   const createReview = useCreatePolicyReview();
@@ -286,7 +289,7 @@ function PolicyReviewsTab() {
           <div className="card-body">
             <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
-                <label className="form-label">Policy</label>
+                <label className="form-label">{t('Policy')}</label>
                 <select className="form-input" required value={form.policy_id} onChange={e => setForm(f => ({ ...f, policy_id: e.target.value }))}>
                   <option value="">Select policy...</option>
                   {policyList.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
@@ -301,7 +304,7 @@ function PolicyReviewsTab() {
                 <textarea className="form-input" rows={2} value={form.changes_made} onChange={e => setForm(f => ({ ...f, changes_made: e.target.value }))} style={{ resize: 'vertical' }} />
               </div>
               <div style={{ gridColumn: '1/-1' }}>
-                <label className="form-label">Notes</label>
+                <label className="form-label">{t('Notes')}</label>
                 <textarea className="form-input" rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ resize: 'vertical' }} />
               </div>
               <div style={{ gridColumn: '1/-1' }}>
@@ -326,7 +329,7 @@ function PolicyReviewsTab() {
                   <th style={{ padding: '8px 14px', textAlign: 'left', fontWeight: 600 }}>Reviewer</th>
                   <th style={{ padding: '8px 14px', textAlign: 'center', fontWeight: 600 }}>Review Date</th>
                   <th style={{ padding: '8px 14px', textAlign: 'center', fontWeight: 600 }}>Next Review</th>
-                  <th style={{ padding: '8px 14px', textAlign: 'center', fontWeight: 600 }}>Status</th>
+                  <th style={{ padding: '8px 14px', textAlign: 'center', fontWeight: 600 }}>{t('Status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -433,6 +436,7 @@ function InspectionPrepTab() {
 
 // ── Tab 5: Actions ────────────────────────────────────────────────────────
 function ActionsTab() {
+  const { t } = useLang();
   const { data: actions = [], isLoading } = useComplianceActions();
   const createAction = useCreateComplianceAction();
   const updateAction = useUpdateComplianceAction();
@@ -469,11 +473,11 @@ function ActionsTab() {
           <div className="card-body">
             <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div style={{ gridColumn: '1/-1' }}><label className="form-label">Title *</label><input type="text" className="form-input" required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Action title..." /></div>
-              <div><label className="form-label">Domain</label><select className="form-input" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>{['Safe', 'Effective', 'Caring', 'Responsive', 'Well-led'].map(d => <option key={d} value={d}>{d}</option>)}</select></div>
-              <div><label className="form-label">Priority</label><select className="form-input" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>{PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
+              <div><label className="form-label">{t('Domain')}</label><select className="form-input" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>{['Safe', 'Effective', 'Caring', 'Responsive', 'Well-led'].map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+              <div><label className="form-label">{t('Priority')}</label><select className="form-input" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>{PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
               <div><label className="form-label">Due Date</label><input type="date" className="form-input" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
               <div></div>
-              <div style={{ gridColumn: '1/-1' }}><label className="form-label">Description</label><textarea className="form-input" rows={3} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ resize: 'vertical' }} /></div>
+              <div style={{ gridColumn: '1/-1' }}><label className="form-label">{t('Description')}</label><textarea className="form-input" rows={3} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ resize: 'vertical' }} /></div>
               <div style={{ gridColumn: '1/-1' }}><button type="submit" className="btn btn-primary" disabled={createAction.isPending}>{createAction.isPending ? 'Saving...' : 'Create Action'}</button></div>
             </form>
           </div>

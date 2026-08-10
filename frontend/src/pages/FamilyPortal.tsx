@@ -1,5 +1,6 @@
 // src/pages/FamilyPortal.tsx
 import React, { useState, useRef } from 'react';
+import { useLang } from '../i18n';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import {
@@ -95,6 +96,7 @@ export default function FamilyPortal() {
 
 // ── Dashboard Tab ─────────────────────────────────────────────────────────
 function DashboardTab({ residentId }: { residentId: string }) {
+  const { t } = useLang();
   const { data, isLoading } = useFamilyDashboard(residentId);
   const dashboard = data as FamilyDashboardData | undefined;
 
@@ -131,7 +133,7 @@ function DashboardTab({ residentId }: { residentId: string }) {
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
             <div style={{ textAlign: 'center', padding: '8px 16px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: '#16a34a' }}>{dashboard.latestWellbeing?.mood || 'N/A'}</div>
-              <div style={{ fontSize: 11, color: '#15803d' }}>Wellbeing</div>
+              <div style={{ fontSize: 11, color: '#15803d' }}>{t('Wellbeing')}</div>
             </div>
             <div style={{ textAlign: 'center', padding: '8px 16px', borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: '#0d9488' }}>{dashboard.unreadMessageCount}</div>
@@ -202,6 +204,7 @@ function DashboardTab({ residentId }: { residentId: string }) {
 
 // ── Daily Summary Tab ─────────────────────────────────────────────────────
 function DailySummaryTab({ residentId }: { residentId: string }) {
+  const { t } = useLang();
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const { data: summary, isLoading } = useFamilyDailySummary(residentId, date);
   const generateMutation = useGenerateDailySummary();
@@ -439,6 +442,7 @@ function PhotosTab({ residentId, residents }: { residentId: string; residents: R
 
 // ── Messages Tab ──────────────────────────────────────────────────────────
 function MessagesTab({ residents }: { residents: Resident[] }) {
+  const { t } = useLang();
   const qc = useQueryClient();
   const [msgTab, setMsgTab] = useState<'inbox' | 'sent'>('inbox');
   const [residentFilter, setFilter] = useState('');
@@ -532,11 +536,11 @@ function MessagesTab({ residents }: { residents: Resident[] }) {
                             placeholder="Write a reply…" style={{ flex: 1, padding: '7px 11px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }} />
                           <button onClick={() => replyText.trim() && replyMutation.mutate({ id: m.id, body: replyText.trim() }, { onSuccess: () => { setReplyText(''); setReplyTo(null); } })}
                             disabled={!replyText.trim() || replyMutation.isPending}
-                            style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: '#0d9488', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Send</button>
-                          <button onClick={() => { setReplyTo(null); setReplyText(''); }} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2, #f3f4f6)', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+                            style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: '#0d9488', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{t('Send')}</button>
+                          <button onClick={() => { setReplyTo(null); setReplyText(''); }} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2, #f3f4f6)', cursor: 'pointer', fontSize: 12 }}>{t('Cancel')}</button>
                         </div>
                       ) : (
-                        <button onClick={() => { setReplyTo(m.id); setReplyText(''); }} style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#0d9488', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Reply</button>
+                        <button onClick={() => { setReplyTo(m.id); setReplyText(''); }} style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#0d9488', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{t('Reply')}</button>
                       )}
                     </div>
                   )}
@@ -554,6 +558,7 @@ function MessagesTab({ residents }: { residents: Resident[] }) {
 
 // ── Compose Modal ─────────────────────────────────────────────────────────
 function ComposeModal({ residents, onClose }: { residents: Resident[]; onClose: () => void }) {
+  const { t } = useLang();
   const [form, setForm] = useState({ residentId: '', recipientName: '', recipientEmail: '', subject: '', body: '' });
   const sendMessage = useSendFamilyMessage();
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
@@ -602,7 +607,7 @@ function ComposeModal({ residents, onClose }: { residents: Resident[]; onClose: 
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={sendMessage.isPending}>{sendMessage.isPending ? 'Sending...' : '✉️ Send Message'}</button>
           </div>
         </form>

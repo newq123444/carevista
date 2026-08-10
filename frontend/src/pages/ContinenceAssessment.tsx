@@ -1,5 +1,6 @@
 // src/pages/ContinenceAssessment.tsx — Continence Care & Pattern Analysis
 import React, { useState, useMemo } from 'react';
+import { useLang } from '../i18n';
 import { RecordView } from '../components/ui';
 import { useResidents, useLogContinence, useContinenceLog, useContinencePatterns, useContinenceAssessment, useCreateContinenceAssessment, useContinenceOverview } from '../hooks';
 import type { Resident, ContinenceLog, ContinencePattern, ContinenceAssessment as ContinenceAssessmentType } from '../types';
@@ -23,6 +24,7 @@ const PAD_STATUS_OPTIONS = [
 ];
 
 export default function ContinenceAssessment() {
+  const { t } = useLang();
   const { data: residents = [] } = useResidents();
   const [selectedResident, setSelectedResident] = useState('');
   const { data: logs } = useContinenceLog(selectedResident, 14);
@@ -142,7 +144,7 @@ export default function ContinenceAssessment() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div>
-                <label style={{ fontWeight: 500, display: 'block', marginBottom: 4, fontSize: '0.85rem' }}>Time</label>
+                <label style={{ fontWeight: 500, display: 'block', marginBottom: 4, fontSize: '0.85rem' }}>{t('Time')}</label>
                 <input type="time" value={eventTime} onChange={e => setEventTime(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d1d5db' }} />
               </div>
               <div>
@@ -160,7 +162,7 @@ export default function ContinenceAssessment() {
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontWeight: 500, display: 'block', marginBottom: 4, fontSize: '0.85rem' }}>Notes</label>
+              <label style={{ fontWeight: 500, display: 'block', marginBottom: 4, fontSize: '0.85rem' }}>{t('Notes')}</label>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Dignity-focused observations..." style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d1d5db', resize: 'vertical' }} />
             </div>
 
@@ -301,8 +303,8 @@ export default function ContinenceAssessment() {
                   <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600 }}>Event</th>
                   <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600 }}>Pad Status</th>
                   <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600 }}>Location</th>
-                  <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600 }}>Staff</th>
-                  <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600 }}>Notes</th>
+                  <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600 }}>{t('Staff')}</th>
+                  <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600 }}>{t('Notes')}</th>
                 </tr>
               </thead>
               <tbody>

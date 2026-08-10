@@ -1,5 +1,6 @@
 // src/pages/AiCarePlanWriter.tsx - AI Care Plan Writer
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 
@@ -35,6 +36,7 @@ export default function AiCarePlanWriter() {
 }
 
 function AiCarePlanWriterInner() {
+  const { t } = useLang();
   const [tab, setTab] = useState<'generate' | 'plans'>('generate');
   const [selectedResident, setSelectedResident] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
@@ -122,7 +124,7 @@ function AiCarePlanWriterInner() {
                       <button onClick={() => approveMutation.mutate({ id: selectedPlan.id, status: 'rejected' })} style={{ padding: '8px 16px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>✗ Reject</button>
                     </>
                   )}
-                  <button onClick={() => setSelectedPlan(null)} style={{ padding: '8px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Close</button>
+                  <button onClick={() => setSelectedPlan(null)} style={{ padding: '8px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>{t('Close')}</button>
                 </div>
               </div>
 

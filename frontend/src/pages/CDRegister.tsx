@@ -1,5 +1,6 @@
 // src/pages/CDRegister.tsx
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useResidents, useColleagues } from '../hooks';
@@ -7,6 +8,7 @@ import { formatDateTime } from '../utils/formatters';
 import type { Resident } from '../types';
 
 export default function CDRegister() {
+  const { t } = useLang();
   const qc = useQueryClient();
   const { data: rawResidents = [] } = useResidents({ active: true });
   const { data: rawStaff = [] }     = useColleagues();
@@ -61,18 +63,18 @@ export default function CDRegister() {
             <thead>
               <tr style={{ borderBottom:'2px solid var(--border)', background:'var(--surface-2)' }}>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600, whiteSpace:'nowrap' }}>Date & Time</th>
-                <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>Resident</th>
-                <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>Medication</th>
-                <th style={{ padding:'10px 14px', textAlign:'center', fontWeight:600 }}>Dose</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>{t('Resident')}</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>{t('Medication')}</th>
+                <th style={{ padding:'10px 14px', textAlign:'center', fontWeight:600 }}>{t('Dose')}</th>
                 <th style={{ padding:'10px 14px', textAlign:'center', fontWeight:600 }}>Qty</th>
                 <th style={{ padding:'10px 14px', textAlign:'center', fontWeight:600 }}>Balance</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>Administered By</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>Witnessed By</th>
-                <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>Notes</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>{t('Notes')}</th>
               </tr>
             </thead>
             <tbody>
-              {isLoading?(<tr><td colSpan={9} style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>Loading…</td></tr>)
+              {isLoading?(<tr><td colSpan={9} style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>{t('Loading…')}</td></tr>)
                :entries.length===0?(<tr><td colSpan={9} style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>No CD records found</td></tr>)
                :entries.map((e:any)=>(
                 <tr key={e.id} style={{ borderBottom:'1px solid var(--border)' }}>
@@ -136,10 +138,10 @@ export default function CDRegister() {
                     </div>
                   </div>
                 </div>
-                <div className="form-group"><label className="form-label">Notes</label><textarea className="form-input" rows={2} value={form.notes} onChange={e=>set('notes',e.target.value)} placeholder="Resident response, any concerns…"/></div>
+                <div className="form-group"><label className="form-label">{t('Notes')}</label><textarea className="form-input" rows={2} value={form.notes} onChange={e=>set('notes',e.target.value)} placeholder="Resident response, any concerns…"/></div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={()=>setShowRecord(false)}>Cancel</button>
+                <button type="button" className="btn btn-secondary" onClick={()=>setShowRecord(false)}>{t('Cancel')}</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>{saving?'Saving…':'✅ Confirm & Sign'}</button>
               </div>
             </form>

@@ -2,12 +2,14 @@
 // Merged Task Board + Care Notes — one screen for carers
 // Ad-hoc notes always available via "+ New Note" button
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLang } from '../../i18n';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import {
   useDashboard, useResidents, useCreateNote, useColleagues,
   useTasks, useCompleteTask, useDeferTask, useStartTask, useReleaseTask, useGenerateTasks,
-  useWellbeingOverview, useHome
+  useWellbeingOverview, useHome,
+  useMenuAdmin, useCreateMealOrder,
 } from '../../hooks';
 import { useTaskSSE } from '../../hooks/useSSE';
 import { formatAge, todayISO } from '../../utils/formatters';
@@ -353,6 +355,7 @@ interface ClinicalFormProps {
 }
 
 function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=false }: ClinicalFormProps) {
+  const { t } = useLang();
   const { user } = useAuthStore();
   const { data: rawStaff = [] } = useColleagues();
   const staff: any[] = Array.isArray(rawStaff) ? rawStaff : [];
@@ -633,8 +636,9 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
                     {MEAL_TIMES.map(m => { const active=(note.meal||defaultMeal)===m.value; return <button key={m.value} onClick={()=>set('meal',m.value)} style={{ padding:'7px 14px',borderRadius:20,border:`2px solid ${active?'#10b981':'var(--border)'}`,background:active?'#f0fdf4':'white',color:active?'#15803d':'var(--text-secondary)',cursor:'pointer',fontSize:13,fontWeight:active?700:400,transition:'all 120ms' }}>{m.label}</button>; })}
                   </div>
                 </div>
+                <MealChoiceToKitchen residentId={resident.id} meal={note.meal || defaultMeal} />
                 <div style={{ marginBottom: 14 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Appetite</label>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>{t('Appetite')}</label>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {APPETITE_OPTIONS.map(a => { const active=note.appetite===a.value; return <button key={a.value} onClick={()=>set('appetite',active?'':a.value)} style={{ padding:'8px 14px',borderRadius:20,border:`2px solid ${active?'#10b981':'var(--border)'}`,background:active?'#dcfce7':'white',color:active?'#15803d':'var(--text-secondary)',cursor:'pointer',fontSize:13,fontWeight:active?700:400,transition:'all 120ms' }}>{a.label}</button>; })}
                   </div>
@@ -820,7 +824,7 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
             ))}
             <div style={{ display:'flex', gap:8, marginTop:8 }}>
               <button type="button" onClick={handleDefer} disabled={!deferReason.trim()||deferTask.isPending} className="btn btn-primary" style={{ flex:1, background:'#d97706', borderColor:'#d97706' }}>{deferTask.isPending?'Deferring…':'↩️ Confirm Defer'}</button>
-              <button type="button" onClick={() => setMode('complete')} className="btn btn-secondary" style={{ flex:1 }}>Back</button>
+              <button type="button" onClick={() => setMode('complete')} className="btn btn-secondary" style={{ flex:1 }}>{t('Back')}</button>
             </div>
           </div>
         )}
@@ -877,6 +881,7 @@ function WellbeingAlertWidget({ residents }: { residents: Resident[] }) {
 
 // ── Main CarerDashboard ───────────────────────────────────────────────────
 export default function CarerDashboard() {
+  const { t } = useLang();
   const { user }            = useAuthStore();
   const { data: dashData }  = useDashboard();
   const { data: rawResidents = [] } = useResidents({ active: true });
@@ -1068,7 +1073,7 @@ export default function CarerDashboard() {
         <div style={{ display:'flex', gap:6 }}>
           <input type="text" placeholder="🔍 Search resident..." value={search} onChange={e=>setSearch(e.target.value)}
             style={{ padding:'6px 10px', borderRadius:8, border:'1px solid var(--border)', fontSize:12, width:140, background:'var(--surface-2)' }} />
-          <button className="btn btn-ghost btn-sm" onClick={()=>refetch()} style={{ fontSize:12 }}>Refresh</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>refetch()} style={{ fontSize:12 }}>{t('Refresh')}</button>
         </div>
       </div>
 
@@ -1347,7 +1352,7 @@ export default function CarerDashboard() {
             <div style={{ display:'flex', gap:6 }}>
               <input type="text" placeholder="🔍 Search resident…" value={search} onChange={e=>setSearch(e.target.value)}
                 style={{ padding:'6px 10px', borderRadius:8, border:'1px solid var(--border)', fontSize:12, width:140, background:'var(--surface-2)' }} />
-              <button className="btn btn-ghost btn-sm" onClick={()=>refetch()} style={{ fontSize:12 }}>Refresh</button>
+              <button className="btn btn-ghost btn-sm" onClick={()=>refetch()} style={{ fontSize:12 }}>{t('Refresh')}</button>
             </div>
           </div>
 
@@ -1524,6 +1529,66 @@ export default function CarerDashboard() {
         </span>
       </div>
       </>
+      )}
+    </div>
+  );
+}
+
+// ── Meal choice -> kitchen ────────────────────────────────────────────────
+// Lets the carer record what the resident chose; the order appears instantly
+// on the kitchen's service list with texture, portion and allergy flags.
+const KITCHEN_MEAL: Record<string, string> = {
+  breakfast: 'breakfast', morning_snack: 'snack', lunch: 'lunch',
+  afternoon_tea: 'snack', supper: 'dinner', evening_snack: 'snack',
+};
+
+function MealChoiceToKitchen({ residentId, meal }: { residentId: string; meal: string }) {
+  const { t } = useLang();
+  const kitchenMeal = KITCHEN_MEAL[meal] || 'lunch';
+  const { data: menu = [] } = useMenuAdmin();
+  const createOrder = useCreateMealOrder();
+  const [choice, setChoice] = useState('');
+  const [portion, setPortion] = useState('regular');
+  const [request, setRequest] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const options = (Array.isArray(menu) ? menu : []).filter((o: any) => o.meal_type === kitchenMeal && o.active !== false);
+
+  const send = () => {
+    if (!choice) return;
+    const opt = options.find((o: any) => o.id === choice);
+    createOrder.mutate(
+      { resident_id: residentId, meal_type: kitchenMeal, menu_option_id: choice,
+        choice_name: opt?.name, texture: opt?.texture, portion_size: portion, special_request: request || null },
+      { onSuccess: () => { setSent(true); setTimeout(() => setSent(false), 2500); } }
+    );
+  };
+
+  return (
+    <div style={{ marginBottom: 14, padding: 12, borderRadius: 10, background: '#fff', border: '1px dashed #86efac' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+        Send choice to kitchen ({kitchenMeal})
+      </div>
+      {options.length === 0 ? (
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>No {kitchenMeal} options on the menu yet — a manager can add them in Menu Setup.</div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <select value={choice} onChange={e => setChoice(e.target.value)} style={{ flex: '2 1 200px', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }}>
+              <option value="">{t('Choose a dish…')}</option>
+              {options.map((o: any) => <option key={o.id} value={o.id}>{o.name}{o.texture && o.texture !== 'normal' ? ` (${o.texture})` : ''}</option>)}
+            </select>
+            <select value={portion} onChange={e => setPortion(e.target.value)} style={{ flex: '1 1 110px', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }}>
+              <option value="small">{t('Small')}</option><option value="regular">{t('Regular')}</option><option value="large">{t('Large')}</option>
+            </select>
+          </div>
+          <input value={request} onChange={e => setRequest(e.target.value)} placeholder="Special request (optional) — e.g. no gravy, extra soft"
+            style={{ width: '100%', marginTop: 8, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }} />
+          <button type="button" onClick={send} disabled={!choice || createOrder.isPending}
+            style={{ marginTop: 8, padding: '8px 16px', borderRadius: 8, border: 'none', background: sent ? '#16a34a' : '#10b981', color: '#fff', fontWeight: 700, fontSize: 13, cursor: choice ? 'pointer' : 'not-allowed', opacity: choice ? 1 : 0.5 }}>
+            {sent ? '✓ Sent to kitchen' : createOrder.isPending ? 'Sending…' : 'Send to kitchen'}
+          </button>
+        </>
       )}
     </div>
   );

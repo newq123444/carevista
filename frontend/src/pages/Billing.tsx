@@ -1,5 +1,6 @@
 // src/pages/Billing.tsx
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useInvoices, useCreateInvoice, useUpdateInvoiceStatus, useResidents } from '../hooks';
 import { formatDate, formatPence, FUNDING_LABELS } from '../utils/formatters';
 import type { Invoice, Resident } from '../types';
@@ -10,6 +11,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function Billing() {
+  const { t } = useLang();
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [updating, setUpdating] = useState<Invoice | null>(null);
@@ -80,7 +82,7 @@ export default function Billing() {
         <div className="table-container">
           <table className="table">
             <thead>
-              <tr><th>Invoice #</th><th>Resident</th><th>Period</th><th>Amount</th><th>Payer</th><th>Status</th><th>Due Date</th><th>Actions</th></tr>
+              <tr><th>Invoice #</th><th>{t('Resident')}</th><th>Period</th><th>{t('Amount')}</th><th>Payer</th><th>{t('Status')}</th><th>Due Date</th><th>{t('Actions')}</th></tr>
             </thead>
             <tbody>
               {isLoading ? (
@@ -98,7 +100,7 @@ export default function Billing() {
                     <td><span className={`badge ${STATUS_BADGE[inv.status]}`} style={{ textTransform: 'capitalize' }}>{inv.status}</span></td>
                     <td style={{ fontSize: '0.82rem', color: inv.status === 'overdue' ? 'var(--danger)' : undefined }}>{formatDate(inv.due_date)}</td>
                     <td>
-                      <button className="btn btn-secondary btn-sm" onClick={() => setUpdating(inv)}>Update</button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setUpdating(inv)}>{t('Update')}</button>
                     </td>
                   </tr>
                 ))
@@ -115,6 +117,7 @@ export default function Billing() {
 }
 
 function CreateInvoiceModal({ residents, onClose }: { residents: Resident[]; onClose: () => void }) {
+  const { t } = useLang();
   const create = useCreateInvoice();
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
@@ -174,10 +177,10 @@ function CreateInvoiceModal({ residents, onClose }: { residents: Resident[]; onC
               </div>
             </div>
             <div className="form-group"><label className="form-label">Due Date</label><input className="form-input" type="date" value={form.due_date} onChange={e => set('due_date', e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Notes</label><textarea className="form-input" rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">{t('Notes')}</label><textarea className="form-input" rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} /></div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={create.isPending}>{create.isPending ? 'Creating…' : 'Create Invoice'}</button>
           </div>
         </form>
@@ -187,6 +190,7 @@ function CreateInvoiceModal({ residents, onClose }: { residents: Resident[]; onC
 }
 
 function UpdateInvoiceModal({ invoice, onClose }: { invoice: Invoice; onClose: () => void }) {
+  const { t } = useLang();
   const update = useUpdateInvoiceStatus();
   const [form, setForm] = useState({ status: invoice.status, paid_date: invoice.paid_date?.slice(0, 10) || '', notes: invoice.notes || '' });
 
@@ -202,18 +206,18 @@ function UpdateInvoiceModal({ invoice, onClose }: { invoice: Invoice; onClose: (
         <form onSubmit={submit}>
           <div className="modal-body">
             <div style={{ marginBottom: 14, fontSize: '0.87rem' }}><strong>{invoice.invoice_number}</strong> · {invoice.resident_name} · {formatPence(invoice.total_pence)}</div>
-            <div className="form-group"><label className="form-label">Status</label>
+            <div className="form-group"><label className="form-label">{t('Status')}</label>
               <select className="form-input" value={form.status} onChange={e => setForm((f: any) => ({ ...f, status: e.target.value }))}>
-                <option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="cancelled">Cancelled</option>
+                <option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">{t('Paid')}</option><option value="overdue">{t('Overdue')}</option><option value="cancelled">{t('Cancelled')}</option>
               </select>
             </div>
             {form.status === 'paid' && (
               <div className="form-group"><label className="form-label">Paid Date</label><input className="form-input" type="date" value={form.paid_date} onChange={e => setForm(f => ({ ...f, paid_date: e.target.value }))} /></div>
             )}
-            <div className="form-group"><label className="form-label">Notes</label><textarea className="form-input" rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
+            <div className="form-group"><label className="form-label">{t('Notes')}</label><textarea className="form-input" rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={update.isPending}>{update.isPending ? 'Saving…' : 'Save'}</button>
           </div>
         </form>

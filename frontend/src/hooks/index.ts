@@ -17,7 +17,7 @@ import {
   moodEnvironmentApi, photoFrameApi, sleepTrackerApi, intergenerationalApi,
   rehabGoalsApi, celebrationsApi, housekeepingApi, taskTemplatesApi,
   menuAdminApi, housekeepingAdminApi, homeApi,
-  analyticsApi, familyAccessApi, portalApi,
+  analyticsApi, familyAccessApi, portalApi, kitchenApi,
 } from '../services/api';
 import { toast } from '../utils/toast';
 
@@ -671,6 +671,9 @@ export function useScheduleInterview() {
 export function useUpdateInterviewOutcome() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: ({ id, data }: { id: string; data: object }) => recruitmentApi.updateInterviewOutcome(id, data).then(r => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['recruitment'] }); toast.success('Interview outcome recorded'); }, onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to record outcome') });
+}
+export function useDbsChecks() {
+  return useQuery({ queryKey: ['recruitment', 'dbs'], queryFn: () => recruitmentApi.listDbsChecks().then(r => r.data) });
 }
 export function useCreateDbsCheck() {
   const qc = useQueryClient();
@@ -1447,4 +1450,43 @@ export function useSendPortalMessage(rid?: string) {
 }
 export function usePortalHighlights(rid?: string) {
   return useQuery({ queryKey: ['portal-highlights', rid], queryFn: () => portalApi.careHighlights(rid).then(r => r.data) });
+}
+
+// ── Kitchen ───────────────────────────────────────────────────────────────
+export function useKitchenDashboard(date?: string) {
+  return useQuery({ queryKey: ['kitchen', 'dash', date], queryFn: () => kitchenApi.dashboard(date).then(r => r.data), refetchInterval: 60_000 });
+}
+export function useKitchenChecklist(date?: string) {
+  return useQuery({ queryKey: ['kitchen', 'checklist', date], queryFn: () => kitchenApi.checklist(date).then(r => r.data) });
+}
+export function useSetKitchenCheck() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (d: object) => kitchenApi.setCheck(d).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['kitchen'] }),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed') });
+}
+export function useKitchenTemps(date?: string) {
+  return useQuery({ queryKey: ['kitchen', 'temps', date], queryFn: () => kitchenApi.temperatures(date).then(r => r.data) });
+}
+export function useLogKitchenTemp() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (d: object) => kitchenApi.logTemp(d).then(r => r.data),
+    onSuccess: (row: any) => { qc.invalidateQueries({ queryKey: ['kitchen'] });
+      if (row?.withinRange === false) toast.error('Out of safe range — record corrective action'); else toast.success('Temperature logged'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed') });
+}
+export function useMealOrders(params?: object) {
+  return useQuery({ queryKey: ['kitchen', 'orders', params], queryFn: () => kitchenApi.orders(params).then(r => r.data), refetchInterval: 60_000 });
+}
+export function useCreateMealOrder() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (d: object) => kitchenApi.createOrder(d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['kitchen'] }); toast.success('Sent to kitchen'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed') });
+}
+export function useUpdateMealOrder() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, data }: { id: string; data: object }) => kitchenApi.updateOrder(id, data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['kitchen'] }),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed') });
 }

@@ -1,5 +1,6 @@
 // src/pages/Housekeeping.tsx — cleaner-facing housekeeping checklists
 import React, { useMemo, useState } from 'react';
+import { useLang } from './i18n';
 import { useAuthStore } from '../store/auth.store';
 import {
   useHousekeepingTasks, useHousekeepingRooms, useHousekeepingCommunalAreas,
@@ -18,6 +19,7 @@ const CATEGORIES: { key: Category; label: string; icon: string; roomBased: boole
 const today = () => new Date().toISOString().slice(0, 10);
 
 export default function Housekeeping() {
+  const { t } = useLang();
   const { user } = useAuthStore();
   const defaultInitials = `${(user as any)?.firstName?.[0] || ''}${(user as any)?.lastName?.[0] || ''}`.toUpperCase();
 
@@ -109,7 +111,7 @@ export default function Housekeeping() {
           <div>
             {meta.roomBased ? (
               <>
-                <label style={label}>Room</label>
+                <label style={label}>{t('Room')}</label>
                 <select style={input} value={roomNumber} onChange={e => onPickRoom(e.target.value)}>
                   <option value="">Select a room…</option>
                   {rooms.map((r: any) => (

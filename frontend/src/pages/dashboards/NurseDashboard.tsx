@@ -1,5 +1,6 @@
 // src/pages/dashboards/NurseDashboard.tsx
 import React from 'react';
+import { useLang } from '../../i18n';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import { useDashboard, useEmar, useIncidents } from '../../hooks';
@@ -7,6 +8,7 @@ import { formatDate, todayISO } from '../../utils/formatters';
 import type { Incident } from '../../types';
 
 export default function NurseDashboard() {
+  const { t } = useLang();
   const { user } = useAuthStore();
   const { data: dashData } = useDashboard();
   const { data: emarRaw } = useEmar(todayISO());
@@ -66,7 +68,7 @@ export default function NurseDashboard() {
         <div className="card">
           <div className="card-header">
             <span className="card-title">💊 Today's eMAR Snapshot</span>
-            <Link to="/emar" className="btn btn-primary btn-sm">Open eMAR →</Link>
+            <Link to="/emar" className="btn btn-primary btn-sm">{t('Open eMAR')} →</Link>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
             {emarData.slice(0, 6).map((entry: any) => {
@@ -99,7 +101,7 @@ export default function NurseDashboard() {
         <div className="card">
           <div className="card-header">
             <span className="card-title">⚠️ Open Incidents</span>
-            <Link to="/incidents" className="btn btn-ghost btn-sm">View All →</Link>
+            <Link to="/incidents" className="btn btn-ghost btn-sm">{t('View All')} →</Link>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
             {(incidents as Incident[]).length === 0 ? (

@@ -1,9 +1,11 @@
 // src/pages/HomeSettings.tsx — care home profile & settings (manager)
 import React, { useEffect, useState } from 'react';
+import { useLang } from '../i18n';
 import { useHome, useUpdateHome } from '../hooks';
 import { SectionCard, PageHeading } from '../components/ui';
 
 export default function HomeSettings() {
+  const { t } = useLang();
   const { data: home, isLoading } = useHome();
   const update = useUpdateHome();
   const [f, setF] = useState<any>({});
@@ -22,7 +24,7 @@ export default function HomeSettings() {
 
   const input: React.CSSProperties = { width: '100%', padding: '9px 11px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--surface)', color: 'var(--text-primary)' };
   const label: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 };
-  if (isLoading) return <div style={{ padding: 24, color: 'var(--text-muted)' }}>Loading…</div>;
+  if (isLoading) return <div style={{ padding: 24, color: 'var(--text-muted)' }}>{t('Loading…')}</div>;
 
   return (
     <div style={{ padding: 4, maxWidth: 760, margin: '0 auto' }}>

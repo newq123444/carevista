@@ -1,5 +1,6 @@
 // src/pages/CareTaskManager.tsx — manage home care tasks + personalise per resident
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useTaskTemplates, useCreateTaskTemplate, useUpdateTaskTemplate, useDeleteTaskTemplate,
   useResidents, useResidentCarePlan, useSetTaskExclusion } from '../hooks';
 import { SectionCard, PageHeading } from '../components/ui';
@@ -14,6 +15,7 @@ const APPLIES = [
 const blank = { name: '', icon: '📋', category: 'personal_care', shift: 'day', due_time: '09:00', window_mins: 120, applies_to: 'all', frequency: 'daily', day_of_week: 1, sort_order: 50, resident_id: null as string | null };
 
 export default function CareTaskManager() {
+  const { t } = useLang();
   const [mode, setMode] = useState<'home' | 'resident'>('home');
   const [residentId, setResidentId] = useState('');
   const { data: templates = [], isLoading } = useTaskTemplates();
@@ -48,7 +50,7 @@ export default function CareTaskManager() {
 
       {mode === 'home' && (
         <SectionCard title="Home-wide tasks" action={<button onClick={() => openNew(null)} style={{ padding: '7px 14px', borderRadius: 8, background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>+ Add task</button>}>
-          {isLoading && <div style={{ color: 'var(--text-muted)' }}>Loading…</div>}
+          {isLoading && <div style={{ color: 'var(--text-muted)' }}>{t('Loading…')}</div>}
           {active.map((t: any) => (
             <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderTop: '1px solid var(--border)' }}>
               <span style={{ fontSize: 20, width: 26, textAlign: 'center' }}>{t.icon}</span>
@@ -56,8 +58,8 @@ export default function CareTaskManager() {
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{t.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t.due_time?.slice(0, 5)} · {t.frequency === 'weekly' ? 'Weekly' : 'Daily'} · {(APPLIES.find(a => a.value === t.applies_to)?.label) || t.applies_to}</div>
               </div>
-              <button onClick={() => openEdit(t)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>Edit</button>
-              <button onClick={() => { if (confirm(`Remove "${t.name}"?`)) remove.mutate(t.id); }} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--danger)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>Remove</button>
+              <button onClick={() => openEdit(t)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>{t('Edit')}</button>
+              <button onClick={() => { if (confirm(`Remove "${t.name}"?`)) remove.mutate(t.id); }} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--danger)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>{t('Remove')}</button>
             </div>
           ))}
         </SectionCard>
@@ -95,8 +97,8 @@ export default function CareTaskManager() {
                   <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderTop: '1px solid var(--border)' }}>
                     <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{t.icon}</span>
                     <div style={{ flex: 1, fontSize: 14 }}>{t.name} <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>· {t.due_time?.slice(0, 5)} · {t.frequency === 'weekly' ? 'Weekly' : 'Daily'}</span></div>
-                    <button onClick={() => openEdit(t)} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>Edit</button>
-                    <button onClick={() => { if (confirm('Remove this task?')) remove.mutate(t.id, { onSuccess: () => plan.refetch?.() }); }} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--danger)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>Remove</button>
+                    <button onClick={() => openEdit(t)} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>{t('Edit')}</button>
+                    <button onClick={() => { if (confirm('Remove this task?')) remove.mutate(t.id, { onSuccess: () => plan.refetch?.() }); }} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--danger)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>{t('Remove')}</button>
                   </div>
                 ))}
               </SectionCard>
@@ -117,13 +119,13 @@ export default function CareTaskManager() {
               <div><label style={label}>Icon</label><input style={input} value={form.icon} maxLength={4} onChange={e => set('icon', e.target.value)} /></div>
               <div><label style={label}>Category</label><select style={input} value={form.category} onChange={e => set('category', e.target.value)}>{CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}</select></div>
               <div><label style={label}>Due time</label><input type="time" style={input} value={form.due_time?.slice(0, 5)} onChange={e => set('due_time', e.target.value)} /></div>
-              <div><label style={label}>Shift</label><select style={input} value={form.shift} onChange={e => set('shift', e.target.value)}>{SHIFTS.map(sh => <option key={sh} value={sh}>{sh}</option>)}</select></div>
+              <div><label style={label}>{t('Shift')}</label><select style={input} value={form.shift} onChange={e => set('shift', e.target.value)}>{SHIFTS.map(sh => <option key={sh} value={sh}>{sh}</option>)}</select></div>
               {!form.resident_id && <div><label style={label}>Applies to</label><select style={input} value={form.applies_to} onChange={e => set('applies_to', e.target.value)}>{APPLIES.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}</select></div>}
-              <div><label style={label}>Frequency</label><select style={input} value={form.frequency} onChange={e => set('frequency', e.target.value)}><option value="daily">Daily</option><option value="weekly">Weekly</option></select></div>
+              <div><label style={label}>{t('Frequency')}</label><select style={input} value={form.frequency} onChange={e => set('frequency', e.target.value)}><option value="daily">{t('Daily')}</option><option value="weekly">{t('Weekly')}</option></select></div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
               <button onClick={save} disabled={!form.name.trim()} style={{ flex: 1, padding: '11px', borderRadius: 9, background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>{editing === 'new' ? 'Add task' : 'Save changes'}</button>
-              <button onClick={() => setEditing(null)} style={{ flex: 1, padding: '11px', borderRadius: 9, background: 'var(--surface-2)', border: '1px solid var(--border)', fontWeight: 600, cursor: 'pointer', color: 'var(--text-primary)' }}>Cancel</button>
+              <button onClick={() => setEditing(null)} style={{ flex: 1, padding: '11px', borderRadius: 9, background: 'var(--surface-2)', border: '1px solid var(--border)', fontWeight: 600, cursor: 'pointer', color: 'var(--text-primary)' }}>{t('Cancel')}</button>
             </div>
           </div>
         </div>

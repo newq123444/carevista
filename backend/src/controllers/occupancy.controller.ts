@@ -3,20 +3,50 @@ import { query } from '../models/db';
 import { AppError } from '../utils/errors';
 import { auditLog } from '../services/audit.service';
 
+
+// Live occupancy derived from the actual resident record — the single source of
+// truth. Manual occupancy_records are snapshots for history/forecasting.
+async function liveOccupancy(careHomeId: string) {
+  const { rows: [row] } = await query(
+    `SELECT (SELECT COUNT(*)::int FROM residents WHERE care_home_id = $1 AND active = TRUE) AS occupied_beds,
+            (SELECT COALESCE(registered_beds, 0)::int FROM care_homes WHERE id = $1) AS total_beds`,
+    [careHomeId]
+  );
+  const totalBeds = row?.total_beds || 0;
+  const occupiedBeds = row?.occupied_beds || 0;
+  return {
+    totalBeds, occupiedBeds,
+    vacantBeds: Math.max(0, totalBeds - occupiedBeds),
+    occupancyPct: totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 1000) / 10 : 0,
+  };
+}
+
 export async function recordOccupancy(req: Request, res: Response, next: NextFunction) {
   try {
     const careHomeId = req.user!.care_home_id;
-    const { recordDate, totalBeds, occupiedBeds, revenuePerBedPence, notes } = req.body;
+    const b = req.body;
+    const live = await liveOccupancy(careHomeId);
+    const recordDate = b.recordDate || b.record_date || new Date().toISOString().slice(0, 10);
+    const totalBeds = b.totalBeds ?? b.total_beds ?? live.totalBeds;
+    const occupiedBeds = b.occupiedBeds ?? b.occupied_beds ?? live.occupiedBeds;
+    const revenuePerBedPence = b.revenuePerBedPence ?? b.revenue_per_bed_pence ?? null;
+    const notes = b.notes ?? null;
 
-    if (!recordDate || totalBeds == null || occupiedBeds == null) {
-      return res.status(400).json({ error: 'recordDate, totalBeds, and occupiedBeds are required' });
+    if (!totalBeds) {
+      return res.status(400).json({ error: 'This home has no registered bed count set. Add it in Home Settings first.' });
     }
 
     const occupancyPct = totalBeds > 0 ? ((occupiedBeds / totalBeds) * 100).toFixed(2) : '0';
 
     const { rows: [record] } = await query(
       `INSERT INTO occupancy_records (care_home_id, record_date, total_beds, occupied_beds, occupancy_pct, revenue_per_bed_pence, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (care_home_id, record_date) DO UPDATE SET
+         total_beds = EXCLUDED.total_beds, occupied_beds = EXCLUDED.occupied_beds,
+         occupancy_pct = EXCLUDED.occupancy_pct,
+         revenue_per_bed_pence = COALESCE(EXCLUDED.revenue_per_bed_pence, occupancy_records.revenue_per_bed_pence),
+         notes = COALESCE(EXCLUDED.notes, occupancy_records.notes)
+       RETURNING *`,
       [careHomeId, recordDate, totalBeds, occupiedBeds, occupancyPct, revenuePerBedPence, notes]
     );
 
@@ -109,6 +139,11 @@ export async function getOccupancyDashboard(req: Request, res: Response, next: N
       [careHomeId]
     );
 
-    res.json({ current, trend, revenue, latestForecast });
+    const live = await liveOccupancy(careHomeId);
+    const inSync = !current
+      || (Number(current.occupied_beds) === live.occupiedBeds && Number(current.total_beds) === live.totalBeds
+          && String(current.record_date).slice(0, 10) === new Date().toISOString().slice(0, 10));
+
+    res.json({ current, trend, revenue, latestForecast, live, inSync });
   } catch (err) { next(err); }
 }

@@ -1,10 +1,12 @@
 // src/pages/StaffCostAnalytics.tsx
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useStaffCostsSummary, useStaffCostsPerResident, useStaffCostsBudgetVsActual, useStaffCostsBudgets, useCreateStaffCostBudget } from '../hooks';
 import { formatDate, formatPence } from '../utils/formatters';
 import type { CostBudget } from '../types';
 
 export default function StaffCostAnalytics() {
+  const { t } = useLang();
   const [tab, setTab] = useState<'overview' | 'budgets'>('overview');
   const [showBudgetForm, setShowBudgetForm] = useState(false);
 
@@ -182,12 +184,12 @@ export default function StaffCostAnalytics() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Budget</th>
+                  <th>{t('Budget')}</th>
                   <th>Period</th>
                   <th>Budget Amount</th>
                   <th>Actual</th>
                   <th>Variance</th>
-                  <th>Status</th>
+                  <th>{t('Status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -228,6 +230,7 @@ export default function StaffCostAnalytics() {
 }
 
 function CreateBudgetModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLang();
   const create = useCreateStaffCostBudget();
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
@@ -281,7 +284,7 @@ function CreateBudgetModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={create.isPending}>{create.isPending ? 'Creating...' : 'Create Budget'}</button>
           </div>
         </form>

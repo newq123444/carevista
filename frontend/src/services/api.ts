@@ -315,6 +315,7 @@ export const recruitmentApi = {
   listInterviews:     (params?: object) => api.get('/recruitment/interviews', { params }),
   scheduleInterview:  (data: object) => api.post('/recruitment/interviews', data),
   updateInterviewOutcome: (id: string, data: object) => api.patch(`/recruitment/interviews/${id}/outcome`, data),
+  listDbsChecks:      () => api.get('/recruitment/dbs-checks'),
   createDbsCheck:     (data: object) => api.post('/recruitment/dbs-checks', data),
   updateDbsCheck:     (id: string, data: object) => api.patch(`/recruitment/dbs-checks/${id}`, data),
   getPipeline:        () => api.get('/recruitment/pipeline'),
@@ -659,4 +660,16 @@ export const portalApi = {
 // Public — family invite registration
 export const familyRegisterApi = {
   register: (d: object) => api.post('/auth/family-register', d),
+};
+
+// ── Kitchen: food safety + meal orders ────────────────────────────────────
+export const kitchenApi = {
+  dashboard:    (date?: string) => api.get('/kitchen/dashboard', { params: date ? { date } : {} }),
+  checklist:    (date?: string) => api.get('/kitchen/checklist', { params: date ? { date } : {} }),
+  setCheck:     (d: object) => api.post('/kitchen/checklist', d),
+  temperatures: (date?: string) => api.get('/kitchen/temperatures', { params: date ? { date } : {} }),
+  logTemp:      (d: object) => api.post('/kitchen/temperatures', d),
+  orders:       (params?: object) => api.get('/kitchen/orders', { params }),
+  createOrder:  (d: object) => api.post('/kitchen/orders', d),
+  updateOrder:  (id: string, d: object) => api.patch(`/kitchen/orders/${id}`, d),
 };

@@ -1,5 +1,6 @@
 // src/pages/AuditLog.tsx
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { formatDateTime } from '../utils/formatters';
@@ -7,6 +8,7 @@ import { formatDateTime } from '../utils/formatters';
 const ACTION_COLORS: Record<string,string> = { CREATE:'#16a34a', UPDATE:'#0d9488', DELETE:'#dc2626', LOGIN:'#6366f1', LOGOUT:'#6b7280', VIEW:'#9ca3af', EXPORT:'#d97706' };
 
 export default function AuditLog() {
+  const { t } = useLang();
   const [search, setSearch]     = useState('');
   const [entity, setEntity]     = useState('');
   const [action, setAction]     = useState('');
@@ -37,16 +39,16 @@ export default function AuditLog() {
       </div>
       <div className="card" style={{ marginBottom:16 }}>
         <div className="card-body" style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'flex-end' }}>
-          <div className="form-group" style={{ marginBottom:0, flex:'1 1 180px' }}><label className="form-label">Search</label><input className="form-input" placeholder="User, details…" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}}/></div>
+          <div className="form-group" style={{ marginBottom:0, flex:'1 1 180px' }}><label className="form-label">{t('Search')}</label><input className="form-input" placeholder="User, details…" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}}/></div>
           <div className="form-group" style={{ marginBottom:0, flex:'1 1 140px' }}><label className="form-label">Entity</label>
             <select className="form-input" value={entity} onChange={e=>{setEntity(e.target.value);setPage(1);}}>
-              <option value="">All</option>
+              <option value="">{t('All')}</option>
               {['residents','care_notes','medications','incidents','staff','tasks','billing','compliance'].map(e=><option key={e} value={e}>{e}</option>)}
             </select>
           </div>
           <div className="form-group" style={{ marginBottom:0, flex:'1 1 120px' }}><label className="form-label">Action</label>
             <select className="form-input" value={action} onChange={e=>{setAction(e.target.value);setPage(1);}}>
-              <option value="">All</option>
+              <option value="">{t('All')}</option>
               {['CREATE','UPDATE','DELETE','LOGIN','LOGOUT','VIEW','EXPORT'].map(a=><option key={a} value={a}>{a}</option>)}
             </select>
           </div>
@@ -64,12 +66,12 @@ export default function AuditLog() {
                 <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>User</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>Action</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>Entity</th>
-                <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>Details</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>{t('Details')}</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontWeight:600 }}>IP</th>
               </tr>
             </thead>
             <tbody>
-              {isLoading?(<tr><td colSpan={6} style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>Loading…</td></tr>)
+              {isLoading?(<tr><td colSpan={6} style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>{t('Loading…')}</td></tr>)
                :logs.length===0?(<tr><td colSpan={6} style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>No records found</td></tr>)
                :logs.map((l:any)=>{
                 const ac = ACTION_COLORS[l.action]||'#6b7280';

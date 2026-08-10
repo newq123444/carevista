@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { RecordView } from '../components/ui';
 import { useMusicGenres, useMusicPreferences, useUpdateMusicPreferences, useStartMusicSession, useEndMusicSession, useMusicSessionHistory, useMusicEffectiveness, useResidents } from '../hooks';
 
 export default function MusicTherapy() {
+  const { t } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'genres' | 'preferences' | 'session' | 'history' | 'effectiveness'>('genres');
   const [showSessionForm, setShowSessionForm] = useState(false);
@@ -116,7 +118,7 @@ export default function MusicTherapy() {
                   <input type="text" value={prefForm.preferred_artists} onChange={e => setPrefForm(f => ({ ...f, preferred_artists: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Notes</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Notes')}</label>
                   <input type="text" value={prefForm.notes} onChange={e => setPrefForm(f => ({ ...f, notes: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>
@@ -149,14 +151,14 @@ export default function MusicTherapy() {
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Mood Before</label>
                   <select value={sessionForm.mood_before} onChange={e => setSessionForm(f => ({ ...f, mood_before: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                     <option value="very_low">Very Low</option>
-                    <option value="low">Low</option>
+                    <option value="low">{t('Low')}</option>
                     <option value="neutral">Neutral</option>
-                    <option value="good">Good</option>
+                    <option value="good">{t('Good')}</option>
                     <option value="very_good">Very Good</option>
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Notes</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Notes')}</label>
                   <input type="text" value={sessionForm.notes} onChange={e => setSessionForm(f => ({ ...f, notes: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>

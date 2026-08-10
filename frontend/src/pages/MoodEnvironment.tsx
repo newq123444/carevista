@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useMoodSuggestions, useRecordMoodIntervention, useMoodInterventionHistory, useMoodEffectiveness, useResidents } from '../hooks';
 
 export default function MoodEnvironment() {
+  const { t } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'suggestions' | 'record' | 'history' | 'effectiveness'>('suggestions');
   const [showForm, setShowForm] = useState(false);
@@ -87,9 +89,9 @@ export default function MoodEnvironment() {
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Mood Before</label>
                   <select value={form.mood_before} onChange={e => setForm(f => ({ ...f, mood_before: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                     <option value="very_low">Very Low</option>
-                    <option value="low">Low</option>
+                    <option value="low">{t('Low')}</option>
                     <option value="neutral">Neutral</option>
-                    <option value="good">Good</option>
+                    <option value="good">{t('Good')}</option>
                     <option value="very_good">Very Good</option>
                   </select>
                 </div>
@@ -97,15 +99,15 @@ export default function MoodEnvironment() {
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Mood After</label>
                   <select value={form.mood_after} onChange={e => setForm(f => ({ ...f, mood_after: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                     <option value="very_low">Very Low</option>
-                    <option value="low">Low</option>
+                    <option value="low">{t('Low')}</option>
                     <option value="neutral">Neutral</option>
-                    <option value="good">Good</option>
+                    <option value="good">{t('Good')}</option>
                     <option value="very_good">Very Good</option>
                   </select>
                 </div>
               </div>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Notes</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Notes')}</label>
                 <input type="text" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
               </div>
               <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>Record Intervention</button>

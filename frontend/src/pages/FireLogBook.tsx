@@ -1,10 +1,12 @@
 // src/pages/FireLogBook.tsx
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useFireTests, useRecordFireTest, useFireEquipmentChecks, useRecordFireEquipmentCheck, usePeeps, useCreatePeep, useUpdatePeep, useFireDashboard, useResidents, useStaff } from '../hooks';
 
 type TabType = 'tests' | 'equipment' | 'peeps';
 
 export default function FireLogBook() {
+  const { t } = useLang();
   const [tab, setTab] = useState<TabType>('tests');
   const [showTestForm, setShowTestForm] = useState(false);
   const [showEquipForm, setShowEquipForm] = useState(false);
@@ -158,7 +160,7 @@ export default function FireLogBook() {
               <form onSubmit={handleSubmitTest} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Date</label>
+                    <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('Date')}</label>
                     <input type="date" value={testForm.test_date} onChange={e => setTestForm({ ...testForm, test_date: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }} required />
                   </div>
                   <div>
@@ -168,8 +170,8 @@ export default function FireLogBook() {
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>All Clear?</label>
                     <select value={testForm.all_clear} onChange={e => setTestForm({ ...testForm, all_clear: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
+                      <option value="yes">{t('Yes')}</option>
+                      <option value="no">{t('No')}</option>
                     </select>
                   </div>
                   <div>
@@ -178,12 +180,12 @@ export default function FireLogBook() {
                   </div>
                 </div>
                 <div style={{ marginTop: 12 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Notes</label>
+                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('Notes')}</label>
                   <textarea value={testForm.notes} onChange={e => setTestForm({ ...testForm, notes: e.target.value })} rows={2} placeholder="Additional notes..." style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', resize: 'vertical' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button type="submit" className="btn btn-primary btn-sm" disabled={recordTest.isPending}>Save Test</button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowTestForm(false)}>Cancel</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowTestForm(false)}>{t('Cancel')}</button>
                 </div>
               </form>
             )}
@@ -191,7 +193,7 @@ export default function FireLogBook() {
             <div className="table-container">
               <table className="table">
                 <thead>
-                  <tr><th>Date</th><th>Type</th><th>Result</th><th>Conducted By</th><th>Issues</th></tr>
+                  <tr><th>{t('Date')}</th><th>{t('Type')}</th><th>Result</th><th>Conducted By</th><th>Issues</th></tr>
                 </thead>
                 <tbody>
                   {(tests as any[]).length === 0 ? (
@@ -239,7 +241,7 @@ export default function FireLogBook() {
                     <input type="text" value={equipForm.location} onChange={e => setEquipForm({ ...equipForm, location: e.target.value })} placeholder="e.g. Ground floor corridor" style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }} required />
                   </div>
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Status</label>
+                    <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('Status')}</label>
                     <select value={equipForm.status} onChange={e => setEquipForm({ ...equipForm, status: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
                       <option value="pass">Pass</option>
                       <option value="fail">Fail</option>
@@ -259,7 +261,7 @@ export default function FireLogBook() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button type="submit" className="btn btn-primary btn-sm" disabled={recordEquipCheck.isPending}>Save Check</button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowEquipForm(false)}>Cancel</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowEquipForm(false)}>{t('Cancel')}</button>
                 </div>
               </form>
             )}
@@ -267,7 +269,7 @@ export default function FireLogBook() {
             <div className="table-container">
               <table className="table">
                 <thead>
-                  <tr><th>Type</th><th>Location</th><th>Status</th><th>Checked By</th><th>Next Check</th></tr>
+                  <tr><th>{t('Type')}</th><th>Location</th><th>{t('Status')}</th><th>Checked By</th><th>Next Check</th></tr>
                 </thead>
                 <tbody>
                   {(equipmentChecks as any[]).length === 0 ? (
@@ -302,7 +304,7 @@ export default function FireLogBook() {
                 <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', fontWeight: 600 }}>{editingPeep ? 'Edit PEEP' : 'Create PEEP'}</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Resident</label>
+                    <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('Resident')}</label>
                     <select value={peepForm.resident_id} onChange={e => setPeepForm({ ...peepForm, resident_id: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }} required>
                       <option value="">Select resident...</option>
                       {(residents as any[]).map((r: any) => (
@@ -356,7 +358,7 @@ export default function FireLogBook() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button type="submit" className="btn btn-primary btn-sm" disabled={createPeep.isPending || updatePeep.isPending}>{editingPeep ? 'Update PEEP' : 'Create PEEP'}</button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setShowPeepForm(false); setEditingPeep(null); }}>Cancel</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setShowPeepForm(false); setEditingPeep(null); }}>{t('Cancel')}</button>
                 </div>
               </form>
             )}
@@ -364,7 +366,7 @@ export default function FireLogBook() {
             <div className="table-container">
               <table className="table">
                 <thead>
-                  <tr><th>Resident</th><th>Mobility</th><th>Evacuation Method</th><th>Assistance</th><th>Helpers</th><th>Review Date</th><th>Actions</th></tr>
+                  <tr><th>{t('Resident')}</th><th>Mobility</th><th>Evacuation Method</th><th>Assistance</th><th>Helpers</th><th>Review Date</th><th>{t('Actions')}</th></tr>
                 </thead>
                 <tbody>
                   {(peeps as any[]).length === 0 ? (
@@ -377,7 +379,7 @@ export default function FireLogBook() {
                       <td>{p.assistance_required || '-'}</td>
                       <td>{p.primary_helper || '-'}{p.secondary_helper ? `, ${p.secondary_helper}` : ''}</td>
                       <td>{p.review_date?.slice(0, 10) || '-'}</td>
-                      <td><button className="btn btn-ghost btn-sm" onClick={() => handleEditPeep(p)}>Edit</button></td>
+                      <td><button className="btn btn-ghost btn-sm" onClick={() => handleEditPeep(p)}>{t('Edit')}</button></td>
                     </tr>
                   ))}
                 </tbody>

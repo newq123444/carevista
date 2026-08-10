@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import {
   useJobPostings, useCreateJobPosting, useUpdateJobPosting,
   useJobApplications, useCreateJobApplication, useUpdateApplicationStage,
   useInterviews, useScheduleInterview, useUpdateInterviewOutcome,
-  useCreateDbsCheck, useUpdateDbsCheck, useRecruitmentPipeline, useStaff,
+  useCreateDbsCheck, useUpdateDbsCheck, useDbsChecks, useRecruitmentPipeline, useStaff,
 } from '../hooks';
 import type { JobPosting, JobApplication, Interview, DbsCheck } from '../types';
 
@@ -24,6 +25,7 @@ const CONTRACT_TYPES = [
 ];
 
 export default function RecruitmentPipeline() {
+  const { t } = useLang();
   const { data: postings } = useJobPostings();
   const { data: applications } = useJobApplications();
   const { data: interviews } = useInterviews();
@@ -57,13 +59,17 @@ export default function RecruitmentPipeline() {
 
   // Pipeline stats
   const pipelineData = pipeline || {} as any;
-  const totalApplicants = pipelineData.total_applicants || applicationsList.length;
-  const inInterview = pipelineData.in_interview || applicationsList.filter(a => a.stage === 'interview').length;
-  const offersMade = pipelineData.offers_made || applicationsList.filter(a => a.stage === 'offer').length;
-  const positionsFilled = pipelineData.positions_filled || applicationsList.filter(a => a.stage === 'hired').length;
+  // Backend returns { stageCounts: [{stage,count}], postingStats, upcomingInterviews }
+  const stageCounts: any[] = Array.isArray(pipelineData.stageCounts) ? pipelineData.stageCounts : [];
+  const stageCount = (st: string) => Number(stageCounts.find((x: any) => x.stage === st)?.count) || 0;
+  const totalApplicants = stageCounts.reduce((a: number, x: any) => a + (Number(x.count) || 0), 0) || applicationsList.length;
+  const inInterview = stageCount('interview') || applicationsList.filter(a => a.stage === 'interview').length;
+  const offersMade = stageCount('offer') || applicationsList.filter(a => a.stage === 'offer').length;
+  const positionsFilled = stageCount('hired') || applicationsList.filter(a => a.stage === 'hired').length;
 
   // DBS checks from pipeline data
-  const dbsChecks: DbsCheck[] = pipelineData.dbs_checks || [];
+  const { data: dbsData } = useDbsChecks();
+  const dbsChecks: DbsCheck[] = Array.isArray(dbsData) ? dbsData : (pipelineData.dbs_checks || []);
 
   const handleCreatePosting = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,7 +189,7 @@ export default function RecruitmentPipeline() {
                     </div>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>Description</label>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>{t('Description')}</label>
                     <textarea className="input" rows={3} value={postingForm.description} onChange={e => setPostingForm(f => ({ ...f, description: e.target.value }))} placeholder="Job description..." />
                   </div>
                   <div>
@@ -191,7 +197,7 @@ export default function RecruitmentPipeline() {
                     <textarea className="input" rows={3} value={postingForm.requirements} onChange={e => setPostingForm(f => ({ ...f, requirements: e.target.value }))} placeholder="Required qualifications and experience..." />
                   </div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button type="button" className="btn btn-ghost" onClick={() => setShowPostingForm(false)}>Cancel</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => setShowPostingForm(false)}>{t('Cancel')}</button>
                     <button type="submit" className="btn btn-primary" disabled={createPosting.isPending}>
                       {createPosting.isPending ? 'Creating...' : 'Create Posting'}
                     </button>
@@ -249,7 +255,7 @@ export default function RecruitmentPipeline() {
                     </select>
                   </div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button type="button" className="btn btn-ghost" onClick={() => setShowInterviewModal(false)}>Cancel</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => setShowInterviewModal(false)}>{t('Cancel')}</button>
                     <button type="submit" className="btn btn-primary" disabled={scheduleInterview.isPending}>
                       {scheduleInterview.isPending ? 'Scheduling...' : 'Schedule Interview'}
                     </button>
@@ -274,8 +280,8 @@ export default function RecruitmentPipeline() {
                   <tr>
                     <th>Title</th>
                     <th>Department</th>
-                    <th>Contract</th>
-                    <th>Status</th>
+                    <th>{t('Contract')}</th>
+                    <th>{t('Status')}</th>
                     <th>Applications</th>
                     <th>Posted</th>
                   </tr>
@@ -394,7 +400,7 @@ export default function RecruitmentPipeline() {
                   <tr>
                     <th>Applicant</th>
                     <th>Check Type</th>
-                    <th>Status</th>
+                    <th>{t('Status')}</th>
                     <th>Submitted</th>
                     <th>Certificate No.</th>
                   </tr>

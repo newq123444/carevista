@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useLogSleep, useSleepHistory, useSleepProfile, useSleepDisturbances, useSleepSuggestions, useResidents } from '../hooks';
 
 export default function SleepQualityTracker() {
+  const { t } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'log' | 'history' | 'profile' | 'suggestions'>('log');
   const [showForm, setShowForm] = useState(false);
@@ -27,7 +29,10 @@ export default function SleepQualityTracker() {
   const residentList = Array.isArray(residents) ? residents : [];
   const historyList = Array.isArray(sleepHistory) ? sleepHistory : [];
   const suggestionList = Array.isArray(suggestions) ? suggestions : [];
-  const profileData = profile || null;
+  // Backend returns { profile, recentStats } — merge so either source populates the cards
+  const profileData = (profile as any)
+    ? { ...((profile as any).profile || {}), ...((profile as any).recentStats || {}) }
+    : null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +89,7 @@ export default function SleepQualityTracker() {
             <form onSubmit={handleSubmit} style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', marginBottom: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Date</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Date')}</label>
                   <input type="date" value={form.sleep_date} onChange={e => setForm(f => ({ ...f, sleep_date: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
@@ -123,7 +128,7 @@ export default function SleepQualityTracker() {
                   <input type="text" value={form.interventions} onChange={e => setForm(f => ({ ...f, interventions: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} placeholder="e.g. warm milk, repositioning" />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Notes</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Notes')}</label>
                   <input type="text" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>

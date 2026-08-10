@@ -1,5 +1,6 @@
 // src/pages/dashboards/CleaningDashboard.tsx — real data, world-class UI
 import React from 'react';
+import { useLang } from '../../i18n';
 import { useAuthStore } from '../../store/auth.store';
 import { useHousekeepingSummary } from '../../hooks';
 import { MetricCard, SectionCard, ListRow, PageHeading } from '../../components/ui';
@@ -11,6 +12,7 @@ const STATUS: Record<string, { label: string; tone: string; emoji: string }> = {
 };
 
 export default function CleaningDashboard() {
+  const { t } = useLang();
   const { user } = useAuthStore();
   const { data: hk, isLoading } = useHousekeepingSummary();
   const hour = new Date().getHours();
@@ -33,9 +35,9 @@ export default function CleaningDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
         <MetricCard icon="✅" label="Rooms clean" value={`${cleaned}/${rooms.length || 0}`} sub="today" subTone="success" />
         <MetricCard icon="🕓" label="Needs attention" value={attention} sub="within the day" subTone="warning" />
-        <MetricCard icon="🚨" label="Overdue" value={overdue} sub="priority" subTone="danger" />
+        <MetricCard icon="🚨" label={t('Overdue')} value={overdue} sub="priority" subTone="danger" />
         <MetricCard icon="🧾" label="Tasks logged" value={hk?.tasks_today ?? 0} sub="today" />
-        <MetricCard icon="🏛️" label="Communal areas" value={hk?.communal_areas_today ?? 0} sub="serviced today" />
+        <MetricCard icon="🏛️" label={t('Communal areas')} value={hk?.communal_areas_today ?? 0} sub="serviced today" />
       </div>
 
       <SectionCard title="Room cleaning status">

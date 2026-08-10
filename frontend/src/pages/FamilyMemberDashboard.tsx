@@ -1,5 +1,6 @@
 // src/pages/FamilyMemberDashboard.tsx — the family member's own portal
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useAuthStore } from '../store/auth.store';
 import { usePortalMe, usePortalFeed, usePortalPhotos, usePortalMessages, useSendPortalMessage, usePortalHighlights } from '../hooks';
 
@@ -7,6 +8,7 @@ type Tab = 'updates' | 'photos' | 'messages' | 'care';
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
 
 export default function FamilyMemberDashboard() {
+  const { t } = useLang();
   const { user, logout } = useAuthStore();
   const { data: me } = usePortalMe();
   const residents = me?.residents || [];
@@ -37,7 +39,7 @@ export default function FamilyMemberDashboard() {
             {resident?.room ? <span style={{ fontSize: 13, fontWeight: 400, opacity: 0.85 }}> · Room {resident.room}</span> : null}
           </div>
         </div>
-        <button onClick={() => logout()} style={{ background: 'rgba(255,255,255,.15)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 13, cursor: 'pointer' }}>Sign out</button>
+        <button onClick={() => logout()} style={{ background: 'rgba(255,255,255,.15)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 13, cursor: 'pointer' }}>{t('Sign out')}</button>
       </header>
 
       {residents.length > 1 && (
@@ -76,8 +78,9 @@ function Card({ children, title }: { children: React.ReactNode; title?: string }
 }
 
 function Updates({ rid }: { rid?: string }) {
+  const { t } = useLang();
   const { data, isLoading } = usePortalFeed(rid);
-  if (isLoading) return <Card><span style={{ color: '#94a3b8' }}>Loading…</span></Card>;
+  if (isLoading) return <Card><span style={{ color: '#94a3b8' }}>{t('Loading…')}</span></Card>;
   const summaries = data?.summaries || [];
   const wb = data?.wellbeing || [];
   return (
@@ -85,10 +88,10 @@ function Updates({ rid }: { rid?: string }) {
       {wb[0] && (
         <Card title="How they're doing">
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <Pill label="Mood" value={wb[0].mood} />
-            <Pill label="Appetite" value={wb[0].appetite} />
-            <Pill label="Energy" value={wb[0].energy} />
-            <Pill label="Social" value={wb[0].social} />
+            <Pill label={t('Mood')} value={wb[0].mood} />
+            <Pill label={t('Appetite')} value={wb[0].appetite} />
+            <Pill label={t('Energy')} value={wb[0].energy} />
+            <Pill label={t('Social')} value={wb[0].social} />
           </div>
           <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>As of {fmtDate(wb[0].date)}</div>
         </Card>
@@ -116,9 +119,10 @@ function Pill({ label, value }: { label: string; value?: string }) {
 }
 
 function Photos({ rid }: { rid?: string }) {
+  const { t } = useLang();
   const { data, isLoading } = usePortalPhotos(rid);
   const photos = data?.photos || [];
-  if (isLoading) return <Card><span style={{ color: '#94a3b8' }}>Loading…</span></Card>;
+  if (isLoading) return <Card><span style={{ color: '#94a3b8' }}>{t('Loading…')}</span></Card>;
   if (photos.length === 0) return <Card><p style={{ color: '#64748b', margin: 0 }}>No photos have been shared yet. The care team shares moments from activities and events here.</p></Card>;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -133,6 +137,7 @@ function Photos({ rid }: { rid?: string }) {
 }
 
 function Messages({ rid, name }: { rid?: string; name: string }) {
+  const { t } = useLang();
   const { data } = usePortalMessages(rid);
   const send = useSendPortalMessage(rid);
   const [text, setText] = useState('');
@@ -155,19 +160,20 @@ function Messages({ rid, name }: { rid?: string; name: string }) {
       <div style={{ display: 'flex', gap: 8 }}>
         <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submit(); }}
           placeholder="Write a message…" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #dbe2e6' }} />
-        <button onClick={submit} disabled={!text.trim() || send.isPending} style={{ padding: '10px 16px', borderRadius: 10, background: 'var(--primary, #0f766e)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>Send</button>
+        <button onClick={submit} disabled={!text.trim() || send.isPending} style={{ padding: '10px 16px', borderRadius: 10, background: 'var(--primary, #0f766e)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>{t('Send')}</button>
       </div>
     </Card>
   );
 }
 
 function Care({ rid }: { rid?: string }) {
+  const { t } = useLang();
   const { data, isLoading } = usePortalHighlights(rid);
-  if (isLoading || !data) return <Card><span style={{ color: '#94a3b8' }}>Loading…</span></Card>;
+  if (isLoading || !data) return <Card><span style={{ color: '#94a3b8' }}>{t('Loading…')}</span></Card>;
   const c = data.careThisWeek;
   return (
     <>
-      <Card title="Wellbeing">
+      <Card title={t('Wellbeing')}>
         <div style={{ fontSize: 15, color: '#0f766e', fontWeight: 600 }}>{data.wellbeingSummary}</div>
       </Card>
       <Card title="Care this week">

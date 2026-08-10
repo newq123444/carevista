@@ -85,6 +85,7 @@ export const isManager = requireRole('home_manager', 'deputy_manager', 'super_ad
 export const isClinical = requireRole('registered_nurse', 'senior_carer', 'home_manager', 'deputy_manager', 'super_admin', 'group_admin', 'admin');
 export const isStaff = requireRole('registered_nurse', 'senior_carer', 'carer', 'home_manager', 'deputy_manager', 'activities', 'admin', 'finance', 'super_admin', 'group_admin');
 export const isFamily = requireRole('family');
+export const isKitchen = requireRole('kitchen', 'home_manager', 'deputy_manager', 'admin', 'super_admin', 'group_admin');
 export const isFinance = requireRole('finance', 'home_manager', 'deputy_manager', 'super_admin', 'group_admin', 'admin');
 // Includes operational (non-clinical) staff — cleaning, kitchen, maintenance —
 // for shared, non-clinical endpoints (dashboard summary, resident read for

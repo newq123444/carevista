@@ -2,9 +2,10 @@
 // src/routes/index.ts — All API routes
 // ============================================================
 import { Router } from 'express';
-import { authenticate, isManager, isClinical, isStaff, isFinance, isAllStaff, isFacilities, isFamily, tenantGuard } from '../middleware/auth';
+import { authenticate, isManager, isClinical, isStaff, isFinance, isAllStaff, isFacilities, isFamily, isKitchen, tenantGuard } from '../middleware/auth';
 import * as authCtrl from '../controllers/auth.controller';
 import * as analyticsCtrl from '../controllers/analytics.controller';
+import * as kitchenCtrl from '../controllers/kitchen.controller';
 import * as familyAccessCtrl from '../controllers/familyAccess.controller';
 import * as portalCtrl from '../controllers/portal.controller';
 import * as residentsCtrl from '../controllers/residents.controller';
@@ -97,6 +98,16 @@ router.get('/auth/me', authenticate, (req, res) => res.json(req.user));
 
 // All routes below require authentication + tenant guard
 router.use(authenticate, tenantGuard);
+
+// ── Kitchen: food safety, meal orders, dashboard ──────────────────────────
+router.get('/kitchen/dashboard',        isKitchen,  kitchenCtrl.getDashboard);
+router.get('/kitchen/checklist',        isKitchen,  kitchenCtrl.getChecklist);
+router.post('/kitchen/checklist',       isKitchen,  kitchenCtrl.setCheck);
+router.get('/kitchen/temperatures',     isKitchen,  kitchenCtrl.listTemperatures);
+router.post('/kitchen/temperatures',    isKitchen,  kitchenCtrl.logTemperature);
+router.get('/kitchen/orders',           isAllStaff, kitchenCtrl.listOrders);
+router.post('/kitchen/orders',          isAllStaff, kitchenCtrl.createOrder);
+router.patch('/kitchen/orders/:id',     isAllStaff, kitchenCtrl.updateOrder);
 
 // ── Outcomes / impact analytics ───────────────────────────────────────────
 router.get('/analytics/outcomes', isManager, analyticsCtrl.getOutcomes);
@@ -687,6 +698,7 @@ router.patch('/recruitment/applications/:id/stage', isManager, recruitmentCtrl.u
 router.get('/recruitment/interviews',           isManager, recruitmentCtrl.listInterviews);
 router.post('/recruitment/interviews',          isManager, recruitmentCtrl.scheduleInterview);
 router.patch('/recruitment/interviews/:id/outcome', isManager, recruitmentCtrl.updateInterviewOutcome);
+router.get('/recruitment/dbs-checks',           isManager, recruitmentCtrl.listDbsChecks);
 router.post('/recruitment/dbs-checks',          isManager, recruitmentCtrl.createDbsCheck);
 router.patch('/recruitment/dbs-checks/:id',     isManager, recruitmentCtrl.updateDbsCheck);
 router.get('/recruitment/pipeline',             isManager, recruitmentCtrl.getPipelineOverview);

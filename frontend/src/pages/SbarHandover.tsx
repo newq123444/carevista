@@ -1,5 +1,6 @@
 // src/pages/SbarHandover.tsx — SBAR Handover Generation and Review
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useSbarHandovers, useGenerateSbar, useApproveSbar } from '../hooks';
 import type { SbarHandover as SbarHandoverType } from '../types';
 
@@ -24,6 +25,7 @@ function cleanText(text: string | undefined | null): string {
 }
 
 export default function SbarHandover() {
+  const { t } = useLang();
   const [shiftDate, setShiftDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [shiftType, setShiftType] = useState('day');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -75,8 +77,8 @@ export default function SbarHandover() {
               <label className="form-label">Shift Type</label>
               <select className="form-input" value={shiftType} onChange={e => setShiftType(e.target.value)} style={{ minWidth: 140 }}>
                 <option value="day">Day</option>
-                <option value="evening">Evening</option>
-                <option value="night">Night</option>
+                <option value="evening">{t('Evening')}</option>
+                <option value="night">{t('Night')}</option>
               </select>
             </div>
             <button
@@ -187,7 +189,7 @@ export default function SbarHandover() {
                 <div className="card-body">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#d97706', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.82rem' }}>A</span>
-                    <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#d97706' }}>Assessment</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#d97706' }}>{t('Assessment')}</span>
                   </div>
                   <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{cleanText(selectedHandover.assessment)}</p>
                 </div>

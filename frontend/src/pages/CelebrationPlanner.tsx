@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useUpcomingCelebrations, useCreateCelebration, useAssignCelebrationTask, useCompleteCelebrationTask, useCelebrationCalendar, useNotifyCelebrationFamily, useResidents } from '../hooks';
 
 export default function CelebrationPlanner() {
+  const { t } = useLang();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'plan' | 'tasks' | 'calendar'>('upcoming');
   const [showForm, setShowForm] = useState(false);
   const [selectedCelebration, setSelectedCelebration] = useState('');
@@ -97,16 +99,16 @@ export default function CelebrationPlanner() {
             <form onSubmit={handleCreate} style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', marginBottom: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Resident</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Resident')}</label>
                   <select value={form.resident_id} onChange={e => setForm(f => ({ ...f, resident_id: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                     <option value="">General (no specific resident)</option>
                     {residentList.map((r: any) => <option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Type</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Type')}</label>
                   <select value={form.celebration_type} onChange={e => setForm(f => ({ ...f, celebration_type: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
-                    <option value="birthday">Birthday</option>
+                    <option value="birthday">{t('Birthday')}</option>
                     <option value="admission_anniversary">Admission Anniversary</option>
                     <option value="religious_festival">Religious Festival</option>
                     <option value="achievement">Achievement</option>
@@ -118,16 +120,16 @@ export default function CelebrationPlanner() {
                   <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Date</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Date')}</label>
                   <input type="date" value={form.celebration_date} onChange={e => setForm(f => ({ ...f, celebration_date: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Description</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Description')}</label>
                 <input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
               </div>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Budget</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Budget')}</label>
                 <input type="text" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} placeholder="e.g. 50.00" />
               </div>
               <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>Plan Celebration</button>

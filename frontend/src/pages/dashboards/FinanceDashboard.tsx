@@ -1,5 +1,6 @@
 // src/pages/dashboards/FinanceDashboard.tsx
 import React from 'react';
+import { useLang } from '../../i18n';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import { useInvoices, useResidents } from '../../hooks';
@@ -7,6 +8,7 @@ import { formatPence, formatDate } from '../../utils/formatters';
 import type { Invoice } from '../../types';
 
 export default function FinanceDashboard() {
+  const { t } = useLang();
   const { user } = useAuthStore();
   const { data: allInvoices = [] } = useInvoices();
   const { data: residents = [] } = useResidents({ active: true });
@@ -79,7 +81,7 @@ export default function FinanceDashboard() {
           <div className="card-header"><span className="card-title">⏳ Awaiting Payment</span></div>
           <div className="card-body" style={{ padding: 0 }}>
             {sent.length === 0 ? (
-              <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>No pending invoices</div>
+              <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>{t('No pending invoices')}</div>
             ) : sent.slice(0, 6).map(inv => (
               <div key={inv.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>

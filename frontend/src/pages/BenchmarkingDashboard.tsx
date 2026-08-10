@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useBenchmarkingDashboard, useCalculateBenchmarks, useNationalAverages } from '../hooks';
 
 export default function BenchmarkingDashboard() {
+  const { t } = useLang();
   const { data: dashboard, isLoading } = useBenchmarkingDashboard();
   const { data: averages } = useNationalAverages();
   const calculateMutation = useCalculateBenchmarks();
@@ -37,7 +39,7 @@ export default function BenchmarkingDashboard() {
           {/* KPI Cards */}
           {metrics.length === 0 && (
             <div style={{ padding: 32, textAlign: 'center', background: '#f9fafb', borderRadius: 12, border: '1px dashed #d1d5db', color: '#6b7280', marginBottom: 24 }}>
-              No benchmark data yet. Use <strong>Calculate KPIs</strong> to generate this home's metrics from live care data.
+              No benchmark data yet. Use <strong>{t('Calculate KPIs')}</strong> to generate this home's metrics from live care data.
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16, marginBottom: 32 }}>
@@ -64,7 +66,7 @@ export default function BenchmarkingDashboard() {
                   {kpi.percentile_rank != null && (
                     <div style={{ marginTop: 8 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Percentile Rank</span>
+                        <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{t('Percentile Rank')}</span>
                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: colors.color }}>{kpi.percentile_rank}th</span>
                       </div>
                       <div style={{ height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
@@ -99,15 +101,15 @@ export default function BenchmarkingDashboard() {
           <div style={{ marginTop: 24, display: 'flex', gap: 16, alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#16a34a' }} />
-              <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>Above Average</span>
+              <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>{t('Above Average')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ca8a04' }} />
-              <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>Near Average</span>
+              <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>{t('Near Average')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#dc2626' }} />
-              <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>Below Average</span>
+              <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>{t('Below Average')}</span>
             </div>
           </div>
         </>

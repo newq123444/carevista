@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useQrRoomCodes, useGenerateQrCode, useScanQrCode, useDeactivateQrCode } from '../hooks';
 
 export default function QrRoomScanning() {
+  const { t } = useLang();
   const { data: qrCodes = [], isLoading } = useQrRoomCodes();
   const generateMutation = useGenerateQrCode();
   const scanMutation = useScanQrCode();
@@ -60,11 +62,11 @@ export default function QrRoomScanning() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div style={{ padding: 12, background: '#f9fafb', borderRadius: 8 }}>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 4 }}>Room</div>
+              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 4 }}>{t('Room')}</div>
               <div style={{ fontWeight: 600 }}>{scanResult.room_number || 'N/A'}</div>
             </div>
             <div style={{ padding: 12, background: '#f9fafb', borderRadius: 8 }}>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 4 }}>Resident</div>
+              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 4 }}>{t('Resident')}</div>
               <div style={{ fontWeight: 600 }}>{scanResult.resident_name || 'Unoccupied'}</div>
             </div>
           </div>

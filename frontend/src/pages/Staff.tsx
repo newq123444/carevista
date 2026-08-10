@@ -1,5 +1,6 @@
 // src/pages/Staff.tsx — Staff directory with photos, edit, add
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useStaff } from '../hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDate, ROLE_LABELS } from '../utils/formatters';
@@ -21,6 +22,7 @@ function photoSrc(url?: string | null) {
 function StaffAvatar({ staff: s, size = 52, editable = false, onUploaded }: {
   staff: any; size?: number; editable?: boolean; onUploaded?: () => void;
 }) {
+  const { t } = useLang();
   const qc = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -64,6 +66,7 @@ function StaffAvatar({ staff: s, size = 52, editable = false, onUploaded }: {
 
 // ── Edit Staff Modal ──────────────────────────────────────────────────────
 function EditStaffModal({ staff: s, onClose }: { staff: any; onClose: () => void }) {
+  const { t } = useLang();
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -161,7 +164,7 @@ function EditStaffModal({ staff: s, onClose }: { staff: any; onClose: () => void
 
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? '⏳ Saving…' : '✅ Save Changes'}
             </button>
@@ -174,6 +177,7 @@ function EditStaffModal({ staff: s, onClose }: { staff: any; onClose: () => void
 
 // ── Main Staff Page ───────────────────────────────────────────────────────
 export default function Staff() {
+  const { t } = useLang();
   const { data: rawStaff = [], isLoading } = useStaff();
   const staff: any[] = Array.isArray(rawStaff) ? rawStaff : (rawStaff as any)?.staff ?? [];
   const [search, setSearch]       = useState('');
@@ -227,7 +231,7 @@ export default function Staff() {
       </div>
 
       {isLoading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>{t('Loading…')}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
           {filtered.map((s: any) => {

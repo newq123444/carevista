@@ -1,5 +1,6 @@
 // src/pages/dashboards/MaintenanceDashboard.tsx — real data, world-class UI
 import React from 'react';
+import { useLang } from '../../i18n';
 import { useAuthStore } from '../../store/auth.store';
 import { useResidents, useRoomTurnoverDashboard } from '../../hooks';
 import { MetricCard, SectionCard, ProgressStat, PageHeading } from '../../components/ui';
@@ -10,6 +11,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function MaintenanceDashboard() {
+  const { t } = useLang();
   const { user } = useAuthStore();
   const { data: residents = [] } = useResidents({ active: true });
   const { data: turnover, isLoading } = useRoomTurnoverDashboard();
@@ -33,8 +35,8 @@ export default function MaintenanceDashboard() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
         <MetricCard icon="🛏️" label="Active turnovers" value={active.length} sub="in progress" subTone="warning" />
-        <MetricCard icon="🚨" label="Overdue" value={overdue} sub="past target date" subTone="danger" />
-        <MetricCard icon="🔨" label="In progress" value={statusMap['in_progress'] ?? 0} sub="being worked on" subTone="accent" />
+        <MetricCard icon="🚨" label={t('Overdue')} value={overdue} sub="past target date" subTone="danger" />
+        <MetricCard icon="🔨" label={t('In progress')} value={statusMap['in_progress'] ?? 0} sub="being worked on" subTone="accent" />
         <MetricCard icon="✅" label="Ready" value={statusMap['ready'] ?? 0} sub="ready to occupy" subTone="success" />
         <MetricCard icon="👥" label="Occupied rooms" value={residentCount} sub="current residents" />
       </div>

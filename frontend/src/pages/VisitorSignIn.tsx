@@ -1,10 +1,12 @@
 // src/pages/VisitorSignIn.tsx
 import React, { useState } from 'react';
+import { useLang } from '../i18n';
 import { useVisitors, useSignInVisitor, useSignOutVisitor, useVisitorDashboard, useVisitorFireRoll, useVisitorSafeguarding, useAddVisitorSafeguarding, useResidents } from '../hooks';
 
 type TabType = 'current' | 'sign-in' | 'history' | 'fire-roll' | 'safeguarding';
 
 export default function VisitorSignIn() {
+  const { t } = useLang();
   const [tab, setTab] = useState<TabType>('current');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFireRoll, setShowFireRoll] = useState(false);
@@ -110,7 +112,7 @@ export default function VisitorSignIn() {
           <div className="card-body">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#dc2626' }}>🚨 FIRE ROLL - Currently Signed-In Visitors</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowFireRoll(false)}>Close</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowFireRoll(false)}>{t('Close')}</button>
             </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12 }}>Print-friendly evacuation list of all visitors currently on site</p>
             <div className="table-container">
@@ -154,7 +156,7 @@ export default function VisitorSignIn() {
             <div className="table-container">
               <table className="table">
                 <thead>
-                  <tr><th>Visitor</th><th>Type</th><th>Visiting</th><th>Purpose</th><th>Sign In</th><th>Actions</th></tr>
+                  <tr><th>{t('Visitor')}</th><th>{t('Type')}</th><th>Visiting</th><th>{t('Purpose')}</th><th>Sign In</th><th>{t('Actions')}</th></tr>
                 </thead>
                 <tbody>
                   {currentVisitors.length === 0 ? (
@@ -188,9 +190,9 @@ export default function VisitorSignIn() {
                   <input type="text" value={signInForm.visitor_name} onChange={e => setSignInForm({ ...signInForm, visitor_name: e.target.value })} placeholder="Full name" style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }} required />
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Type</label>
+                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('Type')}</label>
                   <select value={signInForm.visitor_type} onChange={e => setSignInForm({ ...signInForm, visitor_type: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
-                    <option value="family">Family</option>
+                    <option value="family">{t('Family')}</option>
                     <option value="friend">Friend</option>
                     <option value="contractor">Contractor</option>
                     <option value="professional">Professional</option>
@@ -211,7 +213,7 @@ export default function VisitorSignIn() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Purpose</label>
+                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>{t('Purpose')}</label>
                   <input type="text" value={signInForm.purpose} onChange={e => setSignInForm({ ...signInForm, purpose: e.target.value })} placeholder="Purpose of visit" style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }} />
                 </div>
                 <div>
@@ -242,7 +244,7 @@ export default function VisitorSignIn() {
             <div className="table-container">
               <table className="table">
                 <thead>
-                  <tr><th>Date</th><th>Visitor</th><th>Type</th><th>Visiting</th><th>Purpose</th><th>Duration</th></tr>
+                  <tr><th>{t('Date')}</th><th>{t('Visitor')}</th><th>{t('Type')}</th><th>Visiting</th><th>{t('Purpose')}</th><th>Duration</th></tr>
                 </thead>
                 <tbody>
                   {filteredHistory.length === 0 ? (
@@ -333,7 +335,7 @@ export default function VisitorSignIn() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button type="submit" className="btn btn-primary btn-sm" disabled={addFlag.isPending}>Add Flag</button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowFlagForm(false)}>Cancel</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowFlagForm(false)}>{t('Cancel')}</button>
                 </div>
               </form>
             )}
@@ -341,7 +343,7 @@ export default function VisitorSignIn() {
             <div className="table-container">
               <table className="table">
                 <thead>
-                  <tr><th>Visitor</th><th>Restriction</th><th>Reason</th><th>Related Resident</th><th>Flagged By</th><th>Date</th></tr>
+                  <tr><th>{t('Visitor')}</th><th>Restriction</th><th>Reason</th><th>Related Resident</th><th>Flagged By</th><th>{t('Date')}</th></tr>
                 </thead>
                 <tbody>
                   {(safeguarding as any[]).length === 0 ? (

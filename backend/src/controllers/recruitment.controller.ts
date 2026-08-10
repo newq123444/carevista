@@ -196,6 +196,16 @@ export async function updateInterviewOutcome(req: Request, res: Response, next: 
 
 // ── DBS Checks ────────────────────────────────────────────────────────────
 
+export async function listDbsChecks(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { rows } = await query(
+      `SELECT * FROM dbs_checks WHERE care_home_id = $1 ORDER BY created_at DESC`,
+      [req.user!.care_home_id]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
 export async function createDbsCheck(req: Request, res: Response, next: NextFunction) {
   try {
     const careHomeId = req.user!.care_home_id;
