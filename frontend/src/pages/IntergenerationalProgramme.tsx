@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { RecordView } from '../components/ui';
 import { useIntergenerationalProgrammes, useCreateIntergenerationalProgramme, useIntergenerationalVisits, useCreateIntergenerationalVisit, useAddIntergenerationalParticipant, useLogIntergenerationalOutcome, useIntergenerationalSafeguarding, useIntergenerationalWellbeingImpact, useResidents } from '../hooks';
 
 export default function IntergenerationalProgramme() {
@@ -6,6 +7,9 @@ export default function IntergenerationalProgramme() {
   const [showProgrammeForm, setShowProgrammeForm] = useState(false);
   const [showVisitForm, setShowVisitForm] = useState(false);
   const [selectedProgramme, setSelectedProgramme] = useState('');
+  const [participantFor, setParticipantFor] = useState('');
+  const [participantResident, setParticipantResident] = useState('');
+  const [participantScore, setParticipantScore] = useState('4');
 
   const { data: residents } = useResidents();
   const { data: programmes = [] } = useIntergenerationalProgrammes();
@@ -168,11 +172,37 @@ export default function IntergenerationalProgramme() {
                   <span style={{ fontWeight: 600 }}>{v.programme_name || 'Visit'}</span>
                   <span style={{ marginLeft: 12, fontSize: '0.82rem', color: '#6b7280' }}>{v.visit_date} at {v.start_time}</span>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: '0.72rem', background: '#e0e7ff', color: '#4338ca' }}>{v.activity_type}</span>
                   <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: '0.72rem', background: v.status === 'completed' ? '#dcfce7' : '#fef3c7', color: v.status === 'completed' ? '#16a34a' : '#d97706' }}>{v.status}</span>
+                  <button onClick={() => { setParticipantFor(participantFor === v.id ? '' : v.id); setParticipantResident(''); }} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #0d9488', background: '#f0fdfa', color: '#0d9488', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}>
+                    {participantFor === v.id ? 'Close' : '+ Add resident'}
+                  </button>
                 </div>
               </div>
+              {participantFor === v.id && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f1f5f9', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  <div style={{ flex: '1 1 220px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: 4 }}>Resident who took part</label>
+                    <select value={participantResident} onChange={e => setParticipantResident(e.target.value)} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                      <option value="">Select a resident…</option>
+                      {residentList.map((r: any) => <option key={r.id} value={r.id}>{r.first_name} {r.last_name} — Room {r.room_number}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ width: 150 }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: 4 }}>Engagement (1-5)</label>
+                    <select value={participantScore} onChange={e => setParticipantScore(e.target.value)} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                      {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </div>
+                  <button onClick={() => {
+                    if (!participantResident) return;
+                    addParticipantMutation.mutate({ visit_id: v.id, resident_id: participantResident, engagement_score: parseInt(participantScore) } as any, {
+                      onSuccess: () => { setParticipantResident(''); setParticipantFor(''); },
+                    });
+                  }} disabled={!participantResident} style={{ padding: '9px 18px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', opacity: participantResident ? 1 : 0.5 }}>Add</button>
+                </div>
+              )}
             </div>
           ))}
           {visitList.length === 0 && <p style={{ color: '#6b7280' }}>No visits scheduled yet.</p>}
@@ -185,16 +215,7 @@ export default function IntergenerationalProgramme() {
           {selectedProgramme ? (
             safeguarding ? (
               <div style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-                  {Object.entries(safeguarding as Record<string, any>).filter(([k]) => k !== 'id' && k !== 'care_home_id' && k !== 'programme_id').map(([key, value]) => (
-                    <div key={key} style={{ padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                      <div style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500, textTransform: 'capitalize', marginBottom: 4 }}>{key.replace(/_/g, ' ')}</div>
-                      <div style={{ fontSize: '0.9rem', color: '#1e293b', fontWeight: 600 }}>
-                        {value == null ? '-' : typeof value === 'boolean' ? (value ? 'Yes' : 'No') : typeof value === 'object' ? (Array.isArray(value) ? value.join(', ') : JSON.stringify(value)) : String(value)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <RecordView data={safeguarding} empty="No safeguarding checks recorded for this programme yet." />
               </div>
             ) : <p style={{ color: '#6b7280' }}>Loading safeguarding data...</p>
           ) : <p style={{ color: '#6b7280' }}>Select a programme from the Programmes tab to view safeguarding requirements.</p>}
@@ -206,16 +227,7 @@ export default function IntergenerationalProgramme() {
           <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 16 }}>Wellbeing Impact</h2>
           {wellbeingImpact ? (
             <div style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-                {Object.entries(wellbeingImpact as Record<string, any>).filter(([k]) => k !== 'id' && k !== 'care_home_id').map(([key, value]) => (
-                  <div key={key} style={{ padding: 12, background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#1e293b' }}>
-                      {value == null ? '-' : typeof value === 'number' ? value.toLocaleString() : typeof value === 'object' ? (Array.isArray(value) ? value.length : Object.keys(value).length) : String(value)}
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500, textTransform: 'capitalize', marginTop: 4 }}>{key.replace(/_/g, ' ')}</div>
-                  </div>
-                ))}
-              </div>
+              <RecordView data={wellbeingImpact} empty="No wellbeing impact data yet — log visit outcomes to build it." />
             </div>
           ) : <p style={{ color: '#6b7280' }}>No outcome data available yet. Log participant outcomes after visits.</p>}
         </div>

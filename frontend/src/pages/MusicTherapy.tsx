@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { RecordView } from '../components/ui';
 import { useMusicGenres, useMusicPreferences, useUpdateMusicPreferences, useStartMusicSession, useEndMusicSession, useMusicSessionHistory, useMusicEffectiveness, useResidents } from '../hooks';
 
 export default function MusicTherapy() {
@@ -207,16 +208,7 @@ export default function MusicTherapy() {
           {effectivenessData && typeof effectivenessData === 'object' && Object.keys(effectivenessData).length > 0 ? (
             <div style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }}>
               <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 12 }}>Analysis of music sessions and their impact on mood for the selected resident.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
-                {Object.entries(effectivenessData as Record<string, any>).filter(([k]) => k !== 'id' && k !== 'care_home_id' && k !== 'resident_id').map(([key, value]) => (
-                  <div key={key} style={{ padding: 12, background: '#faf5ff', borderRadius: 8, border: '1px solid #e9d5ff', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#1e293b' }}>
-                      {value == null ? '-' : typeof value === 'number' ? (Number.isInteger(value) ? value : value.toFixed(1)) : typeof value === 'object' ? (Array.isArray(value) ? value.join(', ') : Object.keys(value).length) : String(value)}
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500, textTransform: 'capitalize', marginTop: 4 }}>{key.replace(/_/g, ' ')}</div>
-                  </div>
-                ))}
-              </div>
+              <RecordView data={effectivenessData} empty="No effectiveness data yet — log sessions to build it." />
             </div>
           ) : (
             <p style={{ color: '#6b7280' }}>Select a resident and complete some sessions to see effectiveness data.</p>

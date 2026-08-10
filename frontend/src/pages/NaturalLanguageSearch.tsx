@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { RecordView } from '../components/ui';
 import { useNlSearch, useSearchHistory } from '../hooks';
 import type { NlSearchQuery } from '../types';
 
@@ -98,16 +99,7 @@ export default function NaturalLanguageSearch() {
     // Generic fallback: render key-value pairs as a formatted card
     return (
       <div key={idx} style={{ padding: 16, borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
-          {Object.entries(item).filter(([k]) => k !== 'id' && k !== 'care_home_id').map(([key, value]) => (
-            <div key={key} style={{ padding: 8, background: '#f8fafc', borderRadius: 6 }}>
-              <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 500, textTransform: 'capitalize', marginBottom: 2 }}>{key.replace(/_/g, ' ')}</div>
-              <div style={{ fontSize: '0.82rem', color: '#1e293b', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {value == null ? '-' : typeof value === 'object' ? (Array.isArray(value) ? value.join(', ') : Object.values(value).join(', ')) : String(value)}
-              </div>
-            </div>
-          ))}
-        </div>
+        <RecordView data={item} empty="No details available." />
       </div>
     );
   };

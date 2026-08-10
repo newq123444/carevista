@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../store/auth.store';
 import { useNavigate } from 'react-router-dom';
 import { ROLE_LABELS } from '../utils/formatters';
+import { authApi } from '../services/api';
+import { toast } from '../utils/toast';
 
 const ROLE_COLORS: Record<string, string> = {
   home_manager: '#7c3aed', deputy_manager: '#0d9488', registered_nurse: '#0891b2',
@@ -13,6 +15,25 @@ export default function Profile() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [showLogout, setShowLogout] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [pw, setPw] = useState({ currentPassword: '', newPassword: '', confirm: '' });
+  const [pwBusy, setPwBusy] = useState(false);
+
+  const submitPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pw.newPassword.length < 8) { toast.error('New password must be at least 8 characters'); return; }
+    if (pw.newPassword !== pw.confirm) { toast.error('New passwords do not match'); return; }
+    setPwBusy(true);
+    try {
+      await authApi.changePassword({ currentPassword: pw.currentPassword, newPassword: pw.newPassword });
+      toast.success('Password changed. Please sign in again.');
+      setPw({ currentPassword: '', newPassword: '', confirm: '' });
+      setShowPw(false);
+      setTimeout(() => { logout().then(() => navigate('/login')); }, 1200);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not change password');
+    } finally { setPwBusy(false); }
+  };
   const rc = ROLE_COLORS[user?.role || ''] || '#0d9488';
 
   const handleLogout = async () => {
@@ -40,6 +61,40 @@ export default function Profile() {
               <span style={{ fontWeight: 600 }}>{v}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Change password */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-body">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>🔒 Password</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Change the password you use to sign in</div>
+            </div>
+            <button onClick={() => setShowPw(v => !v)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2, #f8fafc)', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+              {showPw ? 'Cancel' : 'Change password'}
+            </button>
+          </div>
+          {showPw && (
+            <form onSubmit={submitPassword} style={{ marginTop: 16, display: 'grid', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Current password</label>
+                <input type="password" value={pw.currentPassword} onChange={e => setPw(f => ({ ...f, currentPassword: e.target.value }))} required autoComplete="current-password" style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 8 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>New password (min 8 characters)</label>
+                <input type="password" value={pw.newPassword} onChange={e => setPw(f => ({ ...f, newPassword: e.target.value }))} required autoComplete="new-password" style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 8 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Confirm new password</label>
+                <input type="password" value={pw.confirm} onChange={e => setPw(f => ({ ...f, confirm: e.target.value }))} required autoComplete="new-password" style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 8 }} />
+              </div>
+              <button type="submit" disabled={pwBusy} style={{ padding: '11px', borderRadius: 8, background: '#0d9488', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
+                {pwBusy ? 'Saving…' : 'Update password'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
       <div className="card">

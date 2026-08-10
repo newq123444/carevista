@@ -30,6 +30,7 @@ export default function RecruitmentPipeline() {
   const { data: pipeline } = useRecruitmentPipeline();
   const { data: staffList } = useStaff();
   const createPosting = useCreateJobPosting();
+  const createApplication = useCreateJobApplication();
   const updateApplicationStage = useUpdateApplicationStage();
   const scheduleInterview = useScheduleInterview();
   const createDbsCheck = useCreateDbsCheck();
@@ -38,6 +39,8 @@ export default function RecruitmentPipeline() {
   // Form states
   const [showPostingForm, setShowPostingForm] = useState(false);
   const [showInterviewModal, setShowInterviewModal] = useState(false);
+  const [showApplicantForm, setShowApplicantForm] = useState(false);
+  const [applicantForm, setApplicantForm] = useState({ job_posting_id: '', applicant_name: '', applicant_email: '', applicant_phone: '', stage: 'applied', notes: '' });
   const [postingForm, setPostingForm] = useState({
     title: '', department: '', contract_type: 'full_time',
     hours_per_week: '', salary_range: '', description: '', requirements: '',
@@ -81,6 +84,17 @@ export default function RecruitmentPipeline() {
     });
     setInterviewForm({ application_id: '', scheduled_at: '', interviewer_id: '', location: '', interview_type: 'in_person' });
     setShowInterviewModal(false);
+  };
+
+  const handleAddApplicant = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!applicantForm.job_posting_id || !applicantForm.applicant_name.trim() || !applicantForm.applicant_email.trim()) return;
+    createApplication.mutate(applicantForm, {
+      onSuccess: () => {
+        setApplicantForm({ job_posting_id: '', applicant_name: '', applicant_email: '', applicant_phone: '', stage: 'applied', notes: '' });
+        setShowApplicantForm(false);
+      },
+    });
   };
 
   const moveApplication = (appId: string, newStage: string) => {
@@ -291,7 +305,40 @@ export default function RecruitmentPipeline() {
       {/* Kanban Board */}
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-body">
-          <h3 style={{ margin: '0 0 16px' }}>Application Pipeline</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <h3 style={{ margin: 0 }}>Application Pipeline</h3>
+            <button onClick={() => setShowApplicantForm(v => !v)} style={{ padding: '8px 16px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
+              {showApplicantForm ? 'Cancel' : '+ Add Applicant'}
+            </button>
+          </div>
+          {showApplicantForm && (
+            <form onSubmit={handleAddApplicant} style={{ padding: 16, background: '#f8fafc', borderRadius: 10, border: '1px solid #e5e7eb', marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4 }}>Role applied for</label>
+                  <select value={applicantForm.job_posting_id} onChange={e => setApplicantForm(f => ({ ...f, job_posting_id: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                    <option value="">Select a role…</option>
+                    {jobPostingsList.map(pst => <option key={pst.id} value={pst.id}>{pst.title}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4 }}>Applicant name</label>
+                  <input type="text" value={applicantForm.applicant_name} onChange={e => setApplicantForm(f => ({ ...f, applicant_name: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4 }}>Email</label>
+                  <input type="email" value={applicantForm.applicant_email} onChange={e => setApplicantForm(f => ({ ...f, applicant_email: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4 }}>Phone (optional)</label>
+                  <input type="tel" value={applicantForm.applicant_phone} onChange={e => setApplicantForm(f => ({ ...f, applicant_phone: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                </div>
+              </div>
+              <button type="submit" disabled={createApplication.isPending} style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>
+                {createApplication.isPending ? 'Adding…' : 'Add Applicant'}
+              </button>
+            </form>
+          )}
           <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
             {STAGES.map(stage => {
               const stageApps = applicationsList.filter(a => a.stage === stage);

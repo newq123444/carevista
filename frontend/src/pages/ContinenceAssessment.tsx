@@ -1,5 +1,6 @@
 // src/pages/ContinenceAssessment.tsx — Continence Care & Pattern Analysis
 import React, { useState, useMemo } from 'react';
+import { RecordView } from '../components/ui';
 import { useResidents, useLogContinence, useContinenceLog, useContinencePatterns, useContinenceAssessment, useCreateContinenceAssessment, useContinenceOverview } from '../hooks';
 import type { Resident, ContinenceLog, ContinencePattern, ContinenceAssessment as ContinenceAssessmentType } from '../types';
 
@@ -261,7 +262,7 @@ export default function ContinenceAssessment() {
                 <div style={{ fontSize: '0.9rem', color: '#047857' }}>
                   {typeof currentAssessment.recommended_schedule === 'string'
                     ? currentAssessment.recommended_schedule
-                    : JSON.stringify(currentAssessment.recommended_schedule, null, 2)}
+                    : <RecordView data={currentAssessment.recommended_schedule} empty="No schedule generated yet." columns={2} />}
                 </div>
               </div>
             )}

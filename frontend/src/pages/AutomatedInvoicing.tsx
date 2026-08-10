@@ -1,6 +1,6 @@
 // src/pages/AutomatedInvoicing.tsx
 import React, { useState } from 'react';
-import { useRateUplifts, useCreateRateUplift, useApproveRateUplift, usePaymentReminders, useRevenueDashboard, useResidents } from '../hooks';
+import { useRateUplifts, useCreateRateUplift, useApproveRateUplift, usePaymentReminders, useSendPaymentReminder, useRevenueDashboard, useResidents } from '../hooks';
 import { formatDate, formatPence } from '../utils/formatters';
 import type { RateUplift, PaymentReminder, Resident } from '../types';
 
@@ -21,6 +21,7 @@ export default function AutomatedInvoicing() {
   const { data: reminders = [], isLoading: loadingReminders } = usePaymentReminders();
   const { data: residents = [] } = useResidents({ active: true });
   const approveUplift = useApproveRateUplift();
+  const sendReminder = useSendPaymentReminder();
 
   const dash = dashboard || {} as any;
   const monthlyRevenue = dash.monthly_revenue_pence || 0;
@@ -171,13 +172,14 @@ export default function AutomatedInvoicing() {
                   <th>Days Overdue</th>
                   <th>Status</th>
                   <th>Last Reminder</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {loadingReminders ? (
-                  [...Array(3)].map((_, i) => <tr key={i}><td colSpan={8}><div style={{ height: 14, background: 'var(--border)', borderRadius: 4 }} /></td></tr>)
+                  [...Array(3)].map((_, i) => <tr key={i}><td colSpan={9}><div style={{ height: 14, background: 'var(--border)', borderRadius: 4 }} /></td></tr>)
                 ) : (reminders as PaymentReminder[]).length === 0 ? (
-                  <tr><td colSpan={8} className="table-empty">No payment reminders</td></tr>
+                  <tr><td colSpan={9} className="table-empty">No payment reminders</td></tr>
                 ) : (
                   (reminders as PaymentReminder[]).map(r => (
                     <tr key={r.id} style={{ background: r.days_overdue > 30 ? 'rgba(196,54,39,.04)' : undefined }}>
@@ -189,6 +191,14 @@ export default function AutomatedInvoicing() {
                       <td style={{ fontWeight: 600, color: r.days_overdue > 30 ? '#dc2626' : r.days_overdue > 14 ? '#d97706' : undefined }}>{r.days_overdue} days</td>
                       <td><span className={`badge ${STATUS_BADGE[r.status]}`} style={{ textTransform: 'capitalize' }}>{r.status}</span></td>
                       <td style={{ fontSize: '0.82rem' }}>{r.reminder_sent_at ? formatDate(r.reminder_sent_at) : 'Never'}</td>
+                      <td>
+                        <button
+                          onClick={() => sendReminder.mutate({ invoice_id: (r as any).invoice_id || r.id, reminder_type: r.days_overdue > 30 ? 'final' : r.days_overdue > 14 ? 'second' : 'first', channel: 'email' })}
+                          disabled={sendReminder.isPending}
+                          style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #0d9488', background: '#f0fdfa', color: '#0d9488', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}>
+                          Send reminder
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}

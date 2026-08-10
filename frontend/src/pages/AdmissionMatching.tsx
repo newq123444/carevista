@@ -32,6 +32,12 @@ export default function AdmissionMatching() {
     createReferral.mutate(form);
   };
 
+  const decideMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      api.patch(`/admissions/referrals/${id}`, { status }).then(r => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admission-referrals'] }),
+  });
+
   return (
     <div>
       <div className="page-header">
@@ -57,7 +63,15 @@ export default function AdmissionMatching() {
                   <div style={{ fontWeight: 600, fontSize: 14 }}>{ref.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Source: {ref.referral_source || 'Unknown'} | Mobility: {ref.mobility || 'N/A'} | Urgency: {ref.urgency}</div>
                 </div>
-                <span style={{ padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: ref.status === 'accepted' ? '#dcfce7' : ref.status === 'declined' ? '#fef2f2' : '#fef3c7', color: ref.status === 'accepted' ? '#16a34a' : ref.status === 'declined' ? '#dc2626' : '#d97706' }}>{ref.status?.toUpperCase()}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: ref.status === 'accepted' ? '#dcfce7' : ref.status === 'declined' ? '#fef2f2' : '#fef3c7', color: ref.status === 'accepted' ? '#16a34a' : ref.status === 'declined' ? '#dc2626' : '#d97706' }}>{ref.status?.toUpperCase()}</span>
+                  {(!ref.status || ref.status === 'pending') && (
+                    <>
+                      <button onClick={() => decideMutation.mutate({ id: ref.id, status: 'accepted' })} disabled={decideMutation.isPending} style={{ padding: '4px 12px', borderRadius: 7, border: '1px solid #16a34a', background: '#f0fdf4', color: '#15803d', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Accept</button>
+                      <button onClick={() => decideMutation.mutate({ id: ref.id, status: 'declined' })} disabled={decideMutation.isPending} style={{ padding: '4px 12px', borderRadius: 7, border: '1px solid #dc2626', background: '#fef2f2', color: '#b91c1c', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Decline</button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
             {referrals?.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>No referrals yet. Create one to get a match score.</div>}

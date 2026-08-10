@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { RecordView } from '../components/ui';
 import { useRiskOverview, useOverdueRiskReviews, useCalculateWaterlow, useCalculateMUST, useCalculateFallsRisk2, useResidentRiskAssessments, useResidents } from '../hooks';
 import type { RiskOverviewItem, RiskAssessment } from '../types';
 
@@ -261,7 +262,7 @@ export default function RiskAssessments() {
               {detailAssessment.factors && (
                 <div style={{ marginTop: 8 }}>
                   <strong>Factors:</strong>
-                  <pre style={{ background: '#f8fafc', padding: 10, borderRadius: 6, fontSize: '0.75rem', overflowX: 'auto', margin: '4px 0 0' }}>{JSON.stringify(detailAssessment.factors, null, 2)}</pre>
+                  <div style={{ marginTop: 6 }}><RecordView data={detailAssessment.factors} empty="No contributing factors recorded." columns={2} /></div>
                 </div>
               )}
               {detailAssessment.notes && <div><strong>Notes:</strong> {detailAssessment.notes}</div>}

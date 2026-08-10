@@ -35,6 +35,11 @@ export default function BenchmarkingDashboard() {
       ) : (
         <>
           {/* KPI Cards */}
+          {metrics.length === 0 && (
+            <div style={{ padding: 32, textAlign: 'center', background: '#f9fafb', borderRadius: 12, border: '1px dashed #d1d5db', color: '#6b7280', marginBottom: 24 }}>
+              No benchmark data yet. Use <strong>Calculate KPIs</strong> to generate this home's metrics from live care data.
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16, marginBottom: 32 }}>
             {metrics.map((kpi: any) => {
               const colors = getPerformanceColor(kpi.performance_level);
@@ -83,6 +88,9 @@ export default function BenchmarkingDashboard() {
                     <div style={{ fontWeight: 700, color: '#111827' }}>{avg.value}</div>
                   </div>
                 ))}
+                {(!Array.isArray(averages) || averages.length === 0) && (
+                  <div style={{ color: '#6b7280', fontSize: '0.85rem' }}>National average data is not loaded yet.</div>
+                )}
               </div>
             </div>
           )}

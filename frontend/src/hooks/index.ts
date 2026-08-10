@@ -132,6 +132,12 @@ export function useUpdateComplianceAction() {
 export function useFamilyMessages(params?: object) {
   return useQuery({ queryKey: ['family-messages', params], queryFn: () => familyApi.listMessages(params).then(r => r.data), refetchInterval: 30_000 });
 }
+export function useReplyFamilyMessage() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, body }: { id: string; body: string }) => familyApi.replyMessage(id, body).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['family-messages'] }); toast.success('Reply sent'); },
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to send reply') });
+}
 export function useSendFamilyMessage() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (data: object) => familyApi.sendMessage(data).then(r => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['family-messages'] }); toast.success('Message sent'); }, onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to send') });
@@ -577,6 +583,12 @@ export function useCreateRateUplift() {
 export function useApproveRateUplift() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: ({ id, data }: { id: string; data: object }) => invoicingApi.approveRateUplift(id, data).then(r => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['rate-uplifts'] }); toast.success('Rate uplift updated'); }, onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to update rate uplift') });
+}
+export function useSendPaymentReminder() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (data: object) => invoicingApi.sendReminder(data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoicing'] }); toast.success('Reminder sent'); },
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to send reminder') });
 }
 export function usePaymentReminders(params?: object) {
   return useQuery({ queryKey: ['payment-reminders', params], queryFn: () => invoicingApi.listReminders(params).then(r => r.data) });

@@ -16,6 +16,10 @@ api.interceptors.request.use(cfg => {
 });
 
 // ── Residents ──────────────────────────────────────────────────────────────
+export const authApi = {
+  changePassword: (data: object) => api.post('/auth/change-password', data),
+};
+
 export const residentsApi = {
   list:      (params?: object) => api.get('/residents', { params }),
   get:       (id: string) => api.get(`/residents/${id}`),
@@ -93,6 +97,7 @@ export const complianceApi = {
 export const familyApi = {
   listMessages: (params?: object) => api.get('/family/messages', { params }),
   sendMessage:  (data: object) => api.post('/family/messages', data),
+  replyMessage: (id: string, body: string) => api.post(`/family/messages/${id}/reply`, { body }),
   markRead:     (id: string) => api.patch(`/family/messages/${id}/read`),
   listContacts: (residentId: string) => api.get(`/family/contacts/${residentId}`),
   getDashboard: (residentId: string) => api.get(`/family/dashboard/${residentId}`),
@@ -276,6 +281,7 @@ export const invoicingApi = {
   createRateUplift:   (data: object) => api.post('/invoicing/rate-uplifts', data),
   approveRateUplift:  (id: string, data: object) => api.patch(`/invoicing/rate-uplifts/${id}`, data),
   listReminders:      (params?: object) => api.get('/invoicing/payment-reminders', { params }),
+  sendReminder:       (data: object) => api.post('/invoicing/payment-reminders', data),
   getRevenueDashboard:() => api.get('/invoicing/revenue-dashboard'),
 };
 

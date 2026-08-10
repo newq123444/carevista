@@ -145,6 +145,13 @@ export default function ElearningModule() {
         <p style={{ color: '#6b7280' }}>Loading modules...</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          {filteredModules.length === 0 && (
+            <div style={{ gridColumn: '1 / -1', padding: 32, textAlign: 'center', background: '#f9fafb', borderRadius: 12, border: '1px dashed #d1d5db', color: '#6b7280' }}>
+              {filter === 'all'
+                ? 'No training modules yet. Use “+ New Module” to create your first one.'
+                : 'No modules in this category yet.'}
+            </div>
+          )}
           {filteredModules.map((mod: any) => {
             const completion = completionList.find((c: any) => c.module_id === mod.id);
             return (

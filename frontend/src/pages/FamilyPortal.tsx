@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import {
   useResidents,
   useFamilyDashboard,
+  useReplyFamilyMessage,
   useFamilyDailySummary,
   useGenerateDailySummary,
   useFamilyWeeklyReport,
@@ -442,6 +443,9 @@ function MessagesTab({ residents }: { residents: Resident[] }) {
   const [msgTab, setMsgTab] = useState<'inbox' | 'sent'>('inbox');
   const [residentFilter, setFilter] = useState('');
   const [showCompose, setCompose] = useState(false);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const replyMutation = useReplyFamilyMessage();
 
   const { data: rawMessages = [], isLoading } = useFamilyMessages({ residentId: residentFilter || undefined });
   const messages: any[] = Array.isArray(rawMessages) ? rawMessages : [];
@@ -520,8 +524,20 @@ function MessagesTab({ residents }: { residents: Resident[] }) {
                   </div>
                   <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{m.body?.slice(0, 300)}{m.body?.length > 300 ? '...' : ''}</p>
                   {m.direction === 'inbound' && (
-                    <div style={{ marginTop: 10 }}>
-                      <button onClick={e => { e.stopPropagation(); setCompose(true); }} style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#0d9488', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Reply</button>
+                    <div style={{ marginTop: 10 }} onClick={e => e.stopPropagation()}>
+                      {replyTo === m.id ? (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <input autoFocus value={replyText} onChange={e => setReplyText(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter' && replyText.trim()) { replyMutation.mutate({ id: m.id, body: replyText.trim() }, { onSuccess: () => { setReplyText(''); setReplyTo(null); } }); } }}
+                            placeholder="Write a reply…" style={{ flex: 1, padding: '7px 11px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }} />
+                          <button onClick={() => replyText.trim() && replyMutation.mutate({ id: m.id, body: replyText.trim() }, { onSuccess: () => { setReplyText(''); setReplyTo(null); } })}
+                            disabled={!replyText.trim() || replyMutation.isPending}
+                            style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: '#0d9488', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Send</button>
+                          <button onClick={() => { setReplyTo(null); setReplyText(''); }} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2, #f3f4f6)', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => { setReplyTo(m.id); setReplyText(''); }} style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#0d9488', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Reply</button>
+                      )}
                     </div>
                   )}
                 </div>

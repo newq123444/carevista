@@ -94,3 +94,74 @@ export function PageHeading({ greeting, subtitle, emoji, action }: {
     </div>
   );
 }
+
+// ── RecordView ────────────────────────────────────────────────────────────
+// Renders an arbitrary API/DB record as a readable, human-labelled grid
+// instead of dumping raw column names. Formats dates, booleans, numbers,
+// arrays and nested objects, and hides internal/empty fields.
+const HIDDEN_KEYS = new Set([
+  'id', 'care_home_id', 'resident_id', 'programme_id', 'created_at', 'updated_at',
+  'deleted_at', 'created_by', 'updated_by', 'logged_by', 'observed_by', 'user_id',
+]);
+
+const ACRONYMS: Record<string, string> = { cqc: 'CQC', nhs: 'NHS', gp: 'GP', bmi: 'BMI', must: 'MUST', dnacpr: 'DNACPR', ai: 'AI', id: 'ID' };
+
+export function humanizeKey(key: string): string {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\bpct\b/gi, '%')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(w => ACRONYMS[w.toLowerCase()] || (w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(' ');
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T|$)/;
+
+export function formatValue(value: any): string {
+  if (value == null || value === '') return '—';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'number') return Number.isInteger(value) ? String(value) : value.toFixed(1);
+  if (Array.isArray(value)) return value.length ? value.map(v => (typeof v === 'object' ? Object.values(v).join(' ') : String(v))).join(', ') : '—';
+  if (typeof value === 'object') {
+    const parts = Object.entries(value)
+      .filter(([k]) => !HIDDEN_KEYS.has(k))
+      .map(([k, v]) => `${humanizeKey(k)}: ${formatValue(v)}`);
+    return parts.length ? parts.join(' · ') : '—';
+  }
+  const s = String(value);
+  if (ISO_DATE.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return s.length <= 10
+        ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+  }
+  if (/^[a-z0-9]+(_[a-z0-9]+)+$/.test(s)) return humanizeKey(s);
+  return s;
+}
+
+export function RecordView({ data, empty = 'Nothing recorded yet.', columns = 3 }: {
+  data: any; empty?: string; columns?: number;
+}) {
+  if (!data || typeof data !== 'object') {
+    return <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{empty}</div>;
+  }
+  const entries = Object.entries(data).filter(([k, v]) =>
+    !HIDDEN_KEYS.has(k) && v != null && v !== '' && !(Array.isArray(v) && v.length === 0));
+  if (entries.length === 0) {
+    return <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{empty}</div>;
+  }
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${Math.max(140, Math.floor(600 / columns))}px, 1fr))`, gap: 12 }}>
+      {entries.map(([key, value]) => (
+        <div key={key} style={{ padding: '10px 12px', background: 'var(--surface-2, #f8fafc)', borderRadius: 8, border: '1px solid var(--border, #e5e7eb)' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted, #6b7280)', fontWeight: 600, marginBottom: 3 }}>{humanizeKey(key)}</div>
+          <div style={{ fontSize: 14, color: 'var(--text-primary, #1e293b)', fontWeight: 600, wordBreak: 'break-word' }}>{formatValue(value)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}

@@ -64,6 +64,11 @@ export default function ResidentTablet() {
               {activity}
             </button>
           ))}
+          {activities.length === 0 && (
+            <div style={{ gridColumn: '1 / -1', padding: 28, textAlign: 'center', fontSize: '20px', color: '#6b7280', background: '#fff', borderRadius: 16, border: '2px dashed #d1d5db' }}>
+              No activities are set up yet. Ask a staff member to add some.
+            </div>
+          )}
         </div>
       </div>
     );
