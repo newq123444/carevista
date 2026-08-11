@@ -1,6 +1,6 @@
 // src/pages/Housekeeping.tsx — cleaner-facing housekeeping checklists
 import React, { useMemo, useState } from 'react';
-import { useLang } from './i18n';
+import { useLang } from '../i18n';
 import { useAuthStore } from '../store/auth.store';
 import {
   useHousekeepingTasks, useHousekeepingRooms, useHousekeepingCommunalAreas,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLang } from './i18n';
+import { useLang } from '../i18n';
 import { useAuthStore } from '../store/auth.store';
 import { useNavigate } from 'react-router-dom';
 import { ROLE_LABELS } from '../utils/formatters';

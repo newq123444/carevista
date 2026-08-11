@@ -1127,7 +1127,7 @@ export function useSubmitMenuChoice() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (data: object) => menuChoiceApi.submitChoice(data).then(r => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['menu-choices'] }); toast.success('Menu choice submitted'); }, onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to submit choice') });
 }
-export function useKitchenDashboard() {
+export function useMenuKitchenDashboard() {
   return useQuery({ queryKey: ['menu-choices', 'kitchen-dashboard'], queryFn: () => menuChoiceApi.getKitchenDashboard().then(r => r.data) });
 }
 export function useResidentMenuChoices(residentId: string) {

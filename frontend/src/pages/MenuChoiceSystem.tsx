@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { RecordView } from '../components/ui';
-import { useMenuOptions, useCreateMenuOption, useMenuDietaryProfile, useUpdateMenuDietaryProfile, useSubmitMenuChoice, useKitchenDashboard, useResidentMenuChoices, useResidents } from '../hooks';
+import { useMenuOptions, useCreateMenuOption, useMenuDietaryProfile, useUpdateMenuDietaryProfile, useSubmitMenuChoice, useMenuKitchenDashboard, useResidentMenuChoices, useResidents } from '../hooks';
 
 export default function MenuChoiceSystem() {
   const { t } = useLang();
@@ -12,7 +12,7 @@ export default function MenuChoiceSystem() {
   const { data: residents } = useResidents();
   const { data: options = [] } = useMenuOptions();
   const { data: dietaryProfile } = useMenuDietaryProfile(selectedResident);
-  const { data: kitchenData } = useKitchenDashboard();
+  const { data: kitchenData } = useMenuKitchenDashboard();
   const { data: residentChoices = [] } = useResidentMenuChoices(selectedResident);
 
   const createOptionMutation = useCreateMenuOption();

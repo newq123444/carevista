@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLang } from '../../i18n';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
-import { useDashboard, useIncidents, useComplianceActions, useInvoices, useResidents, useStaff, useTraining, useHousekeepingSummary, useKitchenDashboard, useRoomTurnoverDashboard } from '../../hooks';
+import { useDashboard, useIncidents, useComplianceActions, useInvoices, useResidents, useStaff, useTraining, useHousekeepingSummary, useMenuKitchenDashboard, useRoomTurnoverDashboard } from '../../hooks';
 import { formatDate, formatPence } from '../../utils/formatters';
 import type { Incident, ComplianceAction, Invoice, Resident } from '../../types';
 import WeatherWidget from '../../components/WeatherWidget';
@@ -65,7 +65,7 @@ export default function ManagerDashboard() {
   const { data: rawResidents = [] }   = useResidents({ active: true });
   const { data: rawStaff = [] }       = useStaff();
   const { data: hkSummary }           = useHousekeepingSummary();
-  const { data: kitchenOrders }       = useKitchenDashboard();
+  const { data: kitchenOrders }       = useMenuKitchenDashboard();
   const { data: turnoverData }        = useRoomTurnoverDashboard();
   const { data: rawTraining = [] }    = useTraining();
 
