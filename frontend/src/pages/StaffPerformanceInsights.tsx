@@ -3,7 +3,7 @@ import { useLang } from '../i18n';
 import { useStaffPerformanceTeam, useStaffPerformanceIndividual, useStaffResponseTimes, useCalculateStaffPerformance, useStaff } from '../hooks';
 
 export default function StaffPerformanceInsights() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [viewMode, setViewMode] = useState<'team' | 'individual'>('team');
   const [selectedStaffId, setSelectedStaffId] = useState('');
 
@@ -33,10 +33,10 @@ export default function StaffPerformanceInsights() {
       {/* View Toggle */}
       <div style={{ display: 'flex', gap: 4, padding: 4, background: '#f3f4f6', borderRadius: 10, marginBottom: 24, width: 'fit-content' }}>
         <button onClick={() => setViewMode('team')} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer', background: viewMode === 'team' ? '#fff' : 'transparent', color: viewMode === 'team' ? '#111827' : '#6b7280', boxShadow: viewMode === 'team' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
-          {t('Team View')}
+          {tr('Team View')}
         </button>
         <button onClick={() => setViewMode('individual')} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer', background: viewMode === 'individual' ? '#fff' : 'transparent', color: viewMode === 'individual' ? '#111827' : '#6b7280', boxShadow: viewMode === 'individual' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
-          {t('Individual View')}
+          {tr('Individual View')}
         </button>
       </div>
 
@@ -89,7 +89,7 @@ export default function StaffPerformanceInsights() {
         <>
           {/* Individual View */}
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Select Staff Member')}</label>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Select Staff Member')}</label>
             <select
               value={selectedStaffId}
               onChange={e => setSelectedStaffId(e.target.value)}

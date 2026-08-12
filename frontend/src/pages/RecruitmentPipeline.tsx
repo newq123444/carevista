@@ -25,7 +25,7 @@ const CONTRACT_TYPES = [
 ];
 
 export default function RecruitmentPipeline() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: postings } = useJobPostings();
   const { data: applications } = useJobApplications();
   const { data: interviews } = useInterviews();
@@ -189,7 +189,7 @@ export default function RecruitmentPipeline() {
                     </div>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>{t('Description')}</label>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>{tr('Description')}</label>
                     <textarea className="input" rows={3} value={postingForm.description} onChange={e => setPostingForm(f => ({ ...f, description: e.target.value }))} placeholder="Job description..." />
                   </div>
                   <div>
@@ -197,7 +197,7 @@ export default function RecruitmentPipeline() {
                     <textarea className="input" rows={3} value={postingForm.requirements} onChange={e => setPostingForm(f => ({ ...f, requirements: e.target.value }))} placeholder="Required qualifications and experience..." />
                   </div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button type="button" className="btn btn-ghost" onClick={() => setShowPostingForm(false)}>{t('Cancel')}</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => setShowPostingForm(false)}>{tr('Cancel')}</button>
                     <button type="submit" className="btn btn-primary" disabled={createPosting.isPending}>
                       {createPosting.isPending ? 'Creating...' : 'Create Posting'}
                     </button>
@@ -255,7 +255,7 @@ export default function RecruitmentPipeline() {
                     </select>
                   </div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button type="button" className="btn btn-ghost" onClick={() => setShowInterviewModal(false)}>{t('Cancel')}</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => setShowInterviewModal(false)}>{tr('Cancel')}</button>
                     <button type="submit" className="btn btn-primary" disabled={scheduleInterview.isPending}>
                       {scheduleInterview.isPending ? 'Scheduling...' : 'Schedule Interview'}
                     </button>
@@ -280,8 +280,8 @@ export default function RecruitmentPipeline() {
                   <tr>
                     <th>Title</th>
                     <th>Department</th>
-                    <th>{t('Contract')}</th>
-                    <th>{t('Status')}</th>
+                    <th>{tr('Contract')}</th>
+                    <th>{tr('Status')}</th>
                     <th>Applications</th>
                     <th>Posted</th>
                   </tr>
@@ -400,7 +400,7 @@ export default function RecruitmentPipeline() {
                   <tr>
                     <th>Applicant</th>
                     <th>Check Type</th>
-                    <th>{t('Status')}</th>
+                    <th>{tr('Status')}</th>
                     <th>Submitted</th>
                     <th>Certificate No.</th>
                   </tr>

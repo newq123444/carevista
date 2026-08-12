@@ -4,7 +4,7 @@ import { RecordView } from '../components/ui';
 import { usePurposeRoles, useCreatePurposeRole, useAssignPurposeRole, useResidentPurposeRoles, useLogPurposeEngagement, usePurposeReport, usePurposeSuggestions, useResidents } from '../hooks';
 
 export default function DailyPurposePlanner() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'roles' | 'assign' | 'engagement' | 'suggestions'>('roles');
   const [showRoleForm, setShowRoleForm] = useState(false);
@@ -92,7 +92,7 @@ export default function DailyPurposePlanner() {
                   <input type="text" value={roleForm.category} onChange={e => setRoleForm(f => ({ ...f, category: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} placeholder="e.g. gardening" />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Description')}</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Description')}</label>
                   <input type="text" value={roleForm.description} onChange={e => setRoleForm(f => ({ ...f, description: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>
@@ -123,14 +123,14 @@ export default function DailyPurposePlanner() {
             <form onSubmit={handleAssignRole} style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', marginBottom: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Role')}</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Role')}</label>
                   <select value={assignForm.role_id} onChange={e => setAssignForm(f => ({ ...f, role_id: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                     <option value="">Select role...</option>
                     {roleList.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Notes')}</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Notes')}</label>
                   <input type="text" value={assignForm.notes} onChange={e => setAssignForm(f => ({ ...f, notes: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>
@@ -169,10 +169,10 @@ export default function DailyPurposePlanner() {
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Engagement</label>
                   <select value={engagementForm.engagement_level} onChange={e => setEngagementForm(f => ({ ...f, engagement_level: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
-                    <option value="high">{t('High')}</option>
-                    <option value="medium">{t('Medium')}</option>
-                    <option value="low">{t('Low')}</option>
-                    <option value="refused">{t('Refused')}</option>
+                    <option value="high">{tr('High')}</option>
+                    <option value="medium">{tr('Medium')}</option>
+                    <option value="low">{tr('Low')}</option>
+                    <option value="refused">{tr('Refused')}</option>
                   </select>
                 </div>
                 <div>

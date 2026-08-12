@@ -56,7 +56,7 @@ function KpiCard({ label, value, sub, icon, color, link, trend }: any) {
 }
 
 export default function ManagerDashboard() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { user }     = useAuthStore();
   const { data: dash, isLoading } = useDashboard();
   const { data: rawIncidents = [] }   = useIncidents({ status: 'open', limit: 10 });
@@ -226,9 +226,9 @@ export default function ManagerDashboard() {
               );
             })}
             <div style={{ padding: '8px 14px', fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 12 }}>
-              <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#16a34a', marginRight: 4 }} />{t('Good')}</span>
+              <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#16a34a', marginRight: 4 }} />{tr('Good')}</span>
               <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#d97706', marginRight: 4 }} />Requires attention</span>
-              <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#dc2626', marginRight: 4 }} />{t('Overdue')}</span>
+              <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#dc2626', marginRight: 4 }} />{tr('Overdue')}</span>
             </div>
           </div>
         </div>

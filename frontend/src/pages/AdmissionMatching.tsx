@@ -11,7 +11,7 @@ function scoreColor(score: number): string {
 }
 
 export default function AdmissionMatching() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [tab, setTab] = useState<'referrals' | 'new' | 'result'>('referrals');
   const [matchResult, setMatchResult] = useState<any>(null);
   const [form, setForm] = useState({ name: '', dateOfBirth: '', referralSource: '', mobility: 'independent', behavior: 'settled', urgency: 'routine', medicalHistory: '', careNeeds: { nursingCare: false, dementiaCare: false, palliative: false } });
@@ -69,8 +69,8 @@ export default function AdmissionMatching() {
                   <span style={{ padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: ref.status === 'accepted' ? '#dcfce7' : ref.status === 'declined' ? '#fef2f2' : '#fef3c7', color: ref.status === 'accepted' ? '#16a34a' : ref.status === 'declined' ? '#dc2626' : '#d97706' }}>{ref.status?.toUpperCase()}</span>
                   {(!ref.status || ref.status === 'pending') && (
                     <>
-                      <button onClick={() => decideMutation.mutate({ id: ref.id, status: 'accepted' })} disabled={decideMutation.isPending} style={{ padding: '4px 12px', borderRadius: 7, border: '1px solid #16a34a', background: '#f0fdf4', color: '#15803d', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{t('Accept')}</button>
-                      <button onClick={() => decideMutation.mutate({ id: ref.id, status: 'declined' })} disabled={decideMutation.isPending} style={{ padding: '4px 12px', borderRadius: 7, border: '1px solid #dc2626', background: '#fef2f2', color: '#b91c1c', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{t('Decline')}</button>
+                      <button onClick={() => decideMutation.mutate({ id: ref.id, status: 'accepted' })} disabled={decideMutation.isPending} style={{ padding: '4px 12px', borderRadius: 7, border: '1px solid #16a34a', background: '#f0fdf4', color: '#15803d', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{tr('Accept')}</button>
+                      <button onClick={() => decideMutation.mutate({ id: ref.id, status: 'declined' })} disabled={decideMutation.isPending} style={{ padding: '4px 12px', borderRadius: 7, border: '1px solid #dc2626', background: '#fef2f2', color: '#b91c1c', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{tr('Decline')}</button>
                     </>
                   )}
                 </div>
@@ -116,7 +116,7 @@ export default function AdmissionMatching() {
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>Urgency</label>
                   <select value={form.urgency} onChange={e => setForm({ ...form, urgency: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }}>
-                    <option value="routine">Routine</option><option value="urgent">{t('Urgent')}</option><option value="emergency">Emergency</option>
+                    <option value="routine">Routine</option><option value="urgent">{tr('Urgent')}</option><option value="emergency">Emergency</option>
                   </select>
                 </div>
               </div>

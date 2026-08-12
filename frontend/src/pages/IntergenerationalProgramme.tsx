@@ -4,7 +4,7 @@ import { RecordView } from '../components/ui';
 import { useIntergenerationalProgrammes, useCreateIntergenerationalProgramme, useIntergenerationalVisits, useCreateIntergenerationalVisit, useAddIntergenerationalParticipant, useLogIntergenerationalOutcome, useIntergenerationalSafeguarding, useIntergenerationalWellbeingImpact, useResidents } from '../hooks';
 
 export default function IntergenerationalProgramme() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [activeTab, setActiveTab] = useState<'programmes' | 'visits' | 'safeguarding' | 'outcomes'>('programmes');
   const [showProgrammeForm, setShowProgrammeForm] = useState(false);
   const [showVisitForm, setShowVisitForm] = useState(false);
@@ -93,7 +93,7 @@ export default function IntergenerationalProgramme() {
                   <input type="email" value={programmeForm.contact_email} onChange={e => setProgrammeForm(f => ({ ...f, contact_email: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Description')}</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Description')}</label>
                   <input type="text" value={programmeForm.description} onChange={e => setProgrammeForm(f => ({ ...f, description: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>
@@ -122,7 +122,7 @@ export default function IntergenerationalProgramme() {
       {activeTab === 'visits' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{t('Visits')}</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{tr('Visits')}</h2>
             <button onClick={() => setShowVisitForm(!showVisitForm)} style={{ padding: '8px 16px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>+ Schedule Visit</button>
           </div>
           {showVisitForm && (
@@ -146,7 +146,7 @@ export default function IntergenerationalProgramme() {
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>Activity Type</label>
                   <select value={visitForm.activity_type} onChange={e => setVisitForm(f => ({ ...f, activity_type: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
-                    <option value="reading">{t('Reading')}</option>
+                    <option value="reading">{tr('Reading')}</option>
                     <option value="art">Art</option>
                     <option value="baking">Baking</option>
                     <option value="singing">Singing</option>
@@ -160,7 +160,7 @@ export default function IntergenerationalProgramme() {
                   <input type="number" value={visitForm.visitor_count} onChange={e => setVisitForm(f => ({ ...f, visitor_count: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Description')}</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Description')}</label>
                   <input type="text" value={visitForm.activity_description} onChange={e => setVisitForm(f => ({ ...f, activity_description: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                 </div>
               </div>
@@ -202,7 +202,7 @@ export default function IntergenerationalProgramme() {
                     addParticipantMutation.mutate({ visit_id: v.id, resident_id: participantResident, engagement_score: parseInt(participantScore) } as any, {
                       onSuccess: () => { setParticipantResident(''); setParticipantFor(''); },
                     });
-                  }} disabled={!participantResident} style={{ padding: '9px 18px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', opacity: participantResident ? 1 : 0.5 }}>{t('Add')}</button>
+                  }} disabled={!participantResident} style={{ padding: '9px 18px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', opacity: participantResident ? 1 : 0.5 }}>{tr('Add')}</button>
                 </div>
               )}
             </div>

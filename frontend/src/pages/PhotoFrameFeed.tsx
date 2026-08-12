@@ -3,7 +3,7 @@ import { useLang } from '../i18n';
 import { useUploadPhoto, usePhotoFramePhotos, useApprovePhoto, useRejectPhoto, useSchedulePhoto, usePhotoViewingHistory, useResidents } from '../hooks';
 
 export default function PhotoFrameFeed() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
   const [activeTab, setActiveTab] = useState<'gallery' | 'upload' | 'approval' | 'schedule' | 'history'>('gallery');
   const [statusFilter, setStatusFilter] = useState('approved');
@@ -99,10 +99,10 @@ export default function PhotoFrameFeed() {
                 <input type="file" accept="image/*" required style={{ padding: '8px 0' }} />
               </div>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Caption')}</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Caption')}</label>
                 <input type="text" name="caption" style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} placeholder="Optional caption..." />
               </div>
-              <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>{t('Upload')}</button>
+              <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>{tr('Upload')}</button>
             </form>
           ) : <p style={{ color: '#6b7280' }}>Select a resident to upload photos for them.</p>}
         </div>
@@ -136,7 +136,7 @@ export default function PhotoFrameFeed() {
           <form onSubmit={handleSchedule} style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Photo')}</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Photo')}</label>
                 <select value={scheduleForm.photo_id} onChange={e => setScheduleForm(f => ({ ...f, photo_id: e.target.value }))} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }}>
                   <option value="">Select a photo…</option>
                   {photoList.map((p: any) => <option key={p.id} value={p.id}>{p.caption || `Photo ${new Date(p.created_at).toLocaleDateString('en-GB')}`}</option>)}
@@ -151,7 +151,7 @@ export default function PhotoFrameFeed() {
                 <input type="text" value={scheduleForm.occasion} onChange={e => setScheduleForm(f => ({ ...f, occasion: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} placeholder="e.g. Birthday" />
               </div>
             </div>
-            <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>{t('Schedule')}</button>
+            <button type="submit" style={{ padding: '8px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>{tr('Schedule')}</button>
           </form>
         </div>
       )}

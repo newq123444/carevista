@@ -25,7 +25,7 @@ export default function AiTools() {
 }
 
 function HandoverTool() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [hours, setHours]     = useState(8);
   const [loading, setLoading] = useState(false);
   const [result, setResult]   = useState<any>(null);
@@ -46,7 +46,7 @@ function HandoverTool() {
           <p style={{ fontSize:14, color:'var(--text-secondary)', marginBottom:16, lineHeight:1.6 }}>Generate a professional shift handover report based on the last N hours of care notes, incidents, missed medications and outstanding tasks.</p>
           <div style={{ display:'flex', gap:12, alignItems:'flex-end', flexWrap:'wrap' }}>
             <div className="form-group" style={{ marginBottom:0 }}>
-              <label className="form-label">{t('Hours to cover')}</label>
+              <label className="form-label">{tr('Hours to cover')}</label>
               <select className="form-input" value={hours} onChange={e=>setHours(parseInt(e.target.value))} style={{ width:200 }}>
                 <option value={4}>Last 4 hours</option>
                 <option value={8}>Last 8 hours (day shift)</option>
@@ -93,7 +93,7 @@ function HandoverTool() {
 }
 
 function CarePlanTool() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: rawResidents=[] } = useResidents({ active:true });
   const residents: Resident[] = Array.isArray(rawResidents) ? rawResidents : (rawResidents as any)?.residents ?? [];
   const [residentId, setResidentId] = useState('');
@@ -117,7 +117,7 @@ function CarePlanTool() {
           <p style={{ fontSize:14, color:'var(--text-secondary)', marginBottom:16, lineHeight:1.6 }}>Generate a comprehensive person-centred care plan using the resident's profile, recent notes, medications and incidents.</p>
           <div style={{ display:'flex', gap:12, alignItems:'flex-end', flexWrap:'wrap' }}>
             <div className="form-group" style={{ marginBottom:0, flex:'1 1 280px' }}>
-              <label className="form-label">{t('Select Resident')}</label>
+              <label className="form-label">{tr('Select Resident')}</label>
               <select className="form-input" value={residentId} onChange={e=>setResidentId(e.target.value)}>
                 <option value="">Choose resident…</option>
                 {residents.map(r=><option key={r.id} value={r.id}>{r.first_name} {r.last_name} — Rm {r.room_number}</option>)}
@@ -149,7 +149,7 @@ function CarePlanTool() {
 }
 
 function MedFlagsTool() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [loading, setLoading] = useState(false);
   const [result, setResult]   = useState<any>(null);
   const [error, setError]     = useState('');

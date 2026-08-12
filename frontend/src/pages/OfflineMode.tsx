@@ -3,7 +3,7 @@ import { useLang } from '../i18n';
 import { useOfflineSyncConflicts, useOfflineSync, useResolveOfflineConflict } from '../hooks';
 
 export default function OfflineMode() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: conflicts = [], isLoading } = useOfflineSyncConflicts();
   const syncMutation = useOfflineSync();
   const resolveMutation = useResolveOfflineConflict();
@@ -31,7 +31,7 @@ export default function OfflineMode() {
 
   return (
     <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
-      <h1 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: 8 }}>{t('Offline Mode')}</h1>
+      <h1 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: 8 }}>{tr('Offline Mode')}</h1>
       <p style={{ color: '#6b7280', marginBottom: 24 }}>Manage offline data synchronization and resolve conflicts.</p>
 
       {/* Connection Status */}
@@ -62,15 +62,15 @@ export default function OfflineMode() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
         <div style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', textAlign: 'center' }}>
           <div style={{ fontSize: '2rem', fontWeight: 700, color: '#0d9488' }}>{pendingItems.length}</div>
-          <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{t('Pending Items')}</div>
+          <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{tr('Pending Items')}</div>
         </div>
         <div style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', textAlign: 'center' }}>
           <div style={{ fontSize: '2rem', fontWeight: 700, color: '#dc2626' }}>{Array.isArray(conflicts) ? conflicts.length : 0}</div>
-          <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{t('Conflicts')}</div>
+          <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{tr('Conflicts')}</div>
         </div>
         <div style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', textAlign: 'center' }}>
           <div style={{ fontSize: '2rem', fontWeight: 700, color: '#10b981' }}>Auto</div>
-          <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{t('Sync Mode')}</div>
+          <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{tr('Sync Mode')}</div>
         </div>
       </div>
 
@@ -105,7 +105,7 @@ export default function OfflineMode() {
 
       {/* Conflicts */}
       <div>
-        <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: 12 }}>{t('Sync Conflicts')}</h2>
+        <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: 12 }}>{tr('Sync Conflicts')}</h2>
         {isLoading ? (
           <p style={{ color: '#6b7280' }}>Loading conflicts...</p>
         ) : Array.isArray(conflicts) && conflicts.length > 0 ? (
@@ -121,10 +121,10 @@ export default function OfflineMode() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button onClick={() => handleResolve(conflict.id, 'keep_local')} style={{ padding: '6px 12px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
-                    {t('Keep Local')}
+                    {tr('Keep Local')}
                   </button>
                   <button onClick={() => handleResolve(conflict.id, 'keep_server')} style={{ padding: '6px 12px', background: '#6b7280', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
-                    {t('Keep Server')}
+                    {tr('Keep Server')}
                   </button>
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default function OfflineMode() {
           </div>
         ) : (
           <div style={{ padding: 24, textAlign: 'center', background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-            <p style={{ color: '#6b7280', margin: 0 }}>{t('No conflicts to resolve')}</p>
+            <p style={{ color: '#6b7280', margin: 0 }}>{tr('No conflicts to resolve')}</p>
           </div>
         )}
       </div>

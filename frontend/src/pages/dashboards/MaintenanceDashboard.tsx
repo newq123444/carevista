@@ -11,7 +11,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function MaintenanceDashboard() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { user } = useAuthStore();
   const { data: residents = [] } = useResidents({ active: true });
   const { data: turnover, isLoading } = useRoomTurnoverDashboard();
@@ -35,8 +35,8 @@ export default function MaintenanceDashboard() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
         <MetricCard icon="🛏️" label="Active turnovers" value={active.length} sub="in progress" subTone="warning" />
-        <MetricCard icon="🚨" label={t('Overdue')} value={overdue} sub="past target date" subTone="danger" />
-        <MetricCard icon="🔨" label={t('In progress')} value={statusMap['in_progress'] ?? 0} sub="being worked on" subTone="accent" />
+        <MetricCard icon="🚨" label={tr('Overdue')} value={overdue} sub="past target date" subTone="danger" />
+        <MetricCard icon="🔨" label={tr('In progress')} value={statusMap['in_progress'] ?? 0} sub="being worked on" subTone="accent" />
         <MetricCard icon="✅" label="Ready" value={statusMap['ready'] ?? 0} sub="ready to occupy" subTone="success" />
         <MetricCard icon="👥" label="Occupied rooms" value={residentCount} sub="current residents" />
       </div>

@@ -8,7 +8,7 @@ const categoryIcons: Record<string, string> = { photography: '📸', outings: '�
 const categoryLabels: Record<string, string> = { photography: 'Photography', outings: 'Outings & Trips', medical: 'Medical Treatment', research: 'Research', dnr: 'DNR/DNACPR', other: 'Other' };
 
 export default function ConsentManager() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [tab, setTab] = useState<'overview' | 'create' | 'expiring'>('overview');
   const [selectedResident, setSelectedResident] = useState('');
   const [form, setForm] = useState({ residentId: '', category: 'medical', description: '', consentGivenBy: '', relationship: '', reviewDate: '', notes: '' });
@@ -193,7 +193,7 @@ export default function ConsentManager() {
                   <input value={form.consentGivenBy} onChange={e => setForm({ ...form, consentGivenBy: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>{t('Relationship')}</label>
+                  <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>{tr('Relationship')}</label>
                   <input value={form.relationship} onChange={e => setForm({ ...form, relationship: e.target.value })} placeholder="e.g. Self, Daughter" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }} />
                 </div>
               </div>
@@ -202,7 +202,7 @@ export default function ConsentManager() {
                 <input type="date" value={form.reviewDate} onChange={e => setForm({ ...form, reviewDate: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }} />
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>{t('Notes')}</label>
+                <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>{tr('Notes')}</label>
                 <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, resize: 'vertical' }} />
               </div>
             </div>
@@ -280,7 +280,7 @@ export default function ConsentManager() {
               <button type="submit" disabled={!capComplete || capacityMutation.isPending} style={{ flex: 1, padding: '11px', borderRadius: 9, background: '#4338ca', color: '#fff', border: 'none', fontWeight: 700, cursor: capComplete ? 'pointer' : 'not-allowed', opacity: capComplete ? 1 : 0.5 }}>
                 {capacityMutation.isPending ? 'Saving…' : 'Record assessment'}
               </button>
-              <button type="button" onClick={() => setCapacityFor(null)} style={{ flex: 1, padding: '11px', borderRadius: 9, background: 'var(--surface-2, #f3f4f6)', border: '1px solid var(--border, #d1d5db)', fontWeight: 600, cursor: 'pointer' }}>{t('Cancel')}</button>
+              <button type="button" onClick={() => setCapacityFor(null)} style={{ flex: 1, padding: '11px', borderRadius: 9, background: 'var(--surface-2, #f3f4f6)', border: '1px solid var(--border, #d1d5db)', fontWeight: 600, cursor: 'pointer' }}>{tr('Cancel')}</button>
             </div>
           </form>
         </div>

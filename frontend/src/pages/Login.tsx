@@ -19,7 +19,7 @@ const DEMO_ACCOUNTS = [
 const DEMO_PASSWORD = 'Demo1234!';
 
 export default function Login() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const navigate = useNavigate();
   const { login, isLoading, error, clearError } = useAuthStore();
 
@@ -81,7 +81,7 @@ export default function Login() {
           }}>⚕</div>
           <div>
             <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>CareVista</div>
-            <div style={{ fontSize: 12, color: '#4a5a7a', letterSpacing: '.1em', textTransform: 'uppercase', fontWeight: 600 }}>{t('Care Home Management')}</div>
+            <div style={{ fontSize: 12, color: '#4a5a7a', letterSpacing: '.1em', textTransform: 'uppercase', fontWeight: 600 }}>{tr('Care Home Management')}</div>
           </div>
         </div>
 
@@ -134,11 +134,11 @@ export default function Login() {
             }}>⚕</div>
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>CareVista</div>
-              <div style={{ fontSize: 10, color: '#4a5a7a', letterSpacing: '.08em', textTransform: 'uppercase' }}>{t('Care Home Management')}</div>
+              <div style={{ fontSize: 10, color: '#4a5a7a', letterSpacing: '.08em', textTransform: 'uppercase' }}>{tr('Care Home Management')}</div>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><LanguageSwitcher compact /></div>
-          <h2 style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 8 }}>{t('Sign in')}</h2>
+          <h2 style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 8 }}>{tr('Sign in')}</h2>
           <p style={{ fontSize: 14, color: '#4a5a7a', marginBottom: 32 }}>Enter your credentials or pick a demo account below</p>
 
           {/* Login form */}
@@ -154,7 +154,7 @@ export default function Login() {
             )}
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#8a9ab8', marginBottom: 6 }}>{t('Email address')}</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#8a9ab8', marginBottom: 6 }}>{tr('Email address')}</label>
               <input
                 type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="you@carehome.co.uk" required
@@ -170,7 +170,7 @@ export default function Login() {
             </div>
 
             <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#8a9ab8', marginBottom: 6 }}>{t('Password')}</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#8a9ab8', marginBottom: 6 }}>{tr('Password')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'} value={password}
@@ -212,7 +212,7 @@ export default function Login() {
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.07)' }} />
-            <span style={{ fontSize: 12, color: '#3a4a5e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('Quick Demo Login')}</span>
+            <span style={{ fontSize: 12, color: '#3a4a5e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em' }}>{tr('Quick Demo Login')}</span>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.07)' }} />
           </div>
 

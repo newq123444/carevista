@@ -13,7 +13,7 @@ const EXAMPLE_QUERIES = [
 ];
 
 export default function NaturalLanguageSearch() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [query, setQuery] = useState('');
   const [showHistory, setShowHistory] = useState(false);
 
@@ -127,7 +127,7 @@ export default function NaturalLanguageSearch() {
                 style={{ width: '100%', padding: '14px 120px 14px 44px', borderRadius: 12, border: '2px solid #e2e8f0', fontSize: '1rem', outline: 'none', transition: 'border-color 150ms' }}
               />
               <button onClick={() => handleSearch()} disabled={!query.trim() || searchMutation.isPending} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', padding: '8px 20px', borderRadius: 8, background: '#4f46e5', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem', opacity: (!query.trim() || searchMutation.isPending) ? 0.6 : 1 }}>
-                {t('Search')}
+                {tr('Search')}
               </button>
             </div>
           </div>

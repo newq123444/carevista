@@ -12,7 +12,7 @@ const CATS: { key: string; label: string }[] = [
 ];
 
 export default function HousekeepingManager() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: tasks = [], isLoading } = useHkAdmin();
   const create = useCreateHk(); const update = useUpdateHk(); const remove = useDeleteHk(); const copy = useCopyHkDefaults();
   const [editing, setEditing] = useState<any>(null);
@@ -29,15 +29,15 @@ export default function HousekeepingManager() {
   const row = (t: any) => (
     <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderTop: '1px solid var(--border)' }}>
       <div style={{ flex: 1, fontSize: 14, color: 'var(--text-primary)' }}>{t.area_label ? <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t.area_label} · </span> : null}{t.specification}</div>
-      <button onClick={() => openEdit(t)} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>{t('Edit')}</button>
-      <button onClick={() => { if (confirm('Remove this task?')) remove.mutate(t.id); }} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--danger)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>{t('Remove')}</button>
+      <button onClick={() => openEdit(t)} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>{tr('Edit')}</button>
+      <button onClick={() => { if (confirm('Remove this task?')) remove.mutate(t.id); }} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--danger)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>{tr('Remove')}</button>
     </div>
   );
 
   return (
     <div style={{ padding: 4, maxWidth: 900, margin: '0 auto' }}>
       <PageHeading greeting="Housekeeping tasks" emoji="🧹" subtitle="Configure your cleaning checklists" />
-      {isLoading && <div style={{ color: 'var(--text-muted)' }}>{t('Loading…')}</div>}
+      {isLoading && <div style={{ color: 'var(--text-muted)' }}>{tr('Loading…')}</div>}
       {!isLoading && list.length === 0 && (
         <SectionCard>
           <div style={{ textAlign: 'center', padding: 12 }}>
@@ -61,13 +61,13 @@ export default function HousekeepingManager() {
           <div style={{ width: '100%', maxWidth: 480, background: 'var(--surface)', borderRadius: 14, padding: 22 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}><strong style={{ fontSize: 16 }}>{editing === 'new' ? 'Add task' : 'Edit task'}</strong><button onClick={() => setEditing(null)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--text-muted)' }}>×</button></div>
             <div style={{ display: 'grid', gap: 12 }}>
-              <div><label style={label}>{t('Checklist')}</label><select style={input} value={form.category} onChange={e => set('category', e.target.value)}>{CATS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}</select></div>
+              <div><label style={label}>{tr('Checklist')}</label><select style={input} value={form.category} onChange={e => set('category', e.target.value)}>{CATS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}</select></div>
               {form.category === 'daily_communal' && <div><label style={label}>Area</label><input style={input} value={form.area_label || ''} onChange={e => set('area_label', e.target.value)} placeholder="e.g. Lounge" /></div>}
-              <div><label style={label}>{t('Task')}</label><input style={input} value={form.specification} onChange={e => set('specification', e.target.value)} placeholder="e.g. Dust skirting boards" /></div>
+              <div><label style={label}>{tr('Task')}</label><input style={input} value={form.specification} onChange={e => set('specification', e.target.value)} placeholder="e.g. Dust skirting boards" /></div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
               <button onClick={save} disabled={!form.specification.trim()} style={{ flex: 1, padding: '11px', borderRadius: 9, background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>{editing === 'new' ? 'Add' : 'Save'}</button>
-              <button onClick={() => setEditing(null)} style={{ flex: 1, padding: '11px', borderRadius: 9, background: 'var(--surface-2)', border: '1px solid var(--border)', fontWeight: 600, cursor: 'pointer', color: 'var(--text-primary)' }}>{t('Cancel')}</button>
+              <button onClick={() => setEditing(null)} style={{ flex: 1, padding: '11px', borderRadius: 9, background: 'var(--surface-2)', border: '1px solid var(--border)', fontWeight: 600, cursor: 'pointer', color: 'var(--text-primary)' }}>{tr('Cancel')}</button>
             </div>
           </div>
         </div>

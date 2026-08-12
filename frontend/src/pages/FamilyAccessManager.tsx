@@ -6,7 +6,7 @@ import { SectionCard, PageHeading } from '../components/ui';
 import { toast } from '../utils/toast';
 
 export default function FamilyAccessManager() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: residents = [] } = useResidents({ active: true });
   const { data } = useFamilyAccess();
   const provision = useProvisionFamily();
@@ -49,7 +49,7 @@ export default function FamilyAccessManager() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={label}>{t('Resident')}</label>
+            <label style={label}>{tr('Resident')}</label>
             <select style={input} value={form.residentId} onChange={e => set('residentId', e.target.value)}>
               <option value="">Select…</option>
               {residents.map((r: any) => <option key={r.id} value={r.id}>{r.first_name} {r.last_name} — Room {r.room_number}</option>)}
@@ -60,7 +60,7 @@ export default function FamilyAccessManager() {
             <div><label style={label}>Family last name</label><input style={input} value={form.lastName} onChange={e => set('lastName', e.target.value)} /></div>
           </>}
           <div><label style={label}>Email{mode === 'invite' ? ' (optional)' : ''}</label><input style={input} type="email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
-          <div><label style={label}>{t('Relationship')}</label><input style={input} placeholder="e.g. Daughter" value={form.relationship} onChange={e => set('relationship', e.target.value)} /></div>
+          <div><label style={label}>{tr('Relationship')}</label><input style={input} placeholder="e.g. Daughter" value={form.relationship} onChange={e => set('relationship', e.target.value)} /></div>
         </div>
         <button onClick={submit} disabled={provision.isPending || invite.isPending} style={{ marginTop: 14, padding: '10px 18px', borderRadius: 9, background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>
           {mode === 'provision' ? 'Create family account' : 'Generate invite code'}
@@ -91,7 +91,7 @@ export default function FamilyAccessManager() {
               <div style={{ fontSize: 14, fontWeight: 600 }}>{l.first_name} {l.last_name}{l.relationship ? ` · ${l.relationship}` : ''}</div>
               <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{l.email} → {l.resident_first} {l.resident_last} (Room {l.room_number}){!l.active ? ' · inactive' : ''}</div>
             </div>
-            <button onClick={() => { if (confirm(`Revoke ${l.first_name}'s access?`)) revoke.mutate(l.id); }} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--danger)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>{t('Revoke')}</button>
+            <button onClick={() => { if (confirm(`Revoke ${l.first_name}'s access?`)) revoke.mutate(l.id); }} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--danger)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>{tr('Revoke')}</button>
           </div>
         ))}
       </SectionCard>
@@ -104,7 +104,7 @@ export default function FamilyAccessManager() {
                 <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 1 }}>{i.code}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{i.resident_first} {i.resident_last}{i.email ? ` · ${i.email}` : ''}{i.relationship ? ` · ${i.relationship}` : ''}</div>
               </div>
-              <button onClick={() => revokeInv.mutate(i.id)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>{t('Cancel')}</button>
+              <button onClick={() => revokeInv.mutate(i.id)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>{tr('Cancel')}</button>
             </div>
           ))}
         </SectionCard>

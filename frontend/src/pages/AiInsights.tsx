@@ -57,7 +57,7 @@ export default function AiInsights() {
 
 // ── Care Quality Dashboard ────────────────────────────────────────────────
 function CareQualityTab() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['care-quality'],
     queryFn: () => api.get('/ai/care-quality').then(r => r.data),
@@ -170,8 +170,8 @@ function CareQualityTab() {
             <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
               <thead>
                 <tr style={{ borderBottom:'2px solid var(--border)', background:'var(--surface-2)' }}>
-                  <th style={{ padding:'8px 14px', textAlign:'left', fontWeight:600 }}>{t('Resident')}</th>
-                  <th style={{ padding:'8px 14px', textAlign:'center', fontWeight:600 }}>{t('Risk')}</th>
+                  <th style={{ padding:'8px 14px', textAlign:'left', fontWeight:600 }}>{tr('Resident')}</th>
+                  <th style={{ padding:'8px 14px', textAlign:'center', fontWeight:600 }}>{tr('Risk')}</th>
                   <th style={{ padding:'8px 14px', textAlign:'center', fontWeight:600 }}>Total Notes</th>
                   <th style={{ padding:'8px 14px', textAlign:'center', fontWeight:600 }}>Per Day</th>
                   <th style={{ padding:'8px 14px', textAlign:'left', fontWeight:600, width:'40%' }}>Rate</th>
@@ -329,7 +329,7 @@ function DataValidationTab() {
 
 // ── Resident Insights Tab ─────────────────────────────────────────────────
 function ResidentInsightsTab() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: rawResidents = [] } = useResidents({ active: true });
   const residents: Resident[] = Array.isArray(rawResidents) ? rawResidents : (rawResidents as any)?.residents ?? [];
   const [residentId, setResidentId]   = useState('');

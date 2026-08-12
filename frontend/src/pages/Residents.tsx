@@ -7,7 +7,7 @@ import { formatDate, formatAge, getRiskColor } from '../utils/formatters';
 import type { Resident } from '../types';
 
 export default function Residents() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState('');
   const { data: residents = [], isLoading } = useResidents({ active: true });
@@ -22,7 +22,7 @@ export default function Residents() {
   return (
     <div>
       <div className="page-header">
-        <div><h1 className="page-title">{t('Residents')}</h1><p className="page-subtitle">{filtered.length} residents shown</p></div>
+        <div><h1 className="page-title">{tr('Residents')}</h1><p className="page-subtitle">{filtered.length} residents shown</p></div>
         <Link to="/residents/new" className="btn btn-primary">+ Admit Resident</Link>
       </div>
       <div className="card" style={{ marginBottom: 20 }}>

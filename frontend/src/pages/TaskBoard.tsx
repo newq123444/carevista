@@ -36,7 +36,7 @@ const CATEGORY_COLOR: Record<string, string> = {
 function TaskChip({ task, userRole, userId, onOpen }: {
   task: any; userRole: string; userId: string; onOpen: (task: any) => void;
 }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const st = STATUS[task.status as keyof typeof STATUS] || STATUS.upcoming;
   const isMyTask = task.in_progress_by === userId;
   const isSomeoneElse = task.in_progress_by && task.in_progress_by !== userId;
@@ -91,7 +91,7 @@ function TaskChip({ task, userRole, userId, onOpen }: {
 
 // ── Complete / Defer modal ─────────────────────────────────────────────────
 function TaskModal({ task, onClose }: { task: any; onClose: () => void }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { user } = useAuthStore();
   const complete  = useCompleteTask();
   const defer     = useDeferTask();
@@ -233,7 +233,7 @@ function TaskModal({ task, onClose }: { task: any; onClose: () => void }) {
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={handleClose}>{t('Cancel')}</button>
+            <button type="button" className="btn btn-secondary" onClick={handleClose}>{tr('Cancel')}</button>
             <button type="submit" className="btn btn-primary"
               disabled={complete.isPending || defer.isPending || (mode === 'defer' && !reason.trim())}
               style={{ background: mode === 'defer' ? '#d97706' : undefined, borderColor: mode === 'defer' ? '#d97706' : undefined }}>
@@ -248,7 +248,7 @@ function TaskModal({ task, onClose }: { task: any; onClose: () => void }) {
 
 // ── Main TaskBoard ─────────────────────────────────────────────────────────
 export default function TaskBoard() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { user } = useAuthStore();
   // Use local date not UTC to match what DB stored
   const localToday = () => {
@@ -365,7 +365,7 @@ export default function TaskBoard() {
                 {counts.total > 0 ? Math.round(counts.done / counts.total * 100) : 0}%
               </text>
             </svg>
-            <span style={{ fontSize:12, color:'var(--text-muted)' }}>{t('Complete')}</span>
+            <span style={{ fontSize:12, color:'var(--text-muted)' }}>{tr('Complete')}</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -462,7 +462,7 @@ export default function TaskBoard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {/* Header row — task names */}
           <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 8, padding: '0 0 4px', borderBottom: '2px solid var(--border)' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{t('Resident')}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{tr('Resident')}</div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Tap a chip to record — chips turn red if overdue</div>
           </div>
 

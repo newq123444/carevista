@@ -6,7 +6,7 @@ import { familyRegisterApi } from '../services/api';
 import { toast } from '../utils/toast';
 
 export default function FamilyRegister() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const navigate = useNavigate();
   const [form, setForm] = useState({ code: '', firstName: '', lastName: '', email: '', password: '' });
   const [done, setDone] = useState(false);
@@ -40,7 +40,7 @@ export default function FamilyRegister() {
           </div>
         ) : (
           <>
-            <label style={label}>{t('Invite code')}<input style={input} value={form.code} onChange={e => set('code', e.target.value.toUpperCase())} placeholder="e.g. A1B2C3D4E5" /></label>
+            <label style={label}>{tr('Invite code')}<input style={input} value={form.code} onChange={e => set('code', e.target.value.toUpperCase())} placeholder="e.g. A1B2C3D4E5" /></label>
             <div style={{ display: 'flex', gap: 10 }}>
               <label style={{ ...label, flex: 1 }}>First name<input style={input} value={form.firstName} onChange={e => set('firstName', e.target.value)} /></label>
               <label style={{ ...label, flex: 1 }}>Last name<input style={input} value={form.lastName} onChange={e => set('lastName', e.target.value)} /></label>

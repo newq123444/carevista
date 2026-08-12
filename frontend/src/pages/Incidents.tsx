@@ -9,7 +9,7 @@ const INCIDENT_TYPES = ['fall','medication_error','aggression','safeguarding','m
 const SEVERITIES = ['low','medium','high','critical'];
 
 export default function Incidents() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [searchParams] = useSearchParams();
   const [showCreate, setShowCreate] = useState(searchParams.get('action') === 'new');
   const [statusFilter, setStatusFilter] = useState('');
@@ -28,7 +28,7 @@ export default function Incidents() {
   return (
     <div>
       <div className="page-header">
-        <div><h1 className="page-title">{t('Incidents')}</h1><p className="page-subtitle">{(incidents as Incident[]).length} incidents</p></div>
+        <div><h1 className="page-title">{tr('Incidents')}</h1><p className="page-subtitle">{(incidents as Incident[]).length} incidents</p></div>
         <button className="btn btn-danger" onClick={() => setShowCreate(true)}>🚨 Report Incident</button>
       </div>
 
@@ -49,7 +49,7 @@ export default function Incidents() {
                 <select className="form-input" value={form.incidentType} onChange={e => setForm(f => ({ ...f, incidentType: e.target.value }))}>
                   {INCIDENT_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g,' ')}</option>)}
                 </select></div>
-              <div><label className="form-label">{t('Severity')}</label>
+              <div><label className="form-label">{tr('Severity')}</label>
                 <select className="form-input" value={form.severity} onChange={e => setForm(f => ({ ...f, severity: e.target.value }))}>
                   {SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select></div>
@@ -78,14 +78,14 @@ export default function Incidents() {
         <div className="card-body" style={{ display: 'flex', gap: 12 }}>
           <select className="form-input" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ flex: '1 1 180px' }}>
             <option value="">All Statuses</option>
-            <option value="open">{t('Open')}</option>
+            <option value="open">{tr('Open')}</option>
             <option value="investigating">Investigating</option>
-            <option value="closed">{t('Closed')}</option>
+            <option value="closed">{tr('Closed')}</option>
           </select>
         </div>
       </div>
 
-      {isLoading ? <div style={{ padding: 40, textAlign: 'center' }}>{t('Loading…')}</div> : (
+      {isLoading ? <div style={{ padding: 40, textAlign: 'center' }}>{tr('Loading…')}</div> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {(incidents as Incident[]).map(inc => {
             const sc = getSeverityColor(inc.severity);

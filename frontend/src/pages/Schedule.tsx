@@ -16,7 +16,7 @@ function getWeekDates(offset: number) {
 const SHIFT_COLORS: Record<string, string> = { day: '#f59e0b', evening: '#8b5cf6', night: '#0f766e', 'sleep-in': '#0891b2' };
 
 export default function Schedule() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [weekOffset, setWeekOffset] = useState(0);
   const days = getWeekDates(weekOffset);
   const start = days[0], end = days[6];
@@ -30,7 +30,7 @@ export default function Schedule() {
         <div><h1 className="page-title">📅 Rota / Schedule</h1><p className="page-subtitle">{formatDate(start)} — {formatDate(end)}</p></div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev Week</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(0)}>{t('Today')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(0)}>{tr('Today')}</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next Week →</button>
         </div>
       </div>

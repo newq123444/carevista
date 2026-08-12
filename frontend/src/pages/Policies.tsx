@@ -17,7 +17,7 @@ const POLICIES = [
 const CATEGORIES = [...new Set(POLICIES.map(p => p.category))];
 
 export default function Policies() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('');
   const filtered = POLICIES.filter(p =>
@@ -35,7 +35,7 @@ export default function Policies() {
         <div className="card-body" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <input type="text" className="form-input" placeholder="🔍 Search policies…" value={search} onChange={e => setSearch(e.target.value)} style={{ flex: '1 1 240px' }} />
           <select className="form-input" value={catFilter} onChange={e => setCatFilter(e.target.value)} style={{ flex: '0 1 200px' }}>
-            <option value="">{t('All Categories')}</option>
+            <option value="">{tr('All Categories')}</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>

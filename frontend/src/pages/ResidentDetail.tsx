@@ -27,7 +27,7 @@ function photoSrc(url?: string | null): string {
 
 // ── Resident Photo Upload ─────────────────────────────────────────────────
 function ResidentPhoto({ residentId, photoUrl, name }: { residentId: string; photoUrl?: string; name: string }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const qc = useQueryClient();
   const [uploading, setUploading] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -77,7 +77,7 @@ function ResidentPhoto({ residentId, photoUrl, name }: { residentId: string; pho
 
 // ── Belongings Tab ────────────────────────────────────────────────────────
 function BelongingsTab({ residentId }: { residentId: string }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const qc = useQueryClient();
   const [belongings, setBelongings] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -148,7 +148,7 @@ function BelongingsTab({ residentId }: { residentId: string }) {
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               {/* Preview */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <img src={preview} alt={t('Preview')} style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 10, border: '2px solid var(--border)' }} />
+                <img src={preview} alt={tr('Preview')} style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 10, border: '2px solid var(--border)' }} />
                 <button onClick={() => { setPreview(null); setSelectedFile(null); }}
                   style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#dc2626', color: 'white', border: '2px solid white', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
               </div>
@@ -161,7 +161,7 @@ function BelongingsTab({ residentId }: { residentId: string }) {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">{t('Description')}</label>
+                  <label className="form-label">{tr('Description')}</label>
                   <input className="form-input" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                     placeholder="e.g. Gold wedding ring, blue cardigan, iPhone 13..." />
                 </div>
@@ -169,7 +169,7 @@ function BelongingsTab({ residentId }: { residentId: string }) {
                   <button className="btn btn-primary" onClick={submitBelonging} disabled={uploading}>
                     {uploading ? '⏳ Saving…' : '✅ Save Record'}
                   </button>
-                  <button className="btn btn-secondary" onClick={() => { setPreview(null); setSelectedFile(null); }}>{t('Cancel')}</button>
+                  <button className="btn btn-secondary" onClick={() => { setPreview(null); setSelectedFile(null); }}>{tr('Cancel')}</button>
                 </div>
               </div>
             </div>
@@ -179,7 +179,7 @@ function BelongingsTab({ residentId }: { residentId: string }) {
 
       {/* Belongings grid */}
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>{t('Loading…')}</div>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>{tr('Loading…')}</div>
       ) : belongings.length === 0 ? (
         <div className="card"><div className="card-body table-empty">No items recorded yet — use the camera above to photograph new belongings on arrival</div></div>
       ) : (
@@ -275,7 +275,7 @@ function MobilityStatusCard({ residentId, currentStatus }: { residentId: string;
 
 // ── Edit Resident Modal ───────────────────────────────────────────────────
 function EditResidentModal({ resident: r, onClose, onSaved }: { resident: any; onClose: () => void; onSaved: () => void }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const qc = useQueryClient();
   const [saving, setSaving] = React.useState(false);
   const [form, setForm] = React.useState({
@@ -340,9 +340,9 @@ function EditResidentModal({ resident: r, onClose, onSaved }: { resident: any; o
               <div className="form-group">
                 <label className="form-label">Risk Level</label>
                 <select className="form-input" value={form.riskLevel} onChange={e => set('riskLevel', e.target.value)}>
-                  <option value="low">{t('Low')}</option>
-                  <option value="medium">{t('Medium')}</option>
-                  <option value="high">{t('High')}</option>
+                  <option value="low">{tr('Low')}</option>
+                  <option value="medium">{tr('Medium')}</option>
+                  <option value="high">{tr('High')}</option>
                 </select>
               </div>
             </div>
@@ -396,7 +396,7 @@ function EditResidentModal({ resident: r, onClose, onSaved }: { resident: any; o
 
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{tr('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? '⏳ Saving…' : '✅ Save Changes'}
             </button>
@@ -408,7 +408,7 @@ function EditResidentModal({ resident: r, onClose, onSaved }: { resident: any; o
 }
 
 export default function ResidentDetail() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { id } = useParams<{ id: string }>();
   const [tab, setTab]       = useState<Tab>('Overview');
   const [showEdit, setShowEdit]     = useState(false);
@@ -864,7 +864,7 @@ function ResidentWellbeingTab({ residentId }: { residentId: string }) {
 
 // ── Resident Activities Tab ───────────────────────────────────────────────
 function ResidentActivitiesTab({ residentId, resident }: { residentId: string; resident: any }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: history = [] } = useResidentActivityHistory(residentId);
   const CATEGORY_ICONS: Record<string, string> = { physical: '🏃', creative: '🎨', social: '🤝', cognitive: '🧠', sensory: '✨' };
   const MOBILITY_LABELS: Record<string, string> = { independent: 'Independent', walking_aid: 'Walking Aid', wheelchair: 'Wheelchair', bed_bound: 'Bed-bound' };
@@ -906,7 +906,7 @@ function ResidentActivitiesTab({ residentId, resident }: { residentId: string; r
       {/* Interests */}
       {resident?.interests && resident.interests.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <h4 style={{ margin: '0 0 8px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('Interests')}</h4>
+          <h4 style={{ margin: '0 0 8px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>{tr('Interests')}</h4>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {(resident.interests as string[]).map((interest: string) => (
               <span key={interest} style={{ padding: '4px 10px', borderRadius: 14, background: '#8b5cf615', border: '1px solid #8b5cf630', fontSize: '0.75rem', fontWeight: 600, color: '#8b5cf6', textTransform: 'capitalize' }}>

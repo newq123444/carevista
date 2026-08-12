@@ -8,7 +8,7 @@ const urgencyColors: Record<string, string> = { critical: '#dc2626', high: '#ea5
 const urgencyBg: Record<string, string> = { critical: '#fef2f2', high: '#fff7ed', medium: '#fffbeb', low: '#f0fdf4' };
 
 export default function SmartHandover() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [tab, setTab] = useState<'generate' | 'history'>('generate');
   const [shiftType, setShiftType] = useState('day');
   const [latestHandover, setLatestHandover] = useState<any>(null);
@@ -78,8 +78,8 @@ export default function SmartHandover() {
                     <div style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '8px 0', paddingLeft: 38 }}>{item.detail}</div>
                     <div style={{ fontSize: 13, fontWeight: 500, color: urgencyColors[item.urgency], paddingLeft: 38 }}>Action: {item.action_required}</div>
                     <div style={{ paddingLeft: 38, marginTop: 10 }}>
-                      <button onClick={() => actionMutation.mutate({ id: latestHandover.id, data: { itemIndex: i, actionTaken: 'Acknowledged and actioned', outcome: 'resolved' } })} style={{ padding: '6px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', marginRight: 8 }}>{t('Mark Actioned')}</button>
-                      <button onClick={() => actionMutation.mutate({ id: latestHandover.id, data: { itemIndex: i, actionTaken: 'Escalated', outcome: 'escalated' } })} style={{ padding: '6px 14px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>{t('Escalate')}</button>
+                      <button onClick={() => actionMutation.mutate({ id: latestHandover.id, data: { itemIndex: i, actionTaken: 'Acknowledged and actioned', outcome: 'resolved' } })} style={{ padding: '6px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', marginRight: 8 }}>{tr('Mark Actioned')}</button>
+                      <button onClick={() => actionMutation.mutate({ id: latestHandover.id, data: { itemIndex: i, actionTaken: 'Escalated', outcome: 'escalated' } })} style={{ padding: '6px 14px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>{tr('Escalate')}</button>
                     </div>
                   </div>
                 ))}

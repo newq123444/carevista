@@ -28,7 +28,7 @@ function currentMeal(): string {
 }
 
 export default function KitchenDashboard() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [meal, setMeal] = useState<string>(currentMeal());
   const [tab, setTab] = useState<'service' | 'safety'>('service');
   const { data: dash } = useKitchenDashboard();
@@ -117,13 +117,13 @@ export default function KitchenDashboard() {
                     </div>
                   </div>
                   {o.status === 'served'
-                    ? <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)' }}>{t('Served')}</span>
+                    ? <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)' }}>{tr('Served')}</span>
                     : o.status === 'refused'
                       ? <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)' }}>Refused</span>
                       : (
                         <div style={{ display: 'flex', gap: 6 }}>
-                          <button onClick={() => updateOrder.mutate({ id: o.id, data: { status: 'preparing' } })} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>{t('Preparing')}</button>
-                          <button onClick={() => updateOrder.mutate({ id: o.id, data: { status: 'served' } })} style={{ padding: '5px 11px', borderRadius: 7, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>{t('Served')}</button>
+                          <button onClick={() => updateOrder.mutate({ id: o.id, data: { status: 'preparing' } })} style={{ padding: '5px 11px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 12, cursor: 'pointer', color: 'var(--text-primary)' }}>{tr('Preparing')}</button>
+                          <button onClick={() => updateOrder.mutate({ id: o.id, data: { status: 'served' } })} style={{ padding: '5px 11px', borderRadius: 7, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>{tr('Served')}</button>
                         </div>
                       )}
                 </div>

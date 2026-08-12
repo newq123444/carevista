@@ -13,7 +13,7 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 export default function InfectionTracker() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: residents = [] } = useResidents();
   const { data: outbreaks } = useOutbreaks();
   const createMutation = useCreateOutbreak();
@@ -146,14 +146,14 @@ export default function InfectionTracker() {
               <textarea value={isolationProtocol} onChange={e => setIsolationProtocol(e.target.value)} rows={3} placeholder="Describe isolation measures..." style={{ width: '100%', padding: '10px 12px', borderRadius: 6, border: '1px solid #d1d5db', resize: 'vertical' }} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontWeight: 500, display: 'block', marginBottom: 4, fontSize: '0.85rem' }}>{t('Notes')}</label>
+              <label style={{ fontWeight: 500, display: 'block', marginBottom: 4, fontSize: '0.85rem' }}>{tr('Notes')}</label>
               <textarea value={createNotes} onChange={e => setCreateNotes(e.target.value)} rows={2} style={{ width: '100%', padding: '10px 12px', borderRadius: 6, border: '1px solid #d1d5db', resize: 'vertical' }} />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button type="submit" disabled={createMutation.isPending} style={{ padding: '10px 20px', borderRadius: 8, background: '#dc2626', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
                 {createMutation.isPending ? 'Reporting...' : 'Report Outbreak'}
               </button>
-              <button type="button" onClick={() => setShowCreateForm(false)} style={{ padding: '10px 20px', borderRadius: 8, background: '#f3f4f6', border: '1px solid #d1d5db', cursor: 'pointer' }}>{t('Cancel')}</button>
+              <button type="button" onClick={() => setShowCreateForm(false)} style={{ padding: '10px 20px', borderRadius: 8, background: '#f3f4f6', border: '1px solid #d1d5db', cursor: 'pointer' }}>{tr('Cancel')}</button>
             </div>
           </form>
         </div>
@@ -242,12 +242,12 @@ export default function InfectionTracker() {
                   <input type="date" value={caseOnsetDate} onChange={e => setCaseOnsetDate(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d1d5db' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 500, display: 'block', marginBottom: 4 }}>{t('Symptoms')}</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 500, display: 'block', marginBottom: 4 }}>{tr('Symptoms')}</label>
                   <input type="text" value={caseSymptoms} onChange={e => setCaseSymptoms(e.target.value)} placeholder="e.g. Nausea, vomiting" style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d1d5db' }} />
                 </div>
                 <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
                   <button type="submit" disabled={addCaseMutation.isPending} style={{ padding: '8px 16px', borderRadius: 6, background: '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>Add Case</button>
-                  <button type="button" onClick={() => setShowAddCase(false)} style={{ padding: '8px 16px', borderRadius: 6, background: '#f3f4f6', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.85rem' }}>{t('Cancel')}</button>
+                  <button type="button" onClick={() => setShowAddCase(false)} style={{ padding: '8px 16px', borderRadius: 6, background: '#f3f4f6', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.85rem' }}>{tr('Cancel')}</button>
                 </div>
               </form>
             </div>

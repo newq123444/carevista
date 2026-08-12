@@ -3,7 +3,7 @@ import { useLang } from '../i18n';
 import { useCompetencySignoffs, useCreateCompetencySignoff, useUpdateCompetencySignoff, useColleagues } from '../hooks';
 
 export default function CompetencySignoff() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'signed_off'>('all');
 
@@ -77,7 +77,7 @@ export default function CompetencySignoff() {
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Competency')}</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Competency')}</label>
                 <select value={form.competency_name} onChange={e => setForm(f => ({ ...f, competency_name: e.target.value }))} required style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}>
                   <option value="">Select competency...</option>
                   {competencyOptions.map(c => <option key={c} value={c}>{c}</option>)}
@@ -107,7 +107,7 @@ export default function CompetencySignoff() {
                 {createMutation.isPending ? 'Recording...' : 'Record & Sign Off'}
               </button>
               <button type="button" onClick={() => setShowForm(false)} style={{ padding: '10px 20px', background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: 8, cursor: 'pointer' }}>
-                {t('Cancel')}
+                {tr('Cancel')}
               </button>
             </div>
           </form>

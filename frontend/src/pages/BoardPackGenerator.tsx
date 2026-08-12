@@ -3,7 +3,7 @@ import { useLang } from '../i18n';
 import { useBoardPacks, useGenerateBoardPack, useApproveBoardPack } from '../hooks';
 
 export default function BoardPackGenerator() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: packs = [], isLoading } = useBoardPacks();
   const generateMutation = useGenerateBoardPack();
   const approveMutation = useApproveBoardPack();
@@ -89,7 +89,7 @@ export default function BoardPackGenerator() {
                 {generateMutation.isPending ? 'Generating...' : 'Generate Pack'}
               </button>
               <button type="button" onClick={() => setShowGenerator(false)} style={{ padding: '10px 20px', background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: 8, cursor: 'pointer' }}>
-                {t('Cancel')}
+                {tr('Cancel')}
               </button>
             </div>
           </form>

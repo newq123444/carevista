@@ -53,8 +53,8 @@ function Bars({ data, color = 'var(--primary)', fmt }: { data: { label: string; 
 }
 
 function TrendLine({ data }: { data: { label: string; value: number }[] }) {
-  const { t } = useLang();
-  if (data.length === 0) return <div style={{ color: 'var(--text-muted)', fontSize: 13, padding: 12 }}>{t('No data yet')}</div>;
+  const { t: tr } = useLang();
+  if (data.length === 0) return <div style={{ color: 'var(--text-muted)', fontSize: 13, padding: 12 }}>{tr('No data yet')}</div>;
   const max = 100, min = 0;
   const pts = data.map((d, i) => {
     const x = data.length === 1 ? 50 : (i / (data.length - 1)) * 100;
@@ -73,7 +73,7 @@ function TrendLine({ data }: { data: { label: string; value: number }[] }) {
 }
 
 export default function OutcomesDashboard() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [days, setDays] = useState(90);
   const [openMetric, setOpenMetric] = useState<string | null>(null);
   const { data: detail, isLoading: detailLoading } = useOutcomeDetail(openMetric);
@@ -182,7 +182,7 @@ export default function OutcomesDashboard() {
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 10 }}>Losing weight is a key malnutrition and deterioration signal — this tracks how many residents are maintaining or gaining.</div>
         </SectionCard>
 
-        <SectionCard title={t('Occupancy')}>
+        <SectionCard title={tr('Occupancy')}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <span style={{ fontSize: 34, fontWeight: 700 }}>{data.occupancy.pct}%</span>
             <span style={{ color: 'var(--text-muted)' }}>{data.occupancy.residents} of {data.occupancy.beds} beds</span>

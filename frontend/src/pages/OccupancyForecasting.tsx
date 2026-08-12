@@ -6,7 +6,7 @@ import { formatDate } from '../utils/formatters';
 import type { OccupancyRecord, OccupancyForecast } from '../types';
 
 export default function OccupancyForecasting() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [showRecordForm, setShowRecordForm] = useState(false);
 
   const { data: dashboard } = useOccupancyDashboard();
@@ -219,7 +219,7 @@ export default function OccupancyForecasting() {
 }
 
 function RecordOccupancyModal({ onClose }: { onClose: () => void }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const record = useRecordOccupancy();
   const [form, setForm] = useState({
     record_date: new Date().toISOString().slice(0, 10),
@@ -273,12 +273,12 @@ function RecordOccupancyModal({ onClose }: { onClose: () => void }) {
               </div>
             )}
             <div className="form-group">
-              <label className="form-label">{t('Notes')}</label>
+              <label className="form-label">{tr('Notes')}</label>
               <textarea className="form-input" rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Optional notes..." />
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{tr('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={record.isPending}>{record.isPending ? 'Saving...' : 'Record'}</button>
           </div>
         </form>

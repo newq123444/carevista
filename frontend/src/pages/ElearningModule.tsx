@@ -3,7 +3,7 @@ import { useLang } from '../i18n';
 import { useElearningModules, useCreateElearningModule, useElearningMandatoryStatus, useElearningCompletions, useSubmitElearningQuiz } from '../hooks';
 
 export default function ElearningModule() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [filter, setFilter] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
   const [quizMode, setQuizMode] = useState<{ moduleId: string; questions: any[] } | null>(null);
@@ -95,7 +95,7 @@ export default function ElearningModule() {
       {/* Category Filter */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         <button onClick={() => setFilter('all')} style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${filter === 'all' ? '#0d9488' : '#d1d5db'}`, background: filter === 'all' ? '#eff6ff' : '#fff', color: filter === 'all' ? '#0d9488' : '#6b7280', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>
-          {t('All')}
+          {tr('All')}
         </button>
         {categories.map(cat => (
           <button key={cat} onClick={() => setFilter(cat)} style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${filter === cat ? '#0d9488' : '#d1d5db'}`, background: filter === cat ? '#eff6ff' : '#fff', color: filter === cat ? '#0d9488' : '#6b7280', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, textTransform: 'capitalize' }}>
@@ -122,7 +122,7 @@ export default function ElearningModule() {
               </div>
             </div>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{t('Description')}</label>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{tr('Description')}</label>
               <textarea value={newModule.description} onChange={e => setNewModule(m => ({ ...m, description: e.target.value }))} rows={3} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6 }} />
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
@@ -132,7 +132,7 @@ export default function ElearningModule() {
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 16, cursor: 'pointer' }}>
                 <input type="checkbox" checked={newModule.mandatory} onChange={e => setNewModule(m => ({ ...m, mandatory: e.target.checked }))} />
-                <span style={{ fontSize: '0.85rem' }}>{t('Mandatory')}</span>
+                <span style={{ fontSize: '0.85rem' }}>{tr('Mandatory')}</span>
               </label>
             </div>
             <button type="submit" disabled={createMutation.isPending} style={{ padding: '8px 16px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}>

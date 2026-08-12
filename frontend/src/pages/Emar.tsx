@@ -70,7 +70,7 @@ function routeRestrictionLabel(medRoute: string): string {
 type ViewMode = 'round' | 'resident' | 'list';
 
 export default function Emar() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
   const userRole = user?.role || 'carer';
@@ -238,7 +238,7 @@ export default function Emar() {
                                     canRecord(userRole, med.route) ? (
                                       <button onClick={() => setEntry({ medicationId: med.id, residentId: med.resident_id, residentName: med.resident_name, medName: med.name, dose: med.dose, route: med.route, scheduledTime: activeRound, date })}
                                         style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#0d9488', color: 'white', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
-                                        {t('Record')}
+                                        {tr('Record')}
                                       </button>
                                     ) : (
                                       <span style={{ fontSize: 10, color: '#9ca3af', display: 'block', textAlign: 'center', lineHeight: 1.3 }}>🔒 Senior/<br/>Nurse only</span>
@@ -286,7 +286,7 @@ export default function Emar() {
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                         <thead>
                           <tr style={{ borderBottom: '2px solid var(--border)', background: 'var(--surface-2)' }}>
-                            <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>{t('Medication')}</th>
+                            <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>{tr('Medication')}</th>
                             <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Dose / Route</th>
                             {ROUNDS.map(r => <th key={r.key} style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 600, color: r.color }}>{r.icon} {r.label}</th>)}
                           </tr>
@@ -314,7 +314,7 @@ export default function Emar() {
                                       canRecord(userRole, med.route) ? (
                                         <button onClick={() => setEntry({ medicationId: med.id, residentId: med.resident_id, residentName: med.resident_name, medName: med.name, dose: med.dose, route: med.route, scheduledTime: r.key, date })}
                                           style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: '#0d9488', color: 'white', fontWeight: 700, fontSize: 11, cursor: 'pointer' }}>
-                                          {t('Record')}
+                                          {tr('Record')}
                                         </button>
                                       ) : (
                                         <span style={{ fontSize: 10, color: '#9ca3af' }}>🔒 Nurse only</span>
@@ -347,9 +347,9 @@ export default function Emar() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--border)', background: 'var(--surface-2)' }}>
-                      <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>{t('Resident')}</th>
-                      <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>{t('Medication')}</th>
-                      <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>{t('Dose')}</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>{tr('Resident')}</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>{tr('Medication')}</th>
+                      <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>{tr('Dose')}</th>
                       <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 600 }}>🌅 Morning</th>
                       <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 600 }}>☀️ Afternoon</th>
                       <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 600 }}>🌆 Evening</th>
@@ -373,7 +373,7 @@ export default function Emar() {
                               {status === 'pending' ? (
                                 canRecord(userRole, med.route) ? (
                                   <button onClick={() => setEntry({ medicationId: med.id, residentId: med.resident_id, residentName: med.resident_name, medName: med.name, dose: med.dose, route: med.route, scheduledTime: r.key, date })}
-                                    style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#0d9488', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{t('Record')}</button>
+                                    style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#0d9488', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{tr('Record')}</button>
                                 ) : (
                                   <span style={{ fontSize: 10, color: '#9ca3af' }}>🔒</span>
                                 )
@@ -401,7 +401,7 @@ export default function Emar() {
 
 // ── Record Administration Modal ────────────────────────────────────────────
 function AdminModal({ entry, onClose }: { entry: any; onClose: () => void }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const record = useRecordAdministration();
   const [form, setForm] = useState({ status: 'given', actualTime: entry.scheduledTime, doseGiven: entry.dose || '', notes: '', refusalReason: '', omissionReason: '', siteApplied: '' });
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
@@ -506,7 +506,7 @@ function AdminModal({ entry, onClose }: { entry: any; onClose: () => void }) {
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{tr('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={record.isPending}>
               {record.isPending ? 'Saving…' : '✅ Confirm & Sign'}
             </button>
@@ -519,7 +519,7 @@ function AdminModal({ entry, onClose }: { entry: any; onClose: () => void }) {
 
 // ── Add Medication Modal ────────────────────────────────────────────────────
 function AddMedModal({ residents, onClose }: { residents: Resident[]; onClose: () => void }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const createMed = useCreateMedication();
   const [form, setForm] = useState({
     resident_id: '', name: '', generic_name: '', dose: '', route: 'oral', frequency: 'once_daily',
@@ -571,7 +571,7 @@ function AddMedModal({ residents, onClose }: { residents: Resident[]; onClose: (
             <div className="form-row">
               <div className="form-group"><label className="form-label">Frequency *</label>
                 <select className="form-input" value={form.frequency} onChange={e => set('frequency', e.target.value)}>
-                  <option value="once_daily">Once Daily</option><option value="twice_daily">Twice Daily</option><option value="three_times_daily">Three Times Daily</option><option value="four_times_daily">Four Times Daily</option><option value="as_required">As Required (PRN)</option><option value="weekly">{t('Weekly')}</option><option value="monthly">{t('Monthly')}</option>
+                  <option value="once_daily">Once Daily</option><option value="twice_daily">Twice Daily</option><option value="three_times_daily">Three Times Daily</option><option value="four_times_daily">Four Times Daily</option><option value="as_required">As Required (PRN)</option><option value="weekly">{tr('Weekly')}</option><option value="monthly">{tr('Monthly')}</option>
                 </select>
               </div>
               <div className="form-group"><label className="form-label">Indication</label><input className="form-input" value={form.indication} onChange={e => set('indication', e.target.value)} placeholder="e.g. Hypertension" /></div>
@@ -605,7 +605,7 @@ function AddMedModal({ residents, onClose }: { residents: Resident[]; onClose: (
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{tr('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={createMed.isPending}>{createMed.isPending ? 'Adding…' : '+ Add Medication'}</button>
           </div>
         </form>

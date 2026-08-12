@@ -30,7 +30,7 @@ function TrafficLight({ score, level }: { score?: number; level?: string }) {
 }
 
 export default function RiskAssessments() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [tab, setTab] = useState<TabType>('overview');
   const [selectedResidentId, setSelectedResidentId] = useState('');
   const [detailAssessment, setDetailAssessment] = useState<RiskAssessment | null>(null);
@@ -68,9 +68,9 @@ export default function RiskAssessments() {
 
       {/* Tabs */}
       <div style={{ borderBottom: '1px solid #e2e8f0', marginBottom: 24 }}>
-        <button onClick={() => setTab('overview')} style={tabStyle('overview')}>{t('Overview')}</button>
+        <button onClick={() => setTab('overview')} style={tabStyle('overview')}>{tr('Overview')}</button>
         <button onClick={() => setTab('overdue')} style={tabStyle('overdue')}>Overdue Reviews</button>
-        <button onClick={() => setTab('calculate')} style={tabStyle('calculate')}>{t('Calculate')}</button>
+        <button onClick={() => setTab('calculate')} style={tabStyle('calculate')}>{tr('Calculate')}</button>
       </div>
 
       {/* Overview Tab */}
@@ -79,8 +79,8 @@ export default function RiskAssessments() {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
             <thead>
               <tr>
-                <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>{t('Resident')}</th>
-                <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>{t('Room')}</th>
+                <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>{tr('Resident')}</th>
+                <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>{tr('Room')}</th>
                 <th style={{ padding: '10px 12px', textAlign: 'center', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Waterlow</th>
                 <th style={{ padding: '10px 12px', textAlign: 'center', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>MUST</th>
                 <th style={{ padding: '10px 12px', textAlign: 'center', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Falls</th>

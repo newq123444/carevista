@@ -14,7 +14,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function AutomatedInvoicing() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [tab, setTab] = useState<'dashboard' | 'uplifts' | 'reminders'>('dashboard');
   const [showUpliftForm, setShowUpliftForm] = useState(false);
 
@@ -122,13 +122,13 @@ export default function AutomatedInvoicing() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>{t('Resident')}</th>
+                  <th>{tr('Resident')}</th>
                   <th>Previous Rate</th>
                   <th>New Rate</th>
                   <th>Effective Date</th>
                   <th>Reason</th>
-                  <th>{t('Status')}</th>
-                  <th>{t('Actions')}</th>
+                  <th>{tr('Status')}</th>
+                  <th>{tr('Actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,13 +169,13 @@ export default function AutomatedInvoicing() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>{t('Invoice')}</th>
-                  <th>{t('Resident')}</th>
+                  <th>{tr('Invoice')}</th>
+                  <th>{tr('Resident')}</th>
                   <th>Payer</th>
                   <th>Amount Due</th>
                   <th>Due Date</th>
                   <th>Days Overdue</th>
-                  <th>{t('Status')}</th>
+                  <th>{tr('Status')}</th>
                   <th>Last Reminder</th>
                   <th>Action</th>
                 </tr>
@@ -219,7 +219,7 @@ export default function AutomatedInvoicing() {
 }
 
 function CreateUpliftModal({ residents, onClose }: { residents: Resident[]; onClose: () => void }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const create = useCreateRateUplift();
   const [form, setForm] = useState({
     resident_id: '',
@@ -293,7 +293,7 @@ function CreateUpliftModal({ residents, onClose }: { residents: Resident[]; onCl
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>{t('Cancel')}</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>{tr('Cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={create.isPending}>{create.isPending ? 'Creating...' : 'Submit Rate Uplift'}</button>
           </div>
         </form>

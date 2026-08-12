@@ -16,7 +16,7 @@ const ABSENCE_TYPES = [
 ];
 
 export default function SicknessAbsence() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: absences } = useAbsences();
   const { data: bradfordScores } = useBradfordScores();
   const { data: patterns } = useAbsencePatterns();
@@ -172,7 +172,7 @@ export default function SicknessAbsence() {
                     <label htmlFor="self_certified" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Self-certified</label>
                   </div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button type="button" className="btn btn-ghost" onClick={() => setShowAbsenceForm(false)}>{t('Cancel')}</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => setShowAbsenceForm(false)}>{tr('Cancel')}</button>
                     <button type="submit" className="btn btn-primary" disabled={recordAbsence.isPending}>
                       {recordAbsence.isPending ? 'Recording...' : 'Record Absence'}
                     </button>
@@ -196,8 +196,8 @@ export default function SicknessAbsence() {
                 <thead>
                   <tr>
                     <th>Staff Member</th>
-                    <th>{t('Role')}</th>
-                    <th>{t('Score')}</th>
+                    <th>{tr('Role')}</th>
+                    <th>{tr('Score')}</th>
                     <th>Spells</th>
                     <th>Total Days</th>
                     <th>Risk Level</th>
@@ -311,7 +311,7 @@ export default function SicknessAbsence() {
             <table className="table" style={{ minWidth: 800, fontSize: '0.75rem' }}>
               <thead>
                 <tr>
-                  <th style={{ position: 'sticky', left: 0, background: 'var(--bg-primary, #fff)', zIndex: 1, minWidth: 140 }}>{t('Staff')}</th>
+                  <th style={{ position: 'sticky', left: 0, background: 'var(--bg-primary, #fff)', zIndex: 1, minWidth: 140 }}>{tr('Staff')}</th>
                   {calendarDays.map(day => (
                     <th key={day} style={{ textAlign: 'center', padding: '4px 2px', minWidth: 28 }}>
                       <div>{new Date(day).toLocaleDateString('en-GB', { day: '2-digit' })}</div>

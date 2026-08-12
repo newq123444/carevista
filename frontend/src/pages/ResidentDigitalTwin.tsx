@@ -38,7 +38,7 @@ export default function ResidentDigitalTwin() {
 }
 
 function ResidentDigitalTwinInner() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
 
   const { data: residents } = useQuery({ queryKey: ['residents'], queryFn: () => api.get('/residents').then(r => r.data?.residents ?? r.data ?? []) });
@@ -106,7 +106,7 @@ function ResidentDigitalTwinInner() {
               {twin.emotional?.current_wellbeing_score != null && (
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 28, fontWeight: 700, color: twin.emotional?.current_wellbeing_score >= 7 ? '#4ade80' : twin.emotional?.current_wellbeing_score >= 4 ? '#fbbf24' : '#f87171' }}>{twin.emotional?.current_wellbeing_score}/10</div>
-                  <div style={{ fontSize: 10, color: '#94a3b8' }}>{t('Wellbeing')}</div>
+                  <div style={{ fontSize: 10, color: '#94a3b8' }}>{tr('Wellbeing')}</div>
                 </div>
               )}
             </div>

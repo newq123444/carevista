@@ -29,7 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function RoomTurnoverManager() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [expandedTurnover, setExpandedTurnover] = useState<string | null>(null);
@@ -173,7 +173,7 @@ export default function RoomTurnoverManager() {
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <button type="submit" className="btn btn-primary btn-sm" disabled={createTurnover.isPending}>Create Turnover</button>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowCreateForm(false)}>{t('Cancel')}</button>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowCreateForm(false)}>{tr('Cancel')}</button>
               </div>
             </form>
           </div>
@@ -285,15 +285,15 @@ export default function RoomTurnoverManager() {
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 2 }}>Category</label>
                         <select value={newItemCategory} onChange={e => setNewItemCategory(e.target.value)} style={{ padding: '6px 8px', borderRadius: 4, border: '1px solid var(--border)', fontSize: '0.85rem' }}>
-                          <option value="cleaning">{t('Cleaning')}</option>
-                          <option value="maintenance">{t('Maintenance')}</option>
+                          <option value="cleaning">{tr('Cleaning')}</option>
+                          <option value="maintenance">{tr('Maintenance')}</option>
                           <option value="decoration">Decoration</option>
                           <option value="inventory">Inventory</option>
                           <option value="admin">Admin</option>
                         </select>
                       </div>
-                      <button type="submit" className="btn btn-primary btn-sm">{t('Add')}</button>
-                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowAddItem(false)}>{t('Cancel')}</button>
+                      <button type="submit" className="btn btn-primary btn-sm">{tr('Add')}</button>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowAddItem(false)}>{tr('Cancel')}</button>
                     </form>
                   ) : (
                     <button className="btn btn-ghost btn-sm" onClick={() => setShowAddItem(true)} style={{ marginTop: 8 }}>+ Add Custom Item</button>

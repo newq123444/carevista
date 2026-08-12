@@ -45,7 +45,7 @@ const ENERGY_OPTIONS = [
 
 // Quick-log resident card
 function QuickLogCard({ resident, onLogged }: { resident: Resident; onLogged: () => void }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [expanded, setExpanded] = useState(false);
   const [mood, setMood] = useState('');
   const [sleep, setSleep] = useState('');
@@ -122,7 +122,7 @@ function QuickLogCard({ resident, onLogged }: { resident: Resident; onLogged: ()
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
           {/* Sleep */}
           <div style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>{t('Sleep')}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>{tr('Sleep')}</div>
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               {SLEEP_OPTIONS.map(s => (
                 <button key={s.value} onClick={() => setSleep(s.value)} style={{ padding: '3px 8px', borderRadius: 12, border: sleep === s.value ? '1.5px solid #0d9488' : '1px solid var(--border)', background: sleep === s.value ? '#0d948810' : 'transparent', cursor: 'pointer', fontSize: 11, color: sleep === s.value ? '#0d9488' : 'var(--text-secondary)', fontWeight: sleep === s.value ? 600 : 400 }}>
@@ -134,7 +134,7 @@ function QuickLogCard({ resident, onLogged }: { resident: Resident; onLogged: ()
 
           {/* Appetite */}
           <div style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>{t('Appetite')}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>{tr('Appetite')}</div>
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               {APPETITE_OPTIONS.map(a => (
                 <button key={a.value} onClick={() => setAppetite(a.value)} style={{ padding: '3px 8px', borderRadius: 12, border: appetite === a.value ? '1.5px solid #10b981' : '1px solid var(--border)', background: appetite === a.value ? '#10b98110' : 'transparent', cursor: 'pointer', fontSize: 11, color: appetite === a.value ? '#10b981' : 'var(--text-secondary)', fontWeight: appetite === a.value ? 600 : 400 }}>
@@ -193,7 +193,7 @@ function QuickLogCard({ resident, onLogged }: { resident: Resident; onLogged: ()
               {logMutation.isPending ? 'Saving...' : '✅ Log Wellbeing'}
             </button>
             <button onClick={() => { setExpanded(false); setMood(''); }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 12, cursor: 'pointer' }}>
-              {t('Cancel')}
+              {tr('Cancel')}
             </button>
           </div>
         </div>

@@ -66,7 +66,7 @@ function getRiskColor(score: number): string {
 }
 
 export default function News2Calculator() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data: residents = [] } = useResidents();
   const [selectedResident, setSelectedResident] = useState('');
   const { data: history } = useNews2History(selectedResident);
@@ -326,14 +326,14 @@ export default function News2Calculator() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                  <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 600 }}>{t('Date')}</th>
+                  <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 600 }}>{tr('Date')}</th>
                   <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>RR</th>
                   <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>SpO2</th>
                   <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>BP</th>
-                  <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>{t('Pulse')}</th>
+                  <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>{tr('Pulse')}</th>
                   <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>Temp</th>
-                  <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>{t('Total')}</th>
-                  <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>{t('Risk')}</th>
+                  <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>{tr('Total')}</th>
+                  <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 600 }}>{tr('Risk')}</th>
                   <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 600 }}>Assessed By</th>
                 </tr>
               </thead>

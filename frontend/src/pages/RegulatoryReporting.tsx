@@ -9,7 +9,7 @@ const typeIcons: Record<string, string> = { cqc: '🏛️', safeguarding: '🛡�
 const typeColors: Record<string, string> = { cqc: '#0d9488', safeguarding: '#dc2626', dols: '#7c3aed', death: '#374151' };
 
 export default function RegulatoryReporting() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [tab, setTab] = useState<'dashboard' | 'create' | 'deadlines'>('dashboard');
   const [createForm, setCreateForm] = useState({ type: 'cqc', residentId: '', incidentId: '', details: '' });
   const queryClient = useQueryClient();
@@ -84,7 +84,7 @@ export default function RegulatoryReporting() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ padding: '3px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600, background: n.status === 'submitted' ? '#dcfce7' : n.status === 'overdue' ? '#fef2f2' : '#f3f4f6', color: n.status === 'submitted' ? '#16a34a' : n.status === 'overdue' ? '#dc2626' : '#6b7280' }}>{n.status}</span>
-                  {n.status === 'draft' && <button onClick={() => updateMutation.mutate({ id: n.id, data: { status: 'submitted' } })} style={{ padding: '4px 10px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>{t('Submit')}</button>}
+                  {n.status === 'draft' && <button onClick={() => updateMutation.mutate({ id: n.id, data: { status: 'submitted' } })} style={{ padding: '4px 10px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>{tr('Submit')}</button>}
                 </div>
               </div>
             ))}
@@ -126,7 +126,7 @@ export default function RegulatoryReporting() {
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>{t('Resident')}</label>
+                <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>{tr('Resident')}</label>
                 <select value={createForm.residentId} onChange={e => setCreateForm({ ...createForm, residentId: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }}>
                   <option value="">Select resident (optional)</option>
                   {residents?.map((r: any) => <option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>)}

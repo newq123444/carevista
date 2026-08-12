@@ -3,7 +3,7 @@ import { useLang } from '../i18n';
 import { useCreateTabletRequest } from '../hooks';
 
 export default function ResidentTablet() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [residentId] = useState('demo-resident');
   const [view, setView] = useState<'home' | 'meals' | 'activities' | 'entertainment'>('home');
   const [mealRating, setMealRating] = useState<string | null>(null);
@@ -30,9 +30,9 @@ export default function ResidentTablet() {
     return (
       <div style={{ padding: 32, minHeight: '100vh', background: '#ffffff' }}>
         <button onClick={() => setView('home')} style={{ fontSize: '24px', padding: '16px 32px', background: '#f3f4f6', border: '2px solid #d1d5db', borderRadius: 12, cursor: 'pointer', marginBottom: 32, minHeight: 64, fontWeight: 600 }}>
-          {t('Back to Home')}
+          {tr('Back to Home')}
         </button>
-        <h1 style={{ fontSize: '36px', fontWeight: 700, color: '#111827', marginBottom: 32, textAlign: 'center' }}>{t('Rate Your Meal')}</h1>
+        <h1 style={{ fontSize: '36px', fontWeight: 700, color: '#111827', marginBottom: 32, textAlign: 'center' }}>{tr('Rate Your Meal')}</h1>
         <p style={{ fontSize: '28px', color: '#374151', textAlign: 'center', marginBottom: 48 }}>How was your meal today?</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 500, margin: '0 auto' }}>
           <button onClick={() => handleMealRating('excellent')} style={{ padding: '24px 32px', fontSize: '28px', background: mealRating === 'excellent' ? '#dcfce7' : '#fff', border: `3px solid ${mealRating === 'excellent' ? '#16a34a' : '#d1d5db'}`, borderRadius: 16, cursor: 'pointer', minHeight: 80, fontWeight: 600, color: '#111827' }}>
@@ -57,9 +57,9 @@ export default function ResidentTablet() {
     return (
       <div style={{ padding: 32, minHeight: '100vh', background: '#ffffff' }}>
         <button onClick={() => setView('home')} style={{ fontSize: '24px', padding: '16px 32px', background: '#f3f4f6', border: '2px solid #d1d5db', borderRadius: 12, cursor: 'pointer', marginBottom: 32, minHeight: 64, fontWeight: 600 }}>
-          {t('Back to Home')}
+          {tr('Back to Home')}
         </button>
-        <h1 style={{ fontSize: '36px', fontWeight: 700, color: '#111827', marginBottom: 32, textAlign: 'center' }}>{t('Choose an Activity')}</h1>
+        <h1 style={{ fontSize: '36px', fontWeight: 700, color: '#111827', marginBottom: 32, textAlign: 'center' }}>{tr('Choose an Activity')}</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24, maxWidth: 700, margin: '0 auto' }}>
           {activities.map(activity => (
             <button key={activity} onClick={() => handleActivityChoice(activity)} style={{ padding: '32px 24px', fontSize: '26px', background: '#fff', border: '3px solid #d1d5db', borderRadius: 16, cursor: 'pointer', minHeight: 100, fontWeight: 600, color: '#111827', textAlign: 'center' }}>
@@ -80,12 +80,12 @@ export default function ResidentTablet() {
     return (
       <div style={{ padding: 32, minHeight: '100vh', background: '#ffffff' }}>
         <button onClick={() => setView('home')} style={{ fontSize: '24px', padding: '16px 32px', background: '#f3f4f6', border: '2px solid #d1d5db', borderRadius: 12, cursor: 'pointer', marginBottom: 32, minHeight: 64, fontWeight: 600 }}>
-          {t('Back to Home')}
+          {tr('Back to Home')}
         </button>
-        <h1 style={{ fontSize: '36px', fontWeight: 700, color: '#111827', marginBottom: 32, textAlign: 'center' }}>{t('Entertainment')}</h1>
+        <h1 style={{ fontSize: '36px', fontWeight: 700, color: '#111827', marginBottom: 32, textAlign: 'center' }}>{tr('Entertainment')}</h1>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 500, margin: '0 auto' }}>
           <div style={{ padding: 24, background: '#f0f9ff', borderRadius: 16, border: '3px solid #bae6fd' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: 600, color: '#0c4a6e', marginBottom: 12 }}>{t('Music Playlist')}</h2>
+            <h2 style={{ fontSize: '28px', fontWeight: 600, color: '#0c4a6e', marginBottom: 12 }}>{tr('Music Playlist')}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {['Classical Favourites', 'Golden Oldies', 'Relaxation Sounds', 'Hymns'].map(track => (
                 <button key={track} style={{ padding: '16px 24px', fontSize: '24px', background: '#fff', border: '2px solid #bae6fd', borderRadius: 12, cursor: 'pointer', minHeight: 64, textAlign: 'left', color: '#111827' }}>
@@ -95,7 +95,7 @@ export default function ResidentTablet() {
             </div>
           </div>
           <div style={{ padding: 24, background: '#fdf4ff', borderRadius: 16, border: '3px solid #e9d5ff' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: 600, color: '#581c87', marginBottom: 12 }}>{t('Photo Gallery')}</h2>
+            <h2 style={{ fontSize: '28px', fontWeight: 600, color: '#581c87', marginBottom: 12 }}>{tr('Photo Gallery')}</h2>
             <button style={{ padding: '16px 24px', fontSize: '24px', background: '#fff', border: '2px solid #e9d5ff', borderRadius: 12, cursor: 'pointer', minHeight: 64, width: '100%', color: '#111827' }}>
               📷 View My Photos
             </button>

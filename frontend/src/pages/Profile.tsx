@@ -13,7 +13,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function Profile() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [showLogout, setShowLogout] = useState(false);
@@ -46,7 +46,7 @@ export default function Profile() {
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <div className="page-header">
-        <h1 className="page-title">{t('My Profile')}</h1>
+        <h1 className="page-title">{tr('My Profile')}</h1>
       </div>
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ padding: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
@@ -81,7 +81,7 @@ export default function Profile() {
           {showPw && (
             <form onSubmit={submitPassword} style={{ marginTop: 16, display: 'grid', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>{t('Current password')}</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>{tr('Current password')}</label>
                 <input type="password" value={pw.currentPassword} onChange={e => setPw(f => ({ ...f, currentPassword: e.target.value }))} required autoComplete="current-password" style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 8 }} />
               </div>
               <div>
@@ -110,7 +110,7 @@ export default function Profile() {
             <div style={{ padding: 16, borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca' }}>
               <p style={{ fontSize: 14, color: '#991b1b', marginBottom: 14, textAlign: 'center' }}>Are you sure you want to sign out?</p>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowLogout(false)} className="btn btn-ghost" style={{ flex: 1 }}>{t('Cancel')}</button>
+                <button onClick={() => setShowLogout(false)} className="btn btn-ghost" style={{ flex: 1 }}>{tr('Cancel')}</button>
                 <button onClick={handleLogout} className="btn btn-danger" style={{ flex: 1 }}>Yes, Sign Out</button>
               </div>
             </div>

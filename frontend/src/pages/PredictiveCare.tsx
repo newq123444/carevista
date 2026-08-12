@@ -86,7 +86,7 @@ function PredictiveCareInner() {
 
 // ── Risk Dashboard Tab ────────────────────────────────────────────────────
 function RiskDashboardTab() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { data, isLoading, error } = usePredictiveRiskDashboard();
   const runAnalysis = useRunPredictiveAnalysis();
 
@@ -134,11 +134,11 @@ function RiskDashboardTab() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left' }}>
-                <th style={{ padding: '10px 12px', fontWeight: 600 }}>{t('Resident')}</th>
-                <th style={{ padding: '10px 12px', fontWeight: 600 }}>{t('Room')}</th>
+                <th style={{ padding: '10px 12px', fontWeight: 600 }}>{tr('Resident')}</th>
+                <th style={{ padding: '10px 12px', fontWeight: 600 }}>{tr('Room')}</th>
                 <th style={{ padding: '10px 12px', fontWeight: 600 }}>Risk Level</th>
                 <th style={{ padding: '10px 12px', fontWeight: 600, textAlign: 'center' }}>Falls Score</th>
-                <th style={{ padding: '10px 12px', fontWeight: 600, textAlign: 'center' }}>{t('Deterioration')}</th>
+                <th style={{ padding: '10px 12px', fontWeight: 600, textAlign: 'center' }}>{tr('Deterioration')}</th>
                 <th style={{ padding: '10px 12px', fontWeight: 600 }}>Last Analyzed</th>
               </tr>
             </thead>

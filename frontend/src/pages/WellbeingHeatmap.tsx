@@ -8,7 +8,7 @@ const statusColors = { green: '#16a34a', amber: '#d97706', red: '#dc2626', no_da
 const statusBg = { green: '#f0fdf4', amber: '#fffbeb', red: '#fef2f2', no_data: '#f3f4f6' };
 
 export default function WellbeingHeatmap() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
 
   const { data, isLoading } = useQuery({
@@ -87,7 +87,7 @@ export default function WellbeingHeatmap() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
             <div style={{ padding: 12, background: 'var(--bg-secondary)', borderRadius: 8 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('Mood')}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tr('Mood')}</div>
               <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>{selectedRoom.mood}</div>
             </div>
             <div style={{ padding: 12, background: 'var(--bg-secondary)', borderRadius: 8 }}>

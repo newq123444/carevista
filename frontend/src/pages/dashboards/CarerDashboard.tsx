@@ -355,7 +355,7 @@ interface ClinicalFormProps {
 }
 
 function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=false }: ClinicalFormProps) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { user } = useAuthStore();
   const { data: rawStaff = [] } = useColleagues();
   const staff: any[] = Array.isArray(rawStaff) ? rawStaff : [];
@@ -638,7 +638,7 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
                 </div>
                 <MealChoiceToKitchen residentId={resident.id} meal={note.meal || defaultMeal} />
                 <div style={{ marginBottom: 14 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>{t('Appetite')}</label>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>{tr('Appetite')}</label>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {APPETITE_OPTIONS.map(a => { const active=note.appetite===a.value; return <button key={a.value} onClick={()=>set('appetite',active?'':a.value)} style={{ padding:'8px 14px',borderRadius:20,border:`2px solid ${active?'#10b981':'var(--border)'}`,background:active?'#dcfce7':'white',color:active?'#15803d':'var(--text-secondary)',cursor:'pointer',fontSize:13,fontWeight:active?700:400,transition:'all 120ms' }}>{a.label}</button>; })}
                   </div>
@@ -824,7 +824,7 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
             ))}
             <div style={{ display:'flex', gap:8, marginTop:8 }}>
               <button type="button" onClick={handleDefer} disabled={!deferReason.trim()||deferTask.isPending} className="btn btn-primary" style={{ flex:1, background:'#d97706', borderColor:'#d97706' }}>{deferTask.isPending?'Deferring…':'↩️ Confirm Defer'}</button>
-              <button type="button" onClick={() => setMode('complete')} className="btn btn-secondary" style={{ flex:1 }}>{t('Back')}</button>
+              <button type="button" onClick={() => setMode('complete')} className="btn btn-secondary" style={{ flex:1 }}>{tr('Back')}</button>
             </div>
           </div>
         )}
@@ -881,7 +881,7 @@ function WellbeingAlertWidget({ residents }: { residents: Resident[] }) {
 
 // ── Main CarerDashboard ───────────────────────────────────────────────────
 export default function CarerDashboard() {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const { user }            = useAuthStore();
   const { data: dashData }  = useDashboard();
   const { data: rawResidents = [] } = useResidents({ active: true });
@@ -1073,7 +1073,7 @@ export default function CarerDashboard() {
         <div style={{ display:'flex', gap:6 }}>
           <input type="text" placeholder="🔍 Search resident..." value={search} onChange={e=>setSearch(e.target.value)}
             style={{ padding:'6px 10px', borderRadius:8, border:'1px solid var(--border)', fontSize:12, width:140, background:'var(--surface-2)' }} />
-          <button className="btn btn-ghost btn-sm" onClick={()=>refetch()} style={{ fontSize:12 }}>{t('Refresh')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>refetch()} style={{ fontSize:12 }}>{tr('Refresh')}</button>
         </div>
       </div>
 
@@ -1352,7 +1352,7 @@ export default function CarerDashboard() {
             <div style={{ display:'flex', gap:6 }}>
               <input type="text" placeholder="🔍 Search resident…" value={search} onChange={e=>setSearch(e.target.value)}
                 style={{ padding:'6px 10px', borderRadius:8, border:'1px solid var(--border)', fontSize:12, width:140, background:'var(--surface-2)' }} />
-              <button className="btn btn-ghost btn-sm" onClick={()=>refetch()} style={{ fontSize:12 }}>{t('Refresh')}</button>
+              <button className="btn btn-ghost btn-sm" onClick={()=>refetch()} style={{ fontSize:12 }}>{tr('Refresh')}</button>
             </div>
           </div>
 
@@ -1543,7 +1543,7 @@ const KITCHEN_MEAL: Record<string, string> = {
 };
 
 function MealChoiceToKitchen({ residentId, meal }: { residentId: string; meal: string }) {
-  const { t } = useLang();
+  const { t: tr } = useLang();
   const kitchenMeal = KITCHEN_MEAL[meal] || 'lunch';
   const { data: menu = [] } = useMenuAdmin();
   const createOrder = useCreateMealOrder();
@@ -1575,11 +1575,11 @@ function MealChoiceToKitchen({ residentId, meal }: { residentId: string; meal: s
         <>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <select value={choice} onChange={e => setChoice(e.target.value)} style={{ flex: '2 1 200px', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }}>
-              <option value="">{t('Choose a dish…')}</option>
+              <option value="">{tr('Choose a dish…')}</option>
               {options.map((o: any) => <option key={o.id} value={o.id}>{o.name}{o.texture && o.texture !== 'normal' ? ` (${o.texture})` : ''}</option>)}
             </select>
             <select value={portion} onChange={e => setPortion(e.target.value)} style={{ flex: '1 1 110px', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }}>
-              <option value="small">{t('Small')}</option><option value="regular">{t('Regular')}</option><option value="large">{t('Large')}</option>
+              <option value="small">{tr('Small')}</option><option value="regular">{tr('Regular')}</option><option value="large">{tr('Large')}</option>
             </select>
           </div>
           <input value={request} onChange={e => setRequest(e.target.value)} placeholder="Special request (optional) — e.g. no gravy, extra soft"

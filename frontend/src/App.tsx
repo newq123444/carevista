@@ -233,7 +233,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen]  = useState(false);
   const [collapsed, setCollapsed]      = useState(false);
   const [searchQuery, setSearchQuery]  = useState('');
-  const { t } = useLang();
+  const { t: tr } = useLang();
 
   // Close drawer on route change (mobile/tablet)
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
@@ -404,7 +404,7 @@ export default function App() {
             // Hide section headers when searching
             if (searchQuery) return null;
             if (isDesktop && collapsed) return <div key={i} style={{ borderTop: '1px solid rgba(255,255,255,.05)', margin: '6px 0' }} />;
-            return <div key={i} style={{ padding: '12px 16px 4px', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#3d4f66', borderBottom: '1px solid rgba(255,255,255,.08)', paddingBottom: '8px' }}>{t(item.section)}</div>;
+            return <div key={i} style={{ padding: '12px 16px 4px', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#3d4f66', borderBottom: '1px solid rgba(255,255,255,.08)', paddingBottom: '8px' }}>{tr(item.section)}</div>;
           }
           const navItem = item as { path: string; label: string; icon: string; roles: string[] | null; badge?: string };
           if (navItem.roles && !navItem.roles.includes(role)) return null;
@@ -427,7 +427,7 @@ export default function App() {
                 minHeight: 44,
               }}>
               <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>{navItem.icon}</span>
-              {!(isDesktop && collapsed) && <span style={{ fontWeight: isActive ? 600 : 400, flex: 1 }}>{t(navItem.label)}</span>}
+              {!(isDesktop && collapsed) && <span style={{ fontWeight: isActive ? 600 : 400, flex: 1 }}>{tr(navItem.label)}</span>}
               {!(isDesktop && collapsed) && badgeCount > 0 && (
                 <span style={{ background: '#dc2626', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '1px 6px', borderRadius: 10, minWidth: 18, textAlign: 'center' }}>{badgeCount}</span>
               )}
@@ -666,7 +666,7 @@ export default function App() {
                     <span className="bottom-nav-badge">{badgeCount > 9 ? '9+' : badgeCount}</span>
                   )}
                 </span>
-                <span>{t(item.label)}</span>
+                <span>{tr(item.label)}</span>
               </NavLink>
             );
           })}
