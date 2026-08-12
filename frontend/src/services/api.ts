@@ -636,6 +636,7 @@ export const homeApi = {
 // ── Outcomes analytics ────────────────────────────────────────────────────
 export const analyticsApi = {
   outcomes: (days?: number) => api.get('/analytics/outcomes', { params: days ? { days } : {} }),
+  outcomeDetail: (metric: string) => api.get(`/analytics/outcomes/${metric}`),
 };
 
 // ── Family access management (manager) ────────────────────────────────────

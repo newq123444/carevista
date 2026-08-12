@@ -111,6 +111,7 @@ router.patch('/kitchen/orders/:id',     isAllStaff, kitchenCtrl.updateOrder);
 
 // ── Outcomes / impact analytics ───────────────────────────────────────────
 router.get('/analytics/outcomes', isManager, analyticsCtrl.getOutcomes);
+router.get('/analytics/outcomes/:metric', isManager, analyticsCtrl.getOutcomeDetail);
 
 // ── Family access management (manager) ────────────────────────────────────
 router.get('/family-access',                 isManager, familyAccessCtrl.listFamilyAccess);

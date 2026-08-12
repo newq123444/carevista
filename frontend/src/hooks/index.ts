@@ -1490,3 +1490,7 @@ export function useUpdateMealOrder() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kitchen'] }),
     onError: (e: any) => toast.error(e.response?.data?.error || 'Failed') });
 }
+
+export function useOutcomeDetail(metric: string | null) {
+  return useQuery({ queryKey: ['outcome-detail', metric], queryFn: () => analyticsApi.outcomeDetail(metric as string).then(r => r.data), enabled: !!metric });
+}

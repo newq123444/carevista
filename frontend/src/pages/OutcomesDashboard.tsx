@@ -1,30 +1,37 @@
 // src/pages/OutcomesDashboard.tsx — proof-of-impact analytics for managers
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
-import { useOutcomes } from '../hooks';
+import { useOutcomes, useOutcomeDetail } from '../hooks';
 import { SectionCard, PageHeading } from '../components/ui';
 
 const MOOD_LABEL: Record<string, string> = { very_happy: 'Very happy', happy: 'Happy', neutral: 'Content', low: 'Low', very_low: 'Very low' };
 const MOOD_COLOR: Record<string, string> = { very_happy: '#0f766e', happy: '#14b8a6', neutral: '#64748b', low: '#f59e0b', very_low: '#ef4444' };
 const monthName = (ym: string) => { const [y, m] = ym.split('-'); return new Date(Number(y), Number(m) - 1, 1).toLocaleString('en-GB', { month: 'short' }); };
 
-function Kpi({ label, value, unit, delta, good, sub }: { label: string; value: React.ReactNode; unit?: string; delta?: number; good?: string; sub?: string }) {
+function Kpi({ label, value, unit, delta, good, sub, onClick }: { label: string; value: React.ReactNode; unit?: string; delta?: number | null; good?: string; sub?: string; onClick?: () => void }) {
   let arrow = ''; let tone = 'var(--text-muted)';
   if (typeof delta === 'number' && delta !== 0 && good) {
     const improving = (good === 'down' && delta < 0) || (good === 'up' && delta > 0);
     arrow = delta > 0 ? '▲' : '▼';
     tone = improving ? 'var(--success)' : 'var(--danger)';
   }
+  // delta === null means there was no prior-period baseline to compare against.
+  const trendText = delta === null ? 'No prior-period data'
+    : (typeof delta === 'number' && delta !== 0 ? `${Math.abs(delta)}% vs prev 30d` : (sub || 'No change'));
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', flex: '1 1 150px', minWidth: 150 }}>
-      <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 6 }}>{label}</div>
+    <div onClick={onClick} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : undefined}
+      onKeyDown={e => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', flex: '1 1 150px', minWidth: 150, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow 120ms, transform 120ms' }}
+      onMouseEnter={e => { if (onClick) { e.currentTarget.style.boxShadow = '0 4px 14px rgba(15,23,42,.10)'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}>
+      <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 6, display: 'flex', justifyContent: 'space-between', gap: 6 }}>
+        <span>{label}</span>{onClick && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>›</span>}
+      </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
         <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>{value}</span>
         {unit && <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{unit}</span>}
       </div>
-      <div style={{ fontSize: 12, marginTop: 4, color: tone }}>
-        {arrow} {typeof delta === 'number' && delta !== 0 ? `${Math.abs(delta)}% vs prev 30d` : (sub || 'No change')}
-      </div>
+      <div style={{ fontSize: 12, marginTop: 4, color: tone }}>{arrow} {trendText}</div>
     </div>
   );
 }
@@ -68,6 +75,8 @@ function TrendLine({ data }: { data: { label: string; value: number }[] }) {
 export default function OutcomesDashboard() {
   const { t } = useLang();
   const [days, setDays] = useState(90);
+  const [openMetric, setOpenMetric] = useState<string | null>(null);
+  const { data: detail, isLoading: detailLoading } = useOutcomeDetail(openMetric);
   const { data, isLoading } = useOutcomes(days);
 
   if (isLoading || !data) return <div style={{ padding: 24, color: 'var(--text-muted)' }}>Loading outcomes…</div>;
@@ -90,15 +99,16 @@ export default function OutcomesDashboard() {
           </select>} />
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
-        <Kpi label="Falls (30d)" value={k.falls.value} unit={`· ${k.falls.per1000}/1k bed-days`} delta={k.falls.delta} good="down" />
-        <Kpi label="All incidents (30d)" value={k.incidents.value} delta={k.incidents.delta} good="down" />
-        <Kpi label="Care completed (7d)" value={`${k.task_completion.value}%`} good="up" sub="of scheduled care" />
-        <Kpi label="Low mood (30d)" value={`${k.wellbeing_low.value}%`} good="down" sub="of wellbeing logs" />
-        <Kpi label="Feeling isolated" value={k.isolation.value} unit="residents" good="down" sub="last 14 days" />
-        <Kpi label="Weight stable/up" value={`${k.weight_stable.value}%`} good="up" sub={`${k.weight_stable.tracked} tracked`} />
-        <Kpi label="NEWS2 high (30d)" value={k.news2_high.value} delta={k.news2_high.delta} good="down" sub="high/critical scores" />
-        <Kpi label="Escalations open" value={k.news2_pending.value} good="down" sub="awaiting response" />
-        <Kpi label="At elevated risk" value={k.news2_elevated.value} unit="residents" good="down" sub="latest NEWS2" />
+        <Kpi label="Falls (30d)" value={k.falls.value} unit={`· ${k.falls.per1000}/1k bed-days`} delta={k.falls.delta} good="down" onClick={() => setOpenMetric('falls')} />
+        <Kpi label="All incidents (30d)" value={k.incidents.value} delta={k.incidents.delta} good="down" onClick={() => setOpenMetric('incidents')} />
+        <Kpi label="Care completed (7d)" value={k.task_completion.value === null ? '—' : `${k.task_completion.value}%`}
+          sub={k.task_completion.value === null ? 'No care scheduled' : `${k.task_completion.done}/${k.task_completion.total} tasks`} good="up" sub="of scheduled care" onClick={() => setOpenMetric('task_completion')} />
+        <Kpi label="Low mood (30d)" value={`${k.wellbeing_low.value}%`} good="down" sub="of wellbeing logs" onClick={() => setOpenMetric('wellbeing_low')} />
+        <Kpi label="Feeling isolated" value={k.isolation.value} unit="residents" good="down" sub="last 14 days" onClick={() => setOpenMetric('isolation')} />
+        <Kpi label="Weight stable/up" value={`${k.weight_stable.value}%`} good="up" sub={`${k.weight_stable.tracked} tracked`} onClick={() => setOpenMetric('weight_stable')} />
+        <Kpi label="NEWS2 high (30d)" value={k.news2_high.value} delta={k.news2_high.delta} good="down" sub="high/critical scores" onClick={() => setOpenMetric('news2_high')} />
+        <Kpi label="Escalations open" value={k.news2_pending.value} good="down" sub="awaiting response" onClick={() => setOpenMetric('news2_pending')} />
+        <Kpi label="At elevated risk" value={k.news2_elevated.value} unit="residents" good="down" sub="latest NEWS2" onClick={() => setOpenMetric('news2_elevated')} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginTop: 8 }}>
@@ -182,6 +192,73 @@ export default function OutcomesDashboard() {
           </div>
         </SectionCard>
       </div>
+
+      {openMetric && (
+        <div onClick={e => { if (e.target === e.currentTarget) setOpenMetric(null); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(15,23,42,.45)', display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ width: 'min(680px, 100%)', background: 'var(--surface)', height: '100%', overflowY: 'auto', padding: 22, boxShadow: '-8px 0 30px rgba(15,23,42,.15)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+              <h2 style={{ margin: 0, fontSize: 18 }}>{detail?.title || 'Loading…'}</h2>
+              <button onClick={() => setOpenMetric(null)} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: 'var(--text-muted)' }}>×</button>
+            </div>
+
+            {detailLoading && <div style={{ color: 'var(--text-muted)' }}>Loading detail…</div>}
+
+            {detail && (
+              <>
+                {detail.good?.length > 0 && (
+                  <div style={{ padding: 14, borderRadius: 10, background: 'var(--success-light, #f0fdf4)', border: '1px solid var(--success, #86efac)', marginBottom: 12 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--success, #15803d)', marginBottom: 6 }}>✅ What's going well</div>
+                    {detail.good.map((g: string, i: number) => <div key={i} style={{ fontSize: 13, marginBottom: 3 }}>{g}</div>)}
+                  </div>
+                )}
+
+                {detail.attention?.length > 0 && (
+                  <div style={{ padding: 14, borderRadius: 10, background: 'var(--danger-light, #fef2f2)', border: '1px solid var(--danger, #fecaca)', marginBottom: 12 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--danger, #b91c1c)', marginBottom: 6 }}>⚠️ Needs attention</div>
+                    {detail.attention.map((a: string, i: number) => <div key={i} style={{ fontSize: 13, marginBottom: 3 }}>{a}</div>)}
+                  </div>
+                )}
+
+                {detail.actions?.length > 0 && (
+                  <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, #f8fafc)', border: '1px solid var(--border)', marginBottom: 16 }}>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Suggested next steps</div>
+                    {detail.actions.map((a: string, i: number) => <div key={i} style={{ fontSize: 13, marginBottom: 3 }}>• {a}</div>)}
+                  </div>
+                )}
+
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Records ({detail.rows?.length || 0})</div>
+                {(!detail.rows || detail.rows.length === 0) ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Nothing to show for this period.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                      <thead><tr>
+                        {detail.columns.map((c: any) => (
+                          <th key={c.key} style={{ textAlign: 'left', padding: '8px 6px', borderBottom: '2px solid var(--border)', color: 'var(--text-secondary)', fontWeight: 700, whiteSpace: 'nowrap' }}>{c.label}</th>
+                        ))}
+                      </tr></thead>
+                      <tbody>
+                        {detail.rows.map((r: any, i: number) => (
+                          <tr key={i}>
+                            {detail.columns.map((c: any) => {
+                              const v = r[c.key];
+                              const isDate = /date|_at|when/i.test(c.key) && v;
+                              return <td key={c.key} style={{ padding: '8px 6px', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
+                                {v == null || v === '' ? '—' : isDate ? new Date(v).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : String(v).replace(/_/g, ' ')}
+                              </td>;
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
