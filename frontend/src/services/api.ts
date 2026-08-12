@@ -558,6 +558,7 @@ export const sleepTrackerApi = {
   getProfile:      (residentId: string) => api.get(`/sleep-tracker/profile/${residentId}`),
   getDisturbances: (residentId: string) => api.get(`/sleep-tracker/disturbances/${residentId}`),
   getSuggestions:  (residentId: string) => api.get(`/sleep-tracker/suggestions/${residentId}`),
+  getPassive:      (residentId: string, nights?: number) => api.get(`/sleep-tracker/passive/${residentId}`, { params: nights ? { nights } : {} }),
 };
 
 // ── Intergenerational Programme (Quality of Life) ────────────────────────

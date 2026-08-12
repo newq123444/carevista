@@ -898,6 +898,7 @@ router.get('/sleep-tracker/history/:residentId',           isStaff, sleepTracker
 router.get('/sleep-tracker/profile/:residentId',           isStaff, sleepTrackerCtrl.getSleepProfile);
 router.get('/sleep-tracker/disturbances/:residentId',      isStaff, sleepTrackerCtrl.getDisturbancePatterns);
 router.get('/sleep-tracker/suggestions/:residentId',       isStaff, sleepTrackerCtrl.getSleepSuggestions);
+router.get('/sleep-tracker/passive/:residentId',            isStaff, sleepTrackerCtrl.getPassiveSleep);
 
 // ── Intergenerational Programme Manager ───────────────────────────────
 router.post('/intergenerational/programmes',               isStaff, intergenerationalCtrl.createProgramme);

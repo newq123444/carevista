@@ -1494,3 +1494,7 @@ export function useUpdateMealOrder() {
 export function useOutcomeDetail(metric: string | null) {
   return useQuery({ queryKey: ['outcome-detail', metric], queryFn: () => analyticsApi.outcomeDetail(metric as string).then(r => r.data), enabled: !!metric });
 }
+
+export function usePassiveSleep(residentId: string, nights?: number) {
+  return useQuery({ queryKey: ['sleep', 'passive', residentId, nights], queryFn: () => sleepTrackerApi.getPassive(residentId, nights).then(r => r.data), enabled: !!residentId });
+}

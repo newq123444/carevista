@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
-import { useLogSleep, useSleepHistory, useSleepProfile, useSleepDisturbances, useSleepSuggestions, useResidents } from '../hooks';
+import { useLogSleep, useSleepHistory, useSleepProfile, useSleepDisturbances, useSleepSuggestions, useResidents, usePassiveSleep,} from '../hooks';
 
 export default function SleepQualityTracker() {
   const { t } = useLang();
   const [selectedResident, setSelectedResident] = useState('');
-  const [activeTab, setActiveTab] = useState<'log' | 'history' | 'profile' | 'suggestions'>('log');
+  const [passiveNights, setPassiveNights] = useState(14);
+  const [activeTab, setActiveTab] = useState<'log' | 'history' | 'profile' | 'passive' | 'suggestions'>('log');
   const [showForm, setShowForm] = useState(false);
 
   const { data: residents } = useResidents();
   const { data: sleepHistory = [] } = useSleepHistory(selectedResident);
+  const { data: passive } = usePassiveSleep(selectedResident, passiveNights);
   const { data: profile } = useSleepProfile(selectedResident);
   const { data: suggestions = [] } = useSleepSuggestions(selectedResident);
 
@@ -72,9 +74,9 @@ export default function SleepQualityTracker() {
       </div>
 
       <div style={{ display: 'flex', gap: 4, padding: 4, background: '#f3f4f6', borderRadius: 10, marginBottom: 24, flexWrap: 'wrap' }}>
-        {(['log', 'history', 'profile', 'suggestions'] as const).map(tab => (
+        {(['log', 'history', 'profile', 'passive', 'suggestions'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', fontWeight: 500, cursor: 'pointer', background: activeTab === tab ? '#fff' : 'transparent', color: activeTab === tab ? '#111827' : '#6b7280', boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontSize: '0.85rem', textTransform: 'capitalize' }}>
-            {tab === 'log' ? 'Log Sleep' : tab === 'profile' ? 'Sleep Profile' : tab}
+            {tab === 'log' ? 'Log Sleep' : tab === 'profile' ? 'Sleep Profile' : tab === 'passive' ? '🌙 Undisturbed View' : tab}
           </button>
         ))}
       </div>
@@ -200,6 +202,98 @@ export default function SleepQualityTracker() {
               )}
             </div>
           ) : <p style={{ color: '#6b7280' }}>Select a resident to see their sleep profile.</p>}
+        </div>
+      )}
+
+      {activeTab === 'passive' && (
+        <div>
+          {!selectedResident ? (
+            <p style={{ color: '#6b7280' }}>Select a resident to see their undisturbed sleep picture.</p>
+          ) : !passive ? (
+            <p style={{ color: '#6b7280' }}>Loading…</p>
+          ) : (
+            <>
+              <div style={{ padding: 12, background: '#eef2ff', borderRadius: 10, fontSize: 12.5, color: '#3730a3', marginBottom: 16 }}>
+                🌙 {passive.method}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ padding: '12px 16px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                    <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>Avg. contacts / night</div>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: passive.averageDisturbances >= 3 ? '#dc2626' : passive.averageDisturbances <= 1 ? '#16a34a' : '#d97706' }}>{passive.averageDisturbances}</div>
+                  </div>
+                  <div style={{ padding: '12px 16px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                    <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>Trend</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, textTransform: 'capitalize', color: passive.trend === 'improving' ? '#16a34a' : passive.trend === 'worsening' ? '#dc2626' : '#6b7280' }}>{passive.trend}</div>
+                  </div>
+                  <div style={{ padding: '12px 16px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                    <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>Busiest hour</div>
+                    <div style={{ fontSize: 18, fontWeight: 700 }}>{passive.worstHour == null ? '—' : String(passive.worstHour).padStart(2, '0') + ':00'}</div>
+                  </div>
+                </div>
+                <label style={{ fontSize: 12.5, color: '#374151' }}>Nights:{' '}
+                  <select value={passiveNights} onChange={e => setPassiveNights(parseInt(e.target.value))} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d1d5db' }}>
+                    {[7, 14, 21, 30].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </label>
+              </div>
+
+              {passive.good?.length > 0 && (
+                <div style={{ padding: 14, borderRadius: 10, background: '#f0fdf4', border: '1px solid #86efac', marginBottom: 12 }}>
+                  <div style={{ fontWeight: 700, color: '#15803d', marginBottom: 6 }}>✅ What's going well</div>
+                  {passive.good.map((g: string, i: number) => <div key={i} style={{ fontSize: 13, marginBottom: 3 }}>{g}</div>)}
+                </div>
+              )}
+              {passive.attention?.length > 0 && (
+                <div style={{ padding: 14, borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', marginBottom: 12 }}>
+                  <div style={{ fontWeight: 700, color: '#b91c1c', marginBottom: 6 }}>⚠️ Needs attention</div>
+                  {passive.attention.map((a: string, i: number) => <div key={i} style={{ fontSize: 13, marginBottom: 3 }}>{a}</div>)}
+                </div>
+              )}
+              {passive.actions?.length > 0 && (
+                <div style={{ padding: 14, borderRadius: 10, background: '#f8fafc', border: '1px solid #e5e7eb', marginBottom: 18 }}>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Suggested next steps</div>
+                  {passive.actions.map((a: string, i: number) => <div key={i} style={{ fontSize: 13, marginBottom: 3 }}>• {a}</div>)}
+                </div>
+              )}
+
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 10 }}>Night by night</h3>
+              {(passive.nightsList || []).map((n: any) => (
+                <div key={n.night} style={{ padding: 12, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13.5 }}>
+                      {new Date(n.night).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      <span style={{ marginLeft: 10, fontWeight: 400, color: '#6b7280', fontSize: 12 }}>21:00 – 07:00</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {n.morning && (
+                        <span style={{ fontSize: 11.5, color: '#6b7280' }}>
+                          next day: {String(n.morning.energy || '—').replace(/_/g, ' ')} energy
+                        </span>
+                      )}
+                      <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 700,
+                        background: n.disturbances === 0 ? '#dcfce7' : n.disturbances >= 3 ? '#fee2e2' : '#fef3c7',
+                        color: n.disturbances === 0 ? '#15803d' : n.disturbances >= 3 ? '#b91c1c' : '#b45309' }}>
+                        {n.disturbances === 0 ? 'Undisturbed' : `${n.disturbances} contact${n.disturbances === 1 ? '' : 's'}`}
+                      </span>
+                    </div>
+                  </div>
+                  {n.events.length > 0 && (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
+                      {n.events.map((e: any, i: number) => (
+                        <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12.5, padding: '3px 0' }}>
+                          <span style={{ width: 46, fontWeight: 700, color: '#0d9488' }}>{new Date(e.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span style={{ width: 84, color: '#6b7280', textTransform: 'capitalize' }}>{e.source}</span>
+                          <span style={{ flex: 1, color: '#334155' }}>{String(e.detail || '').replace(/_/g, ' ')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
 
