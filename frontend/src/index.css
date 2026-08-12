@@ -504,6 +504,19 @@ textarea.form-input { min-height: auto; }
 }
 .modal-close:hover { background: var(--border); color: var(--text-primary); }
 .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+
+/* A <form> often wraps .modal-body + .modal-footer. Without this it is not a
+   flex container, so the body never scrolls and .modal's overflow:hidden clips
+   the footer — hiding the save button on tall forms. */
+.modal > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.modal > form > .modal-body { flex: 1; min-height: 0; overflow-y: auto; }
+.modal-body { min-height: 0; }
 .modal-footer {
   padding: 14px 20px;
   border-top: 1px solid var(--border);
