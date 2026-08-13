@@ -102,7 +102,7 @@ export default function OutcomesDashboard() {
         <Kpi label="Falls (30d)" value={k.falls.value} unit={`· ${k.falls.per1000}/1k bed-days`} delta={k.falls.delta} good="down" onClick={() => setOpenMetric('falls')} />
         <Kpi label="All incidents (30d)" value={k.incidents.value} delta={k.incidents.delta} good="down" onClick={() => setOpenMetric('incidents')} />
         <Kpi label="Care completed (7d)" value={k.task_completion.value === null ? '—' : `${k.task_completion.value}%`}
-          sub={k.task_completion.value === null ? 'No care scheduled' : `${k.task_completion.done}/${k.task_completion.total} tasks`} good="up" sub="of scheduled care" onClick={() => setOpenMetric('task_completion')} />
+          sub={k.task_completion.value === null ? 'No care scheduled' : `${k.task_completion.done}/${k.task_completion.total} tasks`} good="up" onClick={() => setOpenMetric('task_completion')} />
         <Kpi label="Low mood (30d)" value={`${k.wellbeing_low.value}%`} good="down" sub="of wellbeing logs" onClick={() => setOpenMetric('wellbeing_low')} />
         <Kpi label="Feeling isolated" value={k.isolation.value} unit="residents" good="down" sub="last 14 days" onClick={() => setOpenMetric('isolation')} />
         <Kpi label="Weight stable/up" value={`${k.weight_stable.value}%`} good="up" sub={`${k.weight_stable.tracked} tracked`} onClick={() => setOpenMetric('weight_stable')} />

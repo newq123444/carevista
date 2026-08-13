@@ -469,6 +469,12 @@ export default function App() {
             🚪 Sign Out
           </button>
         )}
+        {!(isDesktop && collapsed) && (
+          <div title="Build currently running — use this to confirm a deploy went live"
+            style={{ marginTop: 8, fontSize: '0.62rem', color: '#4a5568', textAlign: 'center', letterSpacing: '.02em' }}>
+            build {typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'}
+          </div>
+        )}
         {(isDesktop && collapsed) && (
           <button onClick={handleLogout} title="Sign out" style={{ width: '100%', background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '6px 0', marginTop: 8, fontSize: 18 }}>🚪</button>
         )}
