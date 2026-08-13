@@ -6,6 +6,7 @@ import { authenticate, isManager, isClinical, isStaff, isFinance, isAllStaff, is
 import * as authCtrl from '../controllers/auth.controller';
 import * as analyticsCtrl from '../controllers/analytics.controller';
 import * as kitchenCtrl from '../controllers/kitchen.controller';
+import * as absencesCtrl from '../controllers/absences.controller';
 import * as familyAccessCtrl from '../controllers/familyAccess.controller';
 import * as portalCtrl from '../controllers/portal.controller';
 import * as residentsCtrl from '../controllers/residents.controller';
@@ -98,6 +99,11 @@ router.get('/auth/me', authenticate, (req, res) => res.json(req.user));
 
 // All routes below require authentication + tenant guard
 router.use(authenticate, tenantGuard);
+
+// ── Resident absences (hospital / home leave) ─────────────────────────────
+router.get('/absences',              isStaff, absencesCtrl.listAbsences);
+router.post('/absences',             isStaff, absencesCtrl.startAbsence);
+router.patch('/absences/:id/return', isStaff, absencesCtrl.endAbsence);
 
 // ── Kitchen: food safety, meal orders, dashboard ──────────────────────────
 router.get('/kitchen/dashboard',        isKitchen,  kitchenCtrl.getDashboard);

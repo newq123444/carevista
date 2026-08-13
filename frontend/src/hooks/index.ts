@@ -17,7 +17,7 @@ import {
   moodEnvironmentApi, photoFrameApi, sleepTrackerApi, intergenerationalApi,
   rehabGoalsApi, celebrationsApi, housekeepingApi, taskTemplatesApi,
   menuAdminApi, housekeepingAdminApi, homeApi,
-  analyticsApi, familyAccessApi, portalApi, kitchenApi,
+  analyticsApi, familyAccessApi, portalApi, kitchenApi, absencesApi,
 } from '../services/api';
 import { toast } from '../utils/toast';
 
@@ -1497,4 +1497,31 @@ export function useOutcomeDetail(metric: string | null) {
 
 export function usePassiveSleep(residentId: string, nights?: number) {
   return useQuery({ queryKey: ['sleep', 'passive', residentId, nights], queryFn: () => sleepTrackerApi.getPassive(residentId, nights).then(r => r.data), enabled: !!residentId });
+}
+
+// ── Resident absences ─────────────────────────────────────────────────────
+export function useResidentAbsences(openOnly?: boolean) {
+  return useQuery({ queryKey: ['absences', openOnly], queryFn: () => absencesApi.list(openOnly).then(r => r.data) });
+}
+export function useStartAbsence() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (d: object) => absencesApi.start(d).then(r => r.data),
+    onSuccess: (r: any) => {
+      qc.invalidateQueries({ queryKey: ['absences'] });
+      qc.invalidateQueries({ queryKey: ['residents'] });
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success(r?.tasksCleared ? `Recorded as away — ${r.tasksCleared} pending task(s) cleared` : 'Recorded as away');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed') });
+}
+export function useEndAbsence() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, data }: { id: string; data: object }) => absencesApi.end(id, data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['absences'] });
+      qc.invalidateQueries({ queryKey: ['residents'] });
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success('Welcome back — care resumed');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed') });
 }

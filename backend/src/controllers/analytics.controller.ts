@@ -15,6 +15,24 @@ export async function getOutcomes(req: Request, res: Response, next: NextFunctio
     const residents = occ.rows[0]?.residents || 0;
     const beds = occ.rows[0]?.beds || 0;
 
+    // Residents temporarily away (hospital / home leave). Their bed is still
+    // held so occupancy is unchanged, but they cannot receive care — so they
+    // must not count against care-delivery metrics.
+    const awayQ = await query(
+      `SELECT COUNT(DISTINCT resident_id)::int AS n FROM resident_absences
+       WHERE care_home_id=$1 AND start_date <= CURRENT_DATE
+         AND (actual_return IS NULL OR actual_return > CURRENT_DATE)`, [chId]);
+    const away = Number(awayQ.rows[0]?.n || 0);
+    const present = Math.max(0, residents - away);
+
+    // Hospital admissions — an avoidable-admission signal CQC looks for.
+    const admQ = await query(
+      `SELECT COUNT(*) FILTER (WHERE start_date >= CURRENT_DATE - 30)::int AS cur,
+              COUNT(*) FILTER (WHERE start_date >= CURRENT_DATE - 60 AND start_date < CURRENT_DATE - 30)::int AS prev,
+              ROUND(AVG(COALESCE(actual_return, CURRENT_DATE) - start_date) FILTER (WHERE start_date >= CURRENT_DATE - 90))::int AS avg_los
+       FROM resident_absences WHERE care_home_id=$1 AND absence_type='hospital'`, [chId]);
+    const admCur = Number(admQ.rows[0]?.cur || 0), admPrev = Number(admQ.rows[0]?.prev || 0);
+
     // Falls — last 30d vs previous 30d, plus per-1000-bed-day rate
     const bedDays30 = Math.max(1, residents * 30);
     const falls = await query(
@@ -77,9 +95,16 @@ export async function getOutcomes(req: Request, res: Response, next: NextFunctio
        WHERE care_home_id=$1 AND log_date >= CURRENT_DATE - 14 AND social_engagement='isolated'`, [chId]);
 
     // Care task completion — last 7d
+    // Exclude tasks on days a resident was away — a hospital stay must not read
+    // as failed care.
     const tasks = await query(
       `SELECT COUNT(*) FILTER (WHERE status='done')::int AS done, COUNT(*)::int AS total
-       FROM care_tasks WHERE care_home_id=$1 AND task_date >= CURRENT_DATE - 7`, [chId]);
+       FROM care_tasks ct
+       WHERE ct.care_home_id=$1 AND ct.task_date >= CURRENT_DATE - 7
+         AND NOT EXISTS (SELECT 1 FROM resident_absences ab
+                         WHERE ab.resident_id = ct.resident_id
+                           AND ab.start_date <= ct.task_date
+                           AND (ab.actual_return IS NULL OR ab.actual_return > ct.task_date))`, [chId]);
     const tDone = Number(tasks.rows[0]?.done || 0), tTotal = Number(tasks.rows[0]?.total || 0);
     const taskPct: number | null = tTotal ? Math.round((tDone / tTotal) * 100) : null;
 
@@ -151,7 +176,7 @@ export async function getOutcomes(req: Request, res: Response, next: NextFunctio
 
     res.json({
       range_days: days,
-      occupancy: { residents, beds, pct: beds ? Math.round((residents / beds) * 100) : 0 },
+      occupancy: { residents, beds, pct: beds ? Math.round((residents / beds) * 100) : 0, away, present },
       kpis: {
         falls: { value: fallsCur, prev: fallsPrev, delta: delta(fallsCur, fallsPrev),
                  per1000: Math.round((fallsCur / bedDays30) * 1000 * 10) / 10, good: 'down' },
@@ -164,6 +189,8 @@ export async function getOutcomes(req: Request, res: Response, next: NextFunctio
         news2_high: { value: n2Cur, prev: n2Prev, delta: delta(n2Cur, n2Prev), good: 'down' },
         news2_pending: { value: Number(n2Pending.rows[0]?.n || 0), good: 'down' },
         news2_elevated: { value: Number(n2Elevated.rows[0]?.n || 0), good: 'down' },
+        hospital_admissions: { value: admCur, prev: admPrev, delta: delta(admCur, admPrev),
+                               avgStayDays: admQ.rows[0]?.avg_los ?? null, away, good: 'down' },
       },
       falls_trend,
       news2_trend,
@@ -313,6 +340,41 @@ export async function getOutcomeDetail(req: Request, res: Response, next: NextFu
       else { attention.push(`${rows.length} high/critical score(s) recorded.`); actions.push('Confirm each triggered the correct escalation and GP/111 review.'); }
       if (Number(pending.rows[0]?.n) > 0) { attention.push(`${pending.rows[0].n} escalation(s) still awaiting response.`); actions.push('Action open escalations now — these are time-critical.'); }
       else good.push('No escalations are waiting for a response.');
+
+    } else if (metric === 'hospital_admissions') {
+      title = 'Hospital admissions and absences (90 days)';
+      const q = await query(
+        `SELECT a.start_date, a.actual_return, a.absence_type, a.reason, a.planned,
+                COALESCE(a.actual_return, CURRENT_DATE) - a.start_date AS days,
+                r.first_name || ' ' || r.last_name AS resident, r.room_number
+         FROM resident_absences a JOIN residents r ON r.id = a.resident_id
+         WHERE a.care_home_id = $1 AND a.start_date >= CURRENT_DATE - 90
+         ORDER BY a.start_date DESC`, [chId]);
+      rows = q.rows;
+      columns = [
+        { key: 'start_date', label: 'Left' }, { key: 'resident', label: 'Resident' },
+        { key: 'room_number', label: 'Room' }, { key: 'absence_type', label: 'Type' },
+        { key: 'reason', label: 'Reason' }, { key: 'days', label: 'Days' },
+        { key: 'actual_return', label: 'Returned' },
+      ];
+      const openA = rows.filter((r: any) => !r.actual_return);
+      const unplanned = rows.filter((r: any) => r.absence_type === 'hospital' && !r.planned);
+      const tally = new Map<string, number>();
+      for (const r of rows as any[]) if (r.absence_type === 'hospital') tally.set(r.resident, (tally.get(r.resident) || 0) + 1);
+      const repeaters = [...tally.entries()].filter(([, n]) => n > 1);
+
+      if (rows.length === 0) good.push('No hospital admissions or absences in the last 90 days.');
+      if (openA.length) attention.push(`${openA.length} resident(s) currently away — care tasks and meals are paused for them.`);
+      if (unplanned.length) {
+        attention.push(`${unplanned.length} unplanned hospital admission(s).`);
+        actions.push('Review each for avoidability — falls, infection, dehydration and medication issues are the common causes.');
+      }
+      if (repeaters.length) {
+        attention.push(`Repeat admissions: ${repeaters.map(([n, c]) => `${n} (${c})`).join(', ')}.`);
+        actions.push('Escalate repeat admissions to the GP for a full review.');
+      }
+      if (rows.length && !unplanned.length) good.push('All absences were planned — no emergency admissions.');
+      actions.push('On return: post-hospital review, medication reconciliation and a NEWS2 baseline.');
 
     } else {
       return res.status(400).json({ error: 'Unknown metric' });

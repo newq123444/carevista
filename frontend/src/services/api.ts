@@ -675,3 +675,10 @@ export const kitchenApi = {
   createOrder:  (d: object) => api.post('/kitchen/orders', d),
   updateOrder:  (id: string, d: object) => api.patch(`/kitchen/orders/${id}`, d),
 };
+
+// ── Resident absences (hospital / home leave) ─────────────────────────────
+export const absencesApi = {
+  list:  (openOnly?: boolean) => api.get('/absences', { params: openOnly ? { open: 'true' } : {} }),
+  start: (d: object) => api.post('/absences', d),
+  end:   (id: string, d: object) => api.patch(`/absences/${id}/return`, d),
+};

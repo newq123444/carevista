@@ -89,6 +89,14 @@ export async function generateDailyTasks(req: Request, res: Response, next: Next
        WHERE r.care_home_id = $2
          AND r.active = TRUE
          AND ctt.active = TRUE
+         -- Skip residents temporarily away (hospital / home leave): their bed is
+         -- held but care cannot be delivered, so generating tasks would create
+         -- false "missed care" and distort completion metrics.
+         AND NOT EXISTS (
+           SELECT 1 FROM resident_absences ab
+           WHERE ab.resident_id = r.id
+             AND ab.start_date <= $1::date
+             AND (ab.actual_return IS NULL OR ab.actual_return > $1::date))
          AND (ctt.frequency = 'daily' OR (ctt.frequency = 'weekly' AND EXTRACT(DOW FROM $1::date) = (abs(hashtext(r.id::text)) % 7)))
          AND (
            ctt.resident_id = r.id

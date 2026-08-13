@@ -109,6 +109,9 @@ export default function OutcomesDashboard() {
         <Kpi label="NEWS2 high (30d)" value={k.news2_high.value} delta={k.news2_high.delta} good="down" sub="high/critical scores" onClick={() => setOpenMetric('news2_high')} />
         <Kpi label="Escalations open" value={k.news2_pending.value} good="down" sub="awaiting response" onClick={() => setOpenMetric('news2_pending')} />
         <Kpi label="At elevated risk" value={k.news2_elevated.value} unit="residents" good="down" sub="latest NEWS2" onClick={() => setOpenMetric('news2_elevated')} />
+        <Kpi label="Hospital admissions (30d)" value={k.hospital_admissions?.value ?? 0} delta={k.hospital_admissions?.delta} good="down"
+          sub={k.hospital_admissions?.away ? `${k.hospital_admissions.away} away now` : (k.hospital_admissions?.avgStayDays != null ? `avg ${k.hospital_admissions.avgStayDays} day stay` : 'none currently away')}
+          onClick={() => setOpenMetric('hospital_admissions')} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginTop: 8 }}>
@@ -185,7 +188,10 @@ export default function OutcomesDashboard() {
         <SectionCard title={tr('Occupancy')}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <span style={{ fontSize: 34, fontWeight: 700 }}>{data.occupancy.pct}%</span>
-            <span style={{ color: 'var(--text-muted)' }}>{data.occupancy.residents} of {data.occupancy.beds} beds</span>
+            <span style={{ color: 'var(--text-muted)' }}>
+              {data.occupancy.residents} of {data.occupancy.beds} beds
+              {data.occupancy.away > 0 && <> · <strong>{data.occupancy.present}</strong> present, {data.occupancy.away} away</>}
+            </span>
           </div>
           <div style={{ height: 10, borderRadius: 6, background: 'var(--surface-2)', overflow: 'hidden', marginTop: 10 }}>
             <div style={{ width: `${Math.min(100, data.occupancy.pct)}%`, height: '100%', background: 'var(--primary)', borderRadius: 6 }} />

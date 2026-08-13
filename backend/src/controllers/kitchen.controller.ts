@@ -140,6 +140,10 @@ export async function listOrders(req: Request, res: Response, next: NextFunction
        WHERE r.care_home_id = $1 AND r.active = TRUE
          AND NOT EXISTS (SELECT 1 FROM meal_orders mo
                          WHERE mo.resident_id = r.id AND mo.meal_date = $2 AND mo.meal_type = $3)
+         -- Residents away in hospital / on leave are not expecting a meal
+         AND NOT EXISTS (SELECT 1 FROM resident_absences ab
+                         WHERE ab.resident_id = r.id AND ab.start_date <= $2::date
+                           AND (ab.actual_return IS NULL OR ab.actual_return > $2::date))
        ORDER BY r.room_number`, [chId, date, mealType]) : { rows: [] };
 
     const textureCounts: Record<string, number> = {};
@@ -219,7 +223,10 @@ export async function getDashboard(req: Request, res: Response, next: NextFuncti
       `SELECT meal_type, status, COUNT(*)::int AS n FROM meal_orders
        WHERE care_home_id = $1 AND meal_date = $2 GROUP BY meal_type, status`, [chId, date]);
     const residents = await query(
-      `SELECT COUNT(*)::int AS n FROM residents WHERE care_home_id = $1 AND active = TRUE`, [chId]);
+      `SELECT COUNT(*)::int AS n FROM residents r WHERE r.care_home_id = $1 AND r.active = TRUE
+         AND NOT EXISTS (SELECT 1 FROM resident_absences ab
+                         WHERE ab.resident_id = r.id AND ab.start_date <= $2::date
+                           AND (ab.actual_return IS NULL OR ab.actual_return > $2::date))`, [chId, date]);
     const textures = await query(
       `SELECT COALESCE(NULLIF(mo.texture,''), mdp.texture_requirement, 'normal') AS texture, COUNT(*)::int AS n
        FROM meal_orders mo LEFT JOIN menu_dietary_profiles mdp ON mdp.resident_id = mo.resident_id
