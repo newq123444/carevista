@@ -67,7 +67,7 @@ export default function SicknessAbsence() {
     return 'badge-danger';
   };
 
-  // Generate mock calendar data for annual leave
+  // Annual-leave records, drawn from the real absence list
   const leaveRecords = useMemo(() => {
     return absenceList.filter(a => a.absence_type === 'holiday');
   }, [absenceList]);

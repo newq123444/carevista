@@ -1,180 +1,100 @@
-// src/components/LiveActivityFeed.tsx - Real-time activity feed with filtering
-import React, { useState, useEffect, useMemo } from 'react';
+// src/components/LiveActivityFeed.tsx — real activity, drawn from actual records.
+// Every entry corresponds to something a member of staff genuinely recorded:
+// care notes, completed tasks, medication administrations, incidents,
+// housekeeping, meals served, kitchen temperature checks, visitors and
+// resident absences. Nothing is simulated — a quiet home shows a quiet feed.
+import React, { useState } from 'react';
+import { useActivityFeed } from '../hooks';
 
-interface ActivityEntry {
-  id: string;
-  type: 'care-note' | 'task' | 'incident' | 'medication' | 'admission' | 'cleaning' | 'maintenance' | 'kitchen';
-  message: string;
-  user: string;
-  department: string;
-  timestamp: Date;
-  icon: string;
-  color: string;
+const DEPARTMENTS = ['all', 'Care', 'Nursing', 'Kitchen', 'Cleaning', 'Reception', 'Admin'] as const;
+
+function timeAgo(ts: string): string {
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(ts).getTime()) / 60000));
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const h = Math.floor(mins / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 export default function LiveActivityFeed() {
   const [filter, setFilter] = useState<string>('all');
-  const [entries, setEntries] = useState<ActivityEntry[]>([]);
+  const [hours, setHours] = useState(24);
+  const { data, isLoading, isError, refetch, isFetching } = useActivityFeed(hours, 80);
 
-  // Generate simulated activity entries
-  const generateActivities = useMemo(() => {
-    const now = new Date();
-    const activities: ActivityEntry[] = [
-      { id: '1', type: 'medication', message: 'Morning medications administered to Margaret Hollis (Room 1)', user: 'Priya Sharma', department: 'Nursing', timestamp: new Date(now.getTime() - 3 * 60000), icon: '💊', color: '#7c3aed' },
-      { id: '2', type: 'care-note', message: 'Personal care completed - assisted with wash and dressing', user: 'Daniel Hughes', department: 'Care', timestamp: new Date(now.getTime() - 7 * 60000), icon: '📝', color: '#0d9488' },
-      { id: '3', type: 'cleaning', message: 'Room 3 morning clean completed - all areas sanitised', user: 'Grace Williams', department: 'Cleaning', timestamp: new Date(now.getTime() - 12 * 60000), icon: '🧹', color: '#14b8a6' },
-      { id: '4', type: 'task', message: 'Breakfast service completed for all residents', user: 'Marcus Johnson', department: 'Kitchen', timestamp: new Date(now.getTime() - 18 * 60000), icon: '✅', color: '#16a34a' },
-      { id: '5', type: 'incident', message: 'Near miss reported: wet floor in corridor (resolved)', user: 'Lisa Brown', department: 'Care', timestamp: new Date(now.getTime() - 25 * 60000), icon: '⚠️', color: '#d97706' },
-      { id: '6', type: 'maintenance', message: 'Radiator repair completed in Room 4 - heating restored', user: 'Robert Taylor', department: 'Maintenance', timestamp: new Date(now.getTime() - 32 * 60000), icon: '🔧', color: '#64748b' },
-      { id: '7', type: 'medication', message: 'PRN paracetamol given to Ernest Higgins (Room 14) for headache', user: 'Amara Osei', department: 'Nursing', timestamp: new Date(now.getTime() - 40 * 60000), icon: '💊', color: '#7c3aed' },
-      { id: '8', type: 'care-note', message: 'Fluid intake chart updated - 5 residents below target', user: 'Tom Walsh', department: 'Care', timestamp: new Date(now.getTime() - 48 * 60000), icon: '📝', color: '#0d9488' },
-      { id: '9', type: 'kitchen', message: 'Lunch prep started - dietary requirements confirmed for 24 residents', user: 'Marcus Johnson', department: 'Kitchen', timestamp: new Date(now.getTime() - 55 * 60000), icon: '👨‍🍳', color: '#f97316' },
-      { id: '10', type: 'admission', message: 'New admission documentation completed for Bed 8 (arriving tomorrow)', user: 'Sarah Mitchell', department: 'Admin', timestamp: new Date(now.getTime() - 63 * 60000), icon: '🏥', color: '#ec4899' },
-      { id: '11', type: 'cleaning', message: 'Infection control deep clean completed - Shared bathroom 2', user: 'Grace Williams', department: 'Cleaning', timestamp: new Date(now.getTime() - 72 * 60000), icon: '🧹', color: '#14b8a6' },
-      { id: '12', type: 'task', message: 'Fire door check completed - all doors operational', user: 'Robert Taylor', department: 'Maintenance', timestamp: new Date(now.getTime() - 80 * 60000), icon: '✅', color: '#16a34a' },
-      { id: '13', type: 'care-note', message: 'Repositioning completed for 3 high-risk residents (tissue viability)', user: 'Daniel Hughes', department: 'Care', timestamp: new Date(now.getTime() - 90 * 60000), icon: '📝', color: '#0d9488' },
-      { id: '14', type: 'medication', message: 'Controlled drug count verified - all correct', user: 'Priya Sharma', department: 'Nursing', timestamp: new Date(now.getTime() - 105 * 60000), icon: '💊', color: '#7c3aed' },
-      { id: '15', type: 'maintenance', message: 'Weekly fire alarm test completed successfully - all zones clear', user: 'Robert Taylor', department: 'Maintenance', timestamp: new Date(now.getTime() - 120 * 60000), icon: '🔧', color: '#64748b' },
-    ];
-    return activities;
-  }, []);
-
-  useEffect(() => {
-    setEntries(generateActivities);
-  }, [generateActivities]);
-
-  // Simulate new entries appearing
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const newMessages = [
-        { type: 'care-note' as const, message: 'Wellbeing check completed for all ground floor residents', user: 'Lisa Brown', department: 'Care', icon: '📝', color: '#0d9488' },
-        { type: 'task' as const, message: 'Medication round started - First floor', user: 'Amara Osei', department: 'Nursing', icon: '✅', color: '#16a34a' },
-        { type: 'cleaning' as const, message: 'Corridor mopping in progress - Ground floor', user: 'Grace Williams', department: 'Cleaning', icon: '🧹', color: '#14b8a6' },
-      ];
-      const random = newMessages[Math.floor(Math.random() * newMessages.length)];
-      const newEntry: ActivityEntry = {
-        id: Date.now().toString(),
-        ...random,
-        timestamp: new Date(),
-      };
-      setEntries(prev => [newEntry, ...prev.slice(0, 14)]);
-    }, 30000); // Add a new entry every 30 seconds
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const departments = useMemo(() => {
-    const depts = Array.from(new Set(entries.map(e => e.department)));
-    return ['all', ...depts];
-  }, [entries]);
-
-  const filteredEntries = useMemo(() => {
-    if (filter === 'all') return entries;
-    return entries.filter(e => e.department === filter);
-  }, [entries, filter]);
-
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${Math.floor(diffHours / 24)}d ago`;
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  };
+  const entries: any[] = data?.entries || [];
+  const shown = filter === 'all' ? entries : entries.filter(e => e.department === filter);
 
   return (
     <div className="card">
-      <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="card-title">📡 Live Activity Feed</span>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#16a34a', animation: 'pulse 2s infinite', boxShadow: '0 0 6px #16a34a80' }} />
-        </div>
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {departments.map(dept => (
-            <button
-              key={dept}
-              onClick={() => setFilter(dept)}
-              style={{
-                padding: '3px 8px', borderRadius: 4, border: '1px solid var(--border)',
-                background: filter === dept ? '#0d948815' : 'transparent',
-                color: filter === dept ? '#0d9488' : 'var(--text-muted)',
-                fontSize: 10, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
-              }}
-            >
-              {dept}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="card-body" style={{ padding: 0, maxHeight: 420, overflowY: 'auto' }}>
-        {filteredEntries.map((entry, index) => (
-          <div
-            key={entry.id}
-            style={{
-              padding: '12px 16px',
-              borderBottom: '1px solid var(--border)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 12,
-              background: index === 0 ? `${entry.color}05` : 'transparent',
-              transition: 'background 500ms ease',
-            }}
-          >
-            {/* Timeline dot */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 2, flexShrink: 0 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: 8,
-                background: entry.color + '15', border: `1px solid ${entry.color}30`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13,
-              }}>
-                {entry.icon}
-              </div>
-              {index < filteredEntries.length - 1 && (
-                <div style={{ width: 1, height: 20, background: 'var(--border)', marginTop: 4 }} />
-              )}
-            </div>
-
-            {/* Content */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4 }}>
-                {entry.message}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: entry.color }}>{entry.user}</span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{entry.department}</span>
-              </div>
-            </div>
-
-            {/* Timestamp */}
-            <div style={{ flexShrink: 0, textAlign: 'right' }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)' }}>{formatTimeAgo(entry.timestamp)}</div>
-              <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{formatTime(entry.timestamp)}</div>
+      <div className="card-body">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Activity feed</h3>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Live from care records{isFetching ? ' · refreshing…' : ''}
             </div>
           </div>
-        ))}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <select value={hours} onChange={e => setHours(parseInt(e.target.value))}
+              style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', fontSize: 12.5, background: 'var(--surface)', color: 'var(--text-primary)' }}>
+              <option value={8}>Last 8 hours</option>
+              <option value={24}>Last 24 hours</option>
+              <option value={72}>Last 3 days</option>
+            </select>
+            <button onClick={() => refetch()} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface-2, #f8fafc)', fontSize: 12.5, cursor: 'pointer', color: 'var(--text-primary)' }}>
+              Refresh
+            </button>
+          </div>
+        </div>
 
-        {filteredEntries.length === 0 && (
-          <div style={{ padding: 30, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
-            No activities for this filter
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+          {DEPARTMENTS.map(d => {
+            const n = d === 'all' ? entries.length : entries.filter(e => e.department === d).length;
+            return (
+              <button key={d} onClick={() => setFilter(d)}
+                style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  border: '1px solid ' + (filter === d ? 'var(--primary)' : 'var(--border)'),
+                  background: filter === d ? 'var(--primary)' : 'var(--surface)',
+                  color: filter === d ? '#fff' : 'var(--text-secondary)' }}>
+                {d === 'all' ? 'All' : d}{n > 0 ? ` (${n})` : ''}
+              </button>
+            );
+          })}
+        </div>
+
+        {isLoading && <div style={{ color: 'var(--text-muted)', fontSize: 13, padding: 16 }}>Loading activity…</div>}
+
+        {isError && (
+          <div style={{ padding: 16, borderRadius: 8, background: 'var(--danger-light, #fef2f2)', border: '1px solid var(--danger, #fecaca)', fontSize: 13 }}>
+            Could not load the activity feed. Please try again.
           </div>
         )}
-      </div>
 
-      {/* Footer Stats */}
-      <div style={{ padding: '10px 16px', background: '#f8fafc', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-          Showing {filteredEntries.length} activities
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-          Auto-updates every 30s
-        </span>
+        {!isLoading && !isError && shown.length === 0 && (
+          <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, background: 'var(--surface-2, #f8fafc)', borderRadius: 8, border: '1px dashed var(--border)' }}>
+            {entries.length === 0
+              ? `Nothing recorded in the last ${hours} hours. Activity appears here as staff log care, medications, cleaning and meals.`
+              : `No ${filter} activity in this period.`}
+          </div>
+        )}
+
+        <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+          {shown.map(e => (
+            <div key={e.id} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: e.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
+                {e.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, color: 'var(--text-primary)' }}>{e.message}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                  {e.user} · {e.department}
+                </div>
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{timeAgo(e.timestamp)}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -631,6 +631,7 @@ export const housekeepingAdminApi = {
 };
 export const homeApi = {
   get:    () => api.get('/home'),
+  weatherLocation: () => api.get('/home/weather-location'),
   update: (d: object) => api.patch('/home', d),
 };
 
@@ -681,4 +682,9 @@ export const absencesApi = {
   list:  (openOnly?: boolean) => api.get('/absences', { params: openOnly ? { open: 'true' } : {} }),
   start: (d: object) => api.post('/absences', d),
   end:   (id: string, d: object) => api.patch(`/absences/${id}/return`, d),
+};
+
+// ── Live activity feed (real records) ─────────────────────────────────────
+export const activityApi = {
+  feed: (params?: object) => api.get('/activity/feed', { params }),
 };

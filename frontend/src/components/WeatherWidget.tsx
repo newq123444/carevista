@@ -1,5 +1,6 @@
 // src/components/WeatherWidget.tsx - Beautiful weather widget with care-relevant alerts
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useWeatherLocation } from '../hooks';
 
 interface WeatherDay {
   day: string;
@@ -45,8 +46,13 @@ interface OpenMeteoResponse {
   };
 }
 
-const OPEN_METEO_URL =
-  'https://api.open-meteo.com/v1/forecast?latitude=53.49&longitude=-2.29&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max&timezone=Europe/London&forecast_days=3';
+// Coordinates come from the care home's own postcode (resolved server-side),
+// never a hardcoded location — otherwise every home sees another town's weather.
+const buildWeatherUrl = (lat: number, lon: number) =>
+  `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+  '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code' +
+  '&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max' +
+  '&timezone=Europe/London&forecast_days=3';
 
 function mapWeatherCode(code: number): { condition: 'sunny' | 'partly-cloudy' | 'cloudy' | 'rainy' | 'stormy'; icon: string } {
   if (code === 0) return { condition: 'sunny', icon: '☀️' };
@@ -98,6 +104,9 @@ export default function WeatherWidget() {
   const [liveWeather, setLiveWeather] = useState<CurrentWeather | null>(null);
   const [liveForecast, setLiveForecast] = useState<WeatherDay[] | null>(null);
   const [isLive, setIsLive] = useState(false);
+  const { data: loc } = useWeatherLocation();
+  const lat = loc?.lat, lon = loc?.lon;
+  const placeLabel = loc?.place || null;
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -105,8 +114,9 @@ export default function WeatherWidget() {
   }, []);
 
   const fetchWeather = useCallback(async () => {
+    if (lat == null || lon == null) { setIsLive(false); return; }
     try {
-      const response = await fetch(OPEN_METEO_URL);
+      const response = await fetch(buildWeatherUrl(lat, lon));
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data: OpenMeteoResponse = await response.json();
 
@@ -147,7 +157,7 @@ export default function WeatherWidget() {
       // On error, fall back to simulated data
       setIsLive(false);
     }
-  }, []);
+  }, [lat, lon]);
 
   useEffect(() => {
     fetchWeather();
@@ -163,6 +173,10 @@ export default function WeatherWidget() {
 
   const careAlerts: CareAlert[] = useMemo(() => {
     const alerts: CareAlert[] = [];
+    // Care alerts tell staff to act (salt the paths, check heating, push fluids).
+    // Deriving them from simulated weather could cause real operational
+    // decisions to be made on invented numbers — so only ever alert on live data.
+    if (!isLive) return alerts;
     if (currentWeather.temp <= 5) {
       alerts.push({ type: 'cold', message: 'Cold weather protocol active. Check heating in all rooms and ensure residents have warm clothing.', severity: 'warning', icon: '🥶' });
     }
@@ -185,7 +199,7 @@ export default function WeatherWidget() {
       alerts.push({ type: 'info' as any, message: 'No weather-related care concerns today. Conditions suitable for outdoor activities.', severity: 'info', icon: '✅' });
     }
     return alerts;
-  }, [currentWeather]);
+  }, [currentWeather, isLive]);
 
   const getGradient = () => {
     const hour = currentTime.getHours();
@@ -218,10 +232,17 @@ export default function WeatherWidget() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.85, letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 8 }}>
-              SALFORD, UK
-              {isLive && (
+              {placeLabel ? String(placeLabel).toUpperCase() : 'LOCATION NOT SET'}
+              {isLive ? (
                 <span style={{ background: 'rgba(34,197,94,0.9)', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: 0.3 }}>
                   Live
+                </span>
+              ) : (
+                <span title={lat == null
+                    ? 'Add the home postcode in Home Settings to show local weather.'
+                    : 'The weather service could not be reached. These figures are indicative only and no weather-based care alerts are shown.'}
+                  style={{ background: 'rgba(0,0,0,0.35)', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: 0.3 }}>
+                  {lat == null ? 'Set postcode in Home Settings' : 'Not live — indicative only'}
                 </span>
               )}
             </div>

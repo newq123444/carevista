@@ -17,7 +17,7 @@ import {
   moodEnvironmentApi, photoFrameApi, sleepTrackerApi, intergenerationalApi,
   rehabGoalsApi, celebrationsApi, housekeepingApi, taskTemplatesApi,
   menuAdminApi, housekeepingAdminApi, homeApi,
-  analyticsApi, familyAccessApi, portalApi, kitchenApi, absencesApi,
+  analyticsApi, familyAccessApi, portalApi, kitchenApi, absencesApi, activityApi,
 } from '../services/api';
 import { toast } from '../utils/toast';
 
@@ -1524,4 +1524,14 @@ export function useEndAbsence() {
       toast.success('Welcome back — care resumed');
     },
     onError: (e: any) => toast.error(e.response?.data?.error || 'Failed') });
+}
+
+export function useActivityFeed(hours = 24, limit = 60) {
+  return useQuery({ queryKey: ['activity-feed', hours, limit],
+    queryFn: () => activityApi.feed({ hours, limit }).then(r => r.data),
+    refetchInterval: 60_000 });
+}
+
+export function useWeatherLocation() {
+  return useQuery({ queryKey: ['home', 'weather-location'], queryFn: () => homeApi.weatherLocation().then(r => r.data), staleTime: 24 * 60 * 60 * 1000 });
 }
