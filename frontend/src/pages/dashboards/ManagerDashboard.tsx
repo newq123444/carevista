@@ -82,7 +82,12 @@ export default function ManagerDashboard() {
   const overdueActions  = compActions.filter(a => a.status !== 'closed' && a.due_date && new Date(a.due_date) < new Date());
   const overdueInvoices = invoices.filter(i => i.status === 'overdue');
   const overdueTotal    = overdueInvoices.reduce((s, i) => s + (i.total_pence || 0), 0);
-  const occupancyRate   = dash?.residents?.total ? Math.round((dash.residents.active / dash.residents.total) * 100) : null;
+  // Occupancy = residents in beds ÷ registered beds. Using the resident-record
+  // count instead would always read ~100%, which is what it used to do.
+  const beds            = Number(dash?.residents?.beds) || 0;
+  const occupiedBeds    = Number(dash?.residents?.active) || 0;
+  const awayNow         = Number(dash?.residents?.away) || 0;
+  const occupancyRate   = beds > 0 ? Math.round((occupiedBeds / beds) * 100) : null;
   const dbsExpiring     = staff.filter(s => s.dbs_expires && new Date(s.dbs_expires) < new Date(Date.now() + 30 * 86400000)).length;
   const trainingExpiring = training.filter(t => t.status === 'expiring' || t.status === 'expired').length;
 
@@ -163,9 +168,9 @@ export default function ManagerDashboard() {
               <div style={{ height: '100%', width: `${occupancyRate}%`, borderRadius: 6, background: occupancyRate > 90 ? '#16a34a' : occupancyRate > 70 ? '#d97706' : '#dc2626', transition: 'width 1s ease' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 12, color: 'var(--text-muted)' }}>
-              <span>{dash?.residents?.active ?? 0} occupied</span>
-              <span>{(dash?.residents?.total ?? 0) - (dash?.residents?.active ?? 0)} available</span>
-              <span>{dash?.residents?.total ?? 0} total beds</span>
+              <span>{occupiedBeds} occupied{awayNow > 0 ? ` (${awayNow} away)` : ''}</span>
+              <span>{Math.max(0, beds - occupiedBeds)} available</span>
+              <span>{beds} registered beds</span>
             </div>
           </div>
         </div>

@@ -1017,7 +1017,13 @@ router.get('/reports/dashboard', isAllStaff, async (req, res, next) => {
     const [residents, incidents, missedMeds, notes, expiringTraining, unreadMessages] =
       await Promise.all([
         query(`SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE active) AS active,
-               COUNT(*) FILTER (WHERE active AND risk_level='high') AS high_risk
+               COUNT(*) FILTER (WHERE active AND risk_level='high') AS high_risk,
+               -- Occupancy must be measured against registered beds, not against
+               -- the number of resident records (which would always be ~100%).
+               (SELECT COALESCE(registered_beds,0)::int FROM care_homes WHERE id = $1) AS beds,
+               (SELECT COUNT(DISTINCT ab.resident_id)::int FROM resident_absences ab
+                 WHERE ab.care_home_id = $1 AND ab.start_date <= CURRENT_DATE
+                   AND (ab.actual_return IS NULL OR ab.actual_return > CURRENT_DATE)) AS away
                FROM residents WHERE care_home_id = $1`, [careHomeId]),
         query(`SELECT COUNT(*) AS open FROM incidents WHERE care_home_id = $1 AND status != 'closed'`, [careHomeId]),
         query(`SELECT COUNT(*) FROM med_administrations WHERE care_home_id = $1 AND status = 'missed' AND administration_date = $2`, [careHomeId, today]),
