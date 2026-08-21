@@ -69,6 +69,57 @@ export async function createNote(req: Request, res: Response, next: NextFunction
     );
     if (!resident) throw new AppError(404, 'Resident not found');
 
+    // ── Duplicate-entry warning ──────────────────────────────────────────
+    // Two carers doing the same round is a real and common problem: neither
+    // knows the other has already been in, so the resident gets the same care
+    // twice and the record shows it twice. This does not block the note — a
+    // second note is sometimes correct — but it makes the writer look at what
+    // is already there first. Send confirmDuplicate: true to save anyway.
+    // Some notes legitimately repeat within minutes — a deteriorating resident
+    // gets repeat observations, a behaviour episode gets several entries. Care
+    // delivery does not: nobody washes and dresses the same person twice in
+    // twenty minutes. Window the check accordingly so the warning stays
+    // meaningful instead of becoming something staff click past.
+    const QUICK_REPEAT_IS_NORMAL = new Set([
+      'nursing_observation', 'incident_note', 'behaviour', 'medication_note',
+    ]);
+    const DUPLICATE_WINDOW_MINUTES = QUICK_REPEAT_IS_NORMAL.has(String(noteType)) ? 5 : 20;
+    if (req.body?.confirmDuplicate !== true) {
+      const { rows: [recent] } = await query(
+        `SELECT n.id, n.content, n.note_type, n.created_at, n.author_id,
+                u.first_name || ' ' || u.last_name AS author_name,
+                EXTRACT(EPOCH FROM (NOW() - n.created_at)) / 60 AS minutes_ago
+         FROM care_notes n
+         LEFT JOIN users u ON u.id = n.author_id
+         WHERE n.resident_id = $1 AND n.care_home_id = $2 AND n.deleted_at IS NULL
+           AND n.note_type = $3
+           AND n.created_at > NOW() - ($4 || ' minutes')::interval
+         ORDER BY n.created_at DESC LIMIT 1`,
+        [residentId, careHomeId, noteType, String(DUPLICATE_WINDOW_MINUTES)]
+      );
+
+      if (recent) {
+        const mins = Math.max(0, Math.round(Number(recent.minutes_ago)));
+        const byMe = recent.author_id === req.user!.id;
+        const who = byMe ? 'You' : (recent.author_name || 'Another member of staff');
+        const when = mins < 1 ? 'less than a minute ago' : mins === 1 ? '1 minute ago' : `${mins} minutes ago`;
+        return res.status(409).json({
+          error: `${who} already recorded a ${String(noteType).replace(/_/g, ' ')} note for this resident ${when}. Check it is not the same care before saving another.`,
+          conflict: 'possible_duplicate',
+          existingNote: {
+            id: recent.id,
+            content: recent.content,
+            noteType: recent.note_type,
+            authorName: recent.author_name,
+            createdAt: recent.created_at,
+            minutesAgo: mins,
+            byMe,
+          },
+          canSaveAnyway: true,
+        });
+      }
+    }
+
     // Resolve co-author names if provided
     let coAuthorNames: string[] = [];
     if (coAuthors?.length) {

@@ -40,7 +40,7 @@ const MEAL_LABELS: Record<string, string> = {
 const APPETITE_OPTIONS = ['Excellent – ate everything','Good – ate most of meal','Fair – ate about half','Poor – ate very little','Refused – did not eat','NBM – nil by mouth'];
 const DRINK_OPTIONS = ['Water','Tea','Coffee','Juice','Squash','Milk','Soup','Thickened fluid','Fortified milk'];
 
-function NoteCard({ note: n, staff }: { note: any; staff: any[] }) {
+function NoteCard({ note: n, staff, duplicateOf }: { note: any; staff: any[]; duplicateOf?: string | null }) {
   const [expanded, setExpanded] = useState(false);
   const borderColor = n.flagged ? 'var(--danger)' : n.is_significant ? 'var(--warning)' : 'transparent';
   const cardBg = n.flagged ? '#fef2f208' : 'transparent';
@@ -65,6 +65,12 @@ function NoteCard({ note: n, staff }: { note: any; staff: any[] }) {
             )}
             {meal && (
               <span className="badge badge-neutral" style={{ fontSize: '0.78rem' }}>{MEAL_LABELS[meal.meal] || meal.meal}</span>
+            )}
+            {duplicateOf && (
+              <span className="badge badge-warning" style={{ fontSize: '0.76rem' }}
+                title={`${duplicateOf} recorded the same type of note for this resident within 20 minutes. Check the resident did not receive the same care twice.`}>
+                ⧉ Possible duplicate
+              </span>
             )}
             {n.is_significant && <span className="badge badge-warning" style={{ fontSize: '0.76rem' }}>⚠ Significant</span>}
             {n.flagged && <span className="badge badge-danger" style={{ fontSize: '0.76rem' }}>🚩 Flagged</span>}
@@ -179,6 +185,38 @@ export default function CareNotes() {
   const { data: rawStaff = [] } = useColleagues();
   const staff: any[] = Array.isArray(rawStaff) ? rawStaff : [];
 
+  // Two carers recording the same round for the same resident is a real risk:
+  // either the person received the same care twice, or the record says it
+  // happened twice when it happened once. Flag notes of the same type for the
+  // same resident written within 20 minutes of each other so a manager
+  // reviewing the feed can see it at a glance.
+  const duplicatePartner = React.useMemo(() => {
+    const map = new Map<string, string>();
+    const byKey = new Map<string, any[]>();
+    for (const n of notes as any[]) {
+      const key = `${n.resident_id}|${n.note_type}`;
+      if (!byKey.has(key)) byKey.set(key, []);
+      byKey.get(key)!.push(n);
+    }
+    for (const group of byKey.values()) {
+      const sorted = [...group].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      for (let i = 1; i < sorted.length; i++) {
+        const gap = (new Date(sorted[i].created_at).getTime()
+                   - new Date(sorted[i - 1].created_at).getTime()) / 60000;
+        // Mirrors the server-side window: repeat observations are normal,
+        // repeat personal care is not.
+        const window = ['nursing_observation', 'incident_note', 'behaviour', 'medication_note']
+          .includes(sorted[i].note_type) ? 5 : 20;
+        if (gap <= window) {
+          map.set(sorted[i].id, sorted[i - 1].author_name || 'Another member of staff');
+          map.set(sorted[i - 1].id, sorted[i].author_name || 'Another member of staff');
+        }
+      }
+    }
+    return map;
+  }, [notes]);
+
   return (
     <div>
       <div className="page-header">
@@ -234,7 +272,9 @@ export default function CareNotes() {
         <div className="card"><div className="card-body table-empty">No care notes found for the selected filters</div></div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {notes.map((n: any) => <NoteCard key={n.id} note={n} staff={staff} />)}
+          {notes.map((n: any) => (
+            <NoteCard key={n.id} note={n} staff={staff} duplicateOf={duplicatePartner.get(n.id) || null} />
+          ))}
         </div>
       )}
 

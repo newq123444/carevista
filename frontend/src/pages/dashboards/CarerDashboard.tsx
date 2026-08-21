@@ -12,6 +12,7 @@ import {
   useMenuAdmin, useCreateMealOrder,
 } from '../../hooks';
 import { useTaskSSE } from '../../hooks/useSSE';
+import { ConflictDialog, asConflict, type Conflict } from '../../components/ConflictDialog';
 import { formatAge, todayISO } from '../../utils/formatters';
 import type { Resident } from '../../types';
 
@@ -369,6 +370,10 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
   const [mode, setMode]         = useState<'complete'|'defer'>('complete');
   const [deferReason, setDefer] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  // Set when the server says this care may already be recorded, or the task
+  // was completed by somebody else while this form was open.
+  const [conflict, setConflict] = useState<Conflict | null>(null);
+  const [liveNotice, setLiveNotice] = useState<string | null>(null);
   const [note, setNote]         = useState<any>({
     body:'', flagged:false, mood:'', pain:null,
     meal:defaultMeal, drinks:[], coAuthors:[],
@@ -396,6 +401,20 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
   useEffect(() => {
     return () => { if (task?.id) releaseTask.mutate(task.id); };
   }, [task?.id]);
+
+  // Watch the live stream while this form is open. If a colleague finishes the
+  // same task, or takes it over, say so straight away — before the carer has
+  // written the whole thing out and pressed save.
+  useTaskSSE((e) => {
+    if (!task?.id || e.taskId !== task.id) return;
+    if (e.type === 'TASK_COMPLETED' && e.completedBy) {
+      setLiveNotice(`${e.completedBy} has just completed this task. Check with them before saving.`);
+    } else if (e.type === 'TASK_DEFERRED') {
+      setLiveNotice(`${e.staffName || 'A colleague'} has just deferred this task.`);
+    } else if (e.type === 'TASK_TAKEN_OVER' && e.previousHolderId === user?.id) {
+      setLiveNotice(`${e.staffName || 'A colleague'} has taken this task over.`);
+    }
+  });
 
   const buildContent = () => {
     const parts: string[] = [];
@@ -492,7 +511,11 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
     onClose();
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async () => { await save(false); };
+
+  // confirmDuplicate is only ever true after the carer has been shown the note
+  // that already exists and has chosen to record a second one anyway.
+  const save = async (confirmDuplicate: boolean) => {
     const isMeal = noteType.value === 'nutrition';
     const mealContext = isMeal ? JSON.stringify({
       meal: note.meal || defaultMeal,
@@ -506,22 +529,38 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
     }) : null;
 
     // Save care note
-    await createNote.mutateAsync({
-      residentId: resident.id,
-      noteType: noteType.value,
-      content: buildContent(),
-      isSignificant: note.flagged || false,
-      flagged: note.flagged || false,
-      mood: note.mood || null,
-      painScore: note.pain ?? null,
-      mealContext,
-    });
+    try {
+      await createNote.mutateAsync({
+        residentId: resident.id,
+        noteType: noteType.value,
+        content: buildContent(),
+        isSignificant: note.flagged || false,
+        flagged: note.flagged || false,
+        mood: note.mood || null,
+        painScore: note.pain ?? null,
+        mealContext,
+        ...(confirmDuplicate ? { confirmDuplicate: true } : {}),
+      });
+    } catch (err: any) {
+      const c = asConflict(err);
+      if (c) { setConflict(c); return; }
+      throw err;
+    }
 
     // Mark task complete if triggered from task chip
     if (task?.id) {
-      await completeTask.mutateAsync({ id: task.id, notes: buildContent().slice(0, 200) });
+      try {
+        await completeTask.mutateAsync({ id: task.id, notes: buildContent().slice(0, 200) });
+      } catch (err: any) {
+        const c = asConflict(err);
+        // The note saved; only the task tick failed because somebody got there
+        // first. Say so plainly rather than pretending it all worked.
+        if (c) { setConflict({ ...c, canSaveAnyway: false }); return; }
+        throw err;
+      }
     }
 
+    setConflict(null);
     setSubmitted(true);
     setTimeout(() => { onSaved?.(); onClose(); }, 1500);
   };
@@ -539,6 +578,29 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%' }}>
+      {conflict && (
+        <ConflictDialog
+          conflict={conflict}
+          busy={isBusy}
+          onCancel={() => {
+            setConflict(null);
+            // If the task was already done by someone else there is nothing
+            // left to do here — close and let the list refresh.
+            if (conflict.conflict === 'already_completed') { onSaved?.(); onClose(); }
+          }}
+          onProceed={conflict.conflict === 'possible_duplicate' ? () => save(true) : undefined}
+          proceedLabel="Record it anyway"
+        />
+      )}
+      {liveNotice && (
+        <div style={{ padding:'10px 16px', background:'#fffbeb', borderBottom:'1px solid #fcd34d',
+                      fontSize:13, color:'#92400e', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+          <span style={{ fontSize:16 }}>⚠️</span>
+          <span style={{ flex:1 }}>{liveNotice}</span>
+          <button onClick={() => setLiveNotice(null)}
+            style={{ border:'none', background:'none', cursor:'pointer', color:'#92400e', fontSize:16 }}>×</button>
+        </div>
+      )}
       {/* Form header */}
       <div style={{ padding:'12px 16px', borderBottom:'1px solid var(--border)', background:'var(--surface-2)', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -916,6 +978,7 @@ export default function CarerDashboard() {
   }, []);
 
   const startTask = useStartTask();
+  const [tapConflict, setTapConflict] = useState<{ conflict: Conflict; task: any } | null>(null);
   const { data: homeCfg } = useHome();
   useTaskSSE();
 
@@ -956,18 +1019,44 @@ export default function CarerDashboard() {
     return `${t.resident_name} ${t.room_number}`.toLowerCase().includes(search.toLowerCase());
   });
 
-  // When a task chip is tapped
-  const handleTaskTap = (task: any) => {
-    if (task.status === 'done' || task.status === 'deferred') return;
+  // When a task chip is tapped.
+  // The claim is taken on the server first: if somebody else is already in that
+  // room, or has finished it since this list was loaded, the carer is told
+  // before the form opens rather than after they have written it all out.
+  const openTaskForm = (task: any) => {
     const r = residents.find(res => res.id === task.resident_id);
     if (!r) return;
     const mapped = TASK_TO_NOTE[task.category] || 'nursing_observation';
     const nt = NOTE_TYPES.find(n => n.value === mapped) || NOTE_TYPES[0];
-    startTask.mutate(task.id);
     setTask(task);
     setResident(r);
     setNoteType(nt);
     setIsAdHoc(false);
+  };
+
+  const handleTaskTap = async (task: any) => {
+    if (task.status === 'done' || task.status === 'deferred') return;
+    if (!residents.find(res => res.id === task.resident_id)) return;
+    try {
+      await startTask.mutateAsync({ id: task.id });
+      openTaskForm(task);
+    } catch (err: any) {
+      const c = asConflict(err);
+      if (c) { setTapConflict({ conflict: c, task }); return; }
+      // Presence is a convenience, not a gate — if the claim call fails for any
+      // other reason (offline, server hiccup) let the carer get on with it.
+      openTaskForm(task);
+    }
+  };
+
+  const takeOverTask = async () => {
+    if (!tapConflict) return;
+    const t = tapConflict.task;
+    setTapConflict(null);
+    try {
+      await startTask.mutateAsync({ id: t.id, takeOver: true });
+      openTaskForm(t);
+    } catch { /* the list will refresh and show its real state */ }
   };
 
   // Ad-hoc note — no task attached
@@ -1032,6 +1121,14 @@ export default function CarerDashboard() {
 
   return (
     <div>
+      {tapConflict && (
+        <ConflictDialog
+          conflict={tapConflict.conflict}
+          onCancel={() => setTapConflict(null)}
+          onProceed={tapConflict.conflict.canTakeOver ? takeOverTask : undefined}
+          proceedLabel="Take over"
+        />
+      )}
       {/* ── Header ──────────────────────────────────────────── */}
       <div style={{ marginBottom:16 }}>
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>

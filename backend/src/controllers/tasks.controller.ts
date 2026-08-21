@@ -206,21 +206,62 @@ export async function listTasks(req: Request, res: Response, next: NextFunction)
 }
 
 // ── Complete a task ───────────────────────────────────────────────────────
+// How long a claim on a task stays valid before it is treated as abandoned
+// (carer closed the tab, phone locked, went to another resident).
+const CLAIM_STALE_MINUTES = 15;
+
 export async function completeTask(req: Request, res: Response, next: NextFunction) {
   try {
     const careHomeId = req.user!.care_home_id;
     const { id } = req.params;
     const { notes } = req.body;
 
+    // Only complete a task that is not already done. Without this guard two
+    // carers can each finish the same task and each write a care note for it,
+    // which means either the resident received the same care twice or the
+    // record says something happened twice when it happened once. Both are
+    // serious: the first distresses the resident, the second is a false record.
     const { rows: [task] } = await query(
       `UPDATE care_tasks
        SET status='done', completed_by=$1, completed_at=NOW(), notes=$2,
            in_progress_by=NULL, in_progress_since=NULL, in_progress_name=NULL
-       WHERE id=$3 AND care_home_id=$4
+       WHERE id=$3 AND care_home_id=$4 AND status <> 'done'
        RETURNING *`,
       [req.user!.id, notes || null, id, careHomeId]
     );
-    if (!task) throw new AppError(404, 'Task not found');
+
+    if (!task) {
+      const { rows: [existing] } = await query(
+        `SELECT t.*, u.first_name || ' ' || u.last_name AS completed_by_name,
+                r.first_name || ' ' || r.last_name AS resident_name
+         FROM care_tasks t
+         LEFT JOIN users u ON u.id = t.completed_by
+         LEFT JOIN residents r ON r.id = t.resident_id
+         WHERE t.id = $1 AND t.care_home_id = $2`, [id, careHomeId]);
+      if (!existing) throw new AppError(404, 'Task not found');
+
+      const mins = existing.completed_at
+        ? Math.max(0, Math.round((Date.now() - new Date(existing.completed_at).getTime()) / 60000))
+        : null;
+      const who = existing.completed_by_name || 'Another member of staff';
+      const when = mins === null ? '' : mins < 1 ? ' just now' : mins === 1 ? ' 1 minute ago' : ` ${mins} minutes ago`;
+      const mine = existing.completed_by === req.user!.id;
+
+      return res.status(409).json({
+        error: mine
+          ? `You already completed "${existing.task_name}" for ${existing.resident_name}${when}.`
+          : `${who} already completed "${existing.task_name}" for ${existing.resident_name}${when}. Check with them before recording it again.`,
+        conflict: 'already_completed',
+        taskId: existing.id,
+        taskName: existing.task_name,
+        residentName: existing.resident_name,
+        completedByName: existing.completed_by_name,
+        completedById: existing.completed_by,
+        completedAt: existing.completed_at,
+        minutesAgo: mins,
+        byMe: mine,
+      });
+    }
 
     // SSE broadcast to all staff in this care home
     sseManager.broadcast(careHomeId, {
@@ -247,10 +288,23 @@ export async function deferTask(req: Request, res: Response, next: NextFunction)
       `UPDATE care_tasks
        SET status='deferred', deferred_reason=$1, completed_by=$2, completed_at=NOW(),
            in_progress_by=NULL, in_progress_since=NULL, in_progress_name=NULL
-       WHERE id=$3 AND care_home_id=$4 RETURNING *`,
+       WHERE id=$3 AND care_home_id=$4 AND status <> 'done' RETURNING *`,
       [reason, req.user!.id, id, careHomeId]
     );
-    if (!task) throw new AppError(404, 'Task not found');
+    if (!task) {
+      const { rows: [existing] } = await query(
+        `SELECT t.task_name, t.status, t.completed_at,
+                u.first_name || ' ' || u.last_name AS completed_by_name
+         FROM care_tasks t LEFT JOIN users u ON u.id = t.completed_by
+         WHERE t.id = $1 AND t.care_home_id = $2`, [id, careHomeId]);
+      if (!existing) throw new AppError(404, 'Task not found');
+      return res.status(409).json({
+        error: `"${existing.task_name}" was already completed by ${existing.completed_by_name || 'another member of staff'}. It cannot be deferred now.`,
+        conflict: 'already_completed',
+        completedByName: existing.completed_by_name,
+        completedAt: existing.completed_at,
+      });
+    }
 
     sseManager.broadcast(careHomeId, {
       type: 'TASK_DEFERRED',
@@ -271,6 +325,50 @@ export async function startTask(req: Request, res: Response, next: NextFunction)
     const { id } = req.params;
     const staffName = `${req.user!.first_name} ${req.user!.last_name}`;
 
+    // Look first: claiming a task somebody else is already doing is how two
+    // carers end up in the same room. A claim older than CLAIM_STALE_MINUTES
+    // is treated as abandoned and can be taken silently.
+    const { rows: [current] } = await query(
+      `SELECT t.*, u.first_name || ' ' || u.last_name AS holder_name,
+              r.first_name || ' ' || r.last_name AS resident_name,
+              EXTRACT(EPOCH FROM (NOW() - t.in_progress_since)) / 60 AS held_minutes,
+              cu.first_name || ' ' || cu.last_name AS completed_by_name
+       FROM care_tasks t
+       LEFT JOIN users u ON u.id = t.in_progress_by
+       LEFT JOIN users cu ON cu.id = t.completed_by
+       LEFT JOIN residents r ON r.id = t.resident_id
+       WHERE t.id = $1 AND t.care_home_id = $2`, [id, careHomeId]);
+    if (!current) throw new AppError(404, 'Task not found');
+
+    if (current.status === 'done') {
+      const mins = current.completed_at
+        ? Math.max(0, Math.round((Date.now() - new Date(current.completed_at).getTime()) / 60000)) : null;
+      return res.status(409).json({
+        error: `${current.completed_by_name || 'Another member of staff'} already completed "${current.task_name}" for ${current.resident_name}${mins === null ? '' : mins < 1 ? ' just now' : ` ${mins} minute${mins === 1 ? '' : 's'} ago`}.`,
+        conflict: 'already_completed',
+        completedByName: current.completed_by_name,
+        completedAt: current.completed_at,
+        minutesAgo: mins,
+      });
+    }
+
+    const heldByOther = current.in_progress_by && current.in_progress_by !== req.user!.id;
+    const heldMinutes = current.held_minutes != null ? Math.round(Number(current.held_minutes)) : null;
+    const stale = heldMinutes != null && heldMinutes >= CLAIM_STALE_MINUTES;
+
+    if (heldByOther && !stale && req.body?.takeOver !== true) {
+      return res.status(409).json({
+        error: `${current.holder_name || 'Another member of staff'} is recording "${current.task_name}" for ${current.resident_name} right now${heldMinutes ? ` (started ${heldMinutes} minute${heldMinutes === 1 ? '' : 's'} ago)` : ''}. Check with them before taking over.`,
+        conflict: 'in_progress',
+        holderName: current.holder_name,
+        holderId: current.in_progress_by,
+        heldMinutes,
+        taskName: current.task_name,
+        residentName: current.resident_name,
+        canTakeOver: true,
+      });
+    }
+
     const { rows: [task] } = await query(
       `UPDATE care_tasks
        SET in_progress_by=$1, in_progress_since=NOW(), in_progress_name=$2
@@ -278,6 +376,19 @@ export async function startTask(req: Request, res: Response, next: NextFunction)
       [req.user!.id, staffName, id, careHomeId]
     );
     if (!task) throw new AppError(404, 'Task not found');
+
+    // If this was a deliberate take-over, tell the person who lost it.
+    if (heldByOther) {
+      sseManager.broadcast(careHomeId, {
+        type: 'TASK_TAKEN_OVER',
+        taskId: id,
+        residentId: task.resident_id,
+        taskName: task.task_name,
+        previousHolderId: current.in_progress_by,
+        previousHolderName: current.holder_name,
+        staffName,
+      });
+    }
 
     sseManager.broadcast(careHomeId, {
       type: 'TASK_STARTED',

@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useTasks, useCompleteTask, useDeferTask, useStartTask, useReleaseTask, useGenerateTasks, useResidents } from '../hooks';
 import { useTaskSSE } from '../hooks/useSSE';
+import { ConflictDialog, asConflict, type Conflict } from '../components/ConflictDialog';
 import { todayISO } from '../utils/formatters';
 import type { Resident } from '../types';
 
@@ -99,6 +100,7 @@ function TaskModal({ task, onClose }: { task: any; onClose: () => void }) {
   const [mode, setMode]     = useState<'complete' | 'defer'>('complete');
   const [notes, setNotes]   = useState('');
   const [reason, setReason] = useState('');
+  const [conflict, setConflict] = useState<Conflict | null>(null);
 
   const st = STATUS[task.status as keyof typeof STATUS] || STATUS.due;
   const isSomeoneElse = task.in_progress_by && task.in_progress_by !== user?.id;
@@ -108,13 +110,23 @@ function TaskModal({ task, onClose }: { task: any; onClose: () => void }) {
     onClose();
   };
 
+  // The server refuses to complete a task that is already done. That happens
+  // when a colleague finished it while this dialog was open — tell the carer
+  // who and when instead of silently writing a second completion.
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'complete') {
-      complete.mutate({ id: task.id, notes }, { onSuccess: onClose });
-    } else {
-      if (!reason.trim()) return;
-      defer.mutate({ id: task.id, reason }, { onSuccess: onClose });
+    try {
+      if (mode === 'complete') {
+        await complete.mutateAsync({ id: task.id, notes });
+      } else {
+        if (!reason.trim()) return;
+        await defer.mutateAsync({ id: task.id, reason });
+      }
+      onClose();
+    } catch (err: any) {
+      const c = asConflict(err);
+      if (c) { setConflict(c); return; }
+      throw err;
     }
   };
 
@@ -137,6 +149,10 @@ function TaskModal({ task, onClose }: { task: any; onClose: () => void }) {
   ];
 
   const quickNotes = QUICK_NOTES[task.category] || [];
+
+  if (conflict) {
+    return <ConflictDialog conflict={conflict} onCancel={() => { setConflict(null); onClose(); }} />;
+  }
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && handleClose()}>
@@ -263,6 +279,7 @@ export default function TaskBoard() {
   const [now, setNow]             = useState(new Date());
 
   const startTask   = useStartTask();
+  const [tapConflict, setTapConflict] = useState<{ conflict: Conflict; task: any } | null>(null);
   const genTasks    = useGenerateTasks();
   const { data: rawResidents = [] } = useResidents({ active: true });
   const residents: any[] = Array.isArray(rawResidents) ? rawResidents : [];
@@ -324,9 +341,25 @@ export default function TaskBoard() {
     return true;
   });
 
-  const openTask = (task: any) => {
-    startTask.mutate(task.id);
-    setActive(task);
+  const openTask = async (task: any) => {
+    try {
+      await startTask.mutateAsync({ id: task.id });
+      setActive(task);
+    } catch (err: any) {
+      const c = asConflict(err);
+      if (c) { setTapConflict({ conflict: c, task }); return; }
+      setActive(task);   // presence is a convenience, not a gate
+    }
+  };
+
+  const takeOverTask = async () => {
+    if (!tapConflict) return;
+    const t = tapConflict.task;
+    setTapConflict(null);
+    try {
+      await startTask.mutateAsync({ id: t.id, takeOver: true });
+      setActive(t);
+    } catch { /* the board refreshes and shows its real state */ }
   };
 
   // Summary counts
@@ -343,6 +376,14 @@ export default function TaskBoard() {
 
   return (
     <div>
+      {tapConflict && (
+        <ConflictDialog
+          conflict={tapConflict.conflict}
+          onCancel={() => setTapConflict(null)}
+          onProceed={tapConflict.conflict.canTakeOver ? takeOverTask : undefined}
+          proceedLabel="Take over"
+        />
+      )}
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="page-header">
         <div>

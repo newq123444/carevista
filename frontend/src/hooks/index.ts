@@ -211,9 +211,12 @@ export function useDeferTask() {
   });
 }
 
+// The server refuses a claim held by somebody else. Pass takeOver to override
+// deliberately, after the carer has been shown who has it.
 export function useStartTask() {
   return useMutation({
-    mutationFn: (id: string) => api.post(`/tasks/${id}/start`).then(r => r.data),
+    mutationFn: ({ id, takeOver }: { id: string; takeOver?: boolean }) =>
+      api.post(`/tasks/${id}/start`, takeOver ? { takeOver: true } : {}).then(r => r.data),
   });
 }
 
