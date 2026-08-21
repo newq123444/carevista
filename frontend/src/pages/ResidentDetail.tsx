@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { useParams, Link } from 'react-router-dom';
-import { useResident, useCareNotes, useResidentMedications, useIncidents, useResidentActivityHistory, useResidentWellbeing, useUpdateMobility } from '../hooks';
+import { useResident, useCareNotes, useResidentMedications, useIncidents, useResidentActivityHistory, useResidentWellbeing, useUpdateMobility, useResidentCarePlanFull } from '../hooks';
 import { WeightChart } from '../components/WeightChart';
 import { BodyMap, type BodyMapMark } from '../components/BodyMap';
 import { LifeStoryBoard } from '../components/LifeStoryBoard';
@@ -11,7 +11,7 @@ import { api } from '../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDate, formatAge, formatDateTime, NOTE_TYPE_LABELS } from '../utils/formatters';
 
-const TABS = ['Overview', 'Timeline', 'Medications', 'Incidents', 'Notes', 'Activities', 'Life Story', 'Wellbeing', 'Belongings', 'Weight', 'Body Map'] as const;
+const TABS = ['Overview', 'Care Plan', 'Timeline', 'Medications', 'Incidents', 'Notes', 'Activities', 'Life Story', 'Wellbeing', 'Belongings', 'Weight', 'Body Map'] as const;
 type Tab = typeof TABS[number];
 
 const BELONGING_CATEGORIES = ['general','clothing','jewellery','electronics','documents','valuables','toiletries','other'];
@@ -407,6 +407,84 @@ function EditResidentModal({ resident: r, onClose, onSaved }: { resident: any; o
   );
 }
 
+
+// The care plan, summarised on the resident record. The full editor lives at
+// /care-plans — this is the "is there one, and is it current" answer that a
+// carer opening a resident actually needs.
+function CarePlanTab({ residentId }: { residentId: string }) {
+  const { data: plan, isLoading } = useResidentCarePlanFull(residentId);
+
+  if (isLoading) return <div className="card"><div className="card-body">Loading care plan…</div></div>;
+
+  if (!plan) {
+    return (
+      <div className="card" style={{ borderLeft: '4px solid #ef4444' }}>
+        <div className="card-body">
+          <div style={{ fontWeight: 600, color: '#b91c1c', marginBottom: 6 }}>No care plan</div>
+          <p style={{ color: 'var(--text-secondary)', marginTop: 0 }}>
+            This resident has no person-centred care plan. Regulation 9 requires one, and staff are
+            currently working from memory and handover alone.
+          </p>
+          <Link to="/care-plans" className="btn btn-primary btn-sm">Start a care plan</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const overdue = plan.reviewOverdue;
+  return (
+    <div>
+      <div className="card" style={{ marginBottom: 16, borderLeft: `4px solid ${overdue ? '#ef4444' : plan.status === 'active' ? '#10b981' : '#f59e0b'}` }}>
+        <div className="card-body" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontWeight: 600 }}>
+              {plan.status === 'active' ? 'Active care plan' : plan.status === 'draft' ? 'Draft — not yet signed off' : 'Changed — needs re-signing'}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+              Version {plan.version} · {plan.completenessPercent}% complete ·{' '}
+              {overdue ? <span style={{ color: '#b91c1c', fontWeight: 600 }}>review overdue</span>
+                       : `next review ${plan.nextReviewDate || '—'}`}
+              {plan.approvedByName ? ` · signed off by ${plan.approvedByName}` : ''}
+            </div>
+          </div>
+          <Link to="/care-plans" className="btn btn-primary btn-sm">Open the full plan</Link>
+        </div>
+      </div>
+
+      {plan.whatMattersToMe && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-header"><span className="card-title">What matters to me</span></div>
+          <div className="card-body" style={{ whiteSpace: 'pre-wrap' }}>{plan.whatMattersToMe}</div>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="card-header"><span className="card-title">What staff do</span></div>
+        <div className="card-body">
+          {(plan.sections || []).filter((sec: any) => sec.applicable && sec.interventions).length === 0 ? (
+            <div style={{ color: 'var(--text-secondary)' }}>
+              No interventions written yet. Open the full plan to complete it.
+            </div>
+          ) : (plan.sections || []).filter((sec: any) => sec.applicable && sec.interventions).map((sec: any) => (
+            <div key={sec.id} style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, marginBottom: 3 }}>
+                {sec.domainLabel}
+                {sec.riskLevel === 'high' && <span style={{ marginLeft: 8, fontSize: 11, background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: 10, fontWeight: 700 }}>High risk</span>}
+              </div>
+              <div style={{ whiteSpace: 'pre-wrap', fontSize: 14 }}>{sec.interventions}</div>
+              {(sec.equipment || sec.staffRequired || sec.frequency) && (
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                  {[sec.staffRequired, sec.equipment, sec.frequency].filter(Boolean).join(' · ')}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ResidentDetail() {
   const { t: tr } = useLang();
   const { id } = useParams<{ id: string }>();
@@ -558,6 +636,8 @@ export default function ResidentDetail() {
       )}
 
       {/* ── TIMELINE ─────────────────────────────────────────── */}
+      {tab === 'Care Plan' && <CarePlanTab residentId={id!} />}
+
       {tab === 'Timeline' && (
         <div style={{ maxWidth: 720 }}>
           {timeline.length === 0 ? (

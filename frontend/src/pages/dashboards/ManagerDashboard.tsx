@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLang } from '../../i18n';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
-import { useDashboard, useIncidents, useComplianceActions, useInvoices, useResidents, useStaff, useTraining, useHousekeepingSummary, useMenuKitchenDashboard, useRoomTurnoverDashboard } from '../../hooks';
+import { useDashboard, useIncidents, useComplianceActions, useInvoices, useResidents, useStaff, useTraining, useHousekeepingSummary, useMenuKitchenDashboard, useRoomTurnoverDashboard, useCarePlanOverview, useFeedbackSummary, useLibertySummary } from '../../hooks';
 import { formatDate, formatPence } from '../../utils/formatters';
 import type { Incident, ComplianceAction, Invoice, Resident } from '../../types';
 import WeatherWidget from '../../components/WeatherWidget';
@@ -91,6 +91,14 @@ export default function ManagerDashboard() {
   const dbsExpiring     = staff.filter(s => s.dbs_expires && new Date(s.dbs_expires) < new Date(Date.now() + 30 * 86400000)).length;
   const trainingExpiring = training.filter(t => t.status === 'expiring' || t.status === 'expired').length;
 
+  // Care plans, complaints and DoLS: the three registers an inspector opens first.
+  const { data: planOverview } = useCarePlanOverview();
+  const { data: feedbackSummary } = useFeedbackSummary();
+  const { data: libertySummary } = useLibertySummary();
+  const carePlanGaps = (planOverview?.residentsWithoutPlan ?? 0) + (planOverview?.overdueReviews ?? 0);
+  const feedbackOverdue = (feedbackSummary?.acknowledgementOverdue ?? 0) + (feedbackSummary?.responseOverdue ?? 0);
+  const dolsProblems = (libertySummary?.dolsExpired ?? 0) + (libertySummary?.restrictionsWithoutLawfulBasis ?? 0);
+
   const KPI_CARDS = [
     { label: 'Active Residents',   value: dash?.residents?.active ?? 0, sub: occupancyRate ? `${occupancyRate}% occupancy` : 'Loading…', icon: '👥', color: '#0d9488', link: '/residents' },
     { label: 'Open Incidents',     value: incidents.length,              sub: `${incidents.filter(i => i.severity === 'high' || i.severity === 'critical').length} high/critical`, icon: '⚠️', color: incidents.length > 0 ? '#dc2626' : '#16a34a', link: '/incidents' },
@@ -100,6 +108,9 @@ export default function ManagerDashboard() {
     { label: 'Training Issues',    value: trainingExpiring,              sub: 'Expired or expiring soon', icon: '🎓', color: trainingExpiring > 0 ? '#d97706' : '#16a34a', link: '/training' },
     { label: 'DBS Expiring',       value: dbsExpiring,                   sub: 'Within 30 days', icon: '🪪', color: dbsExpiring > 0 ? '#d97706' : '#16a34a', link: '/staff' },
     { label: 'Unread Messages',    value: dash?.unreadMessages ?? 0,     sub: 'Family portal', icon: '💬', color: (dash?.unreadMessages ?? 0) > 0 ? '#6366f1' : '#6b7280', link: '/family' },
+    { label: 'Care Plan Gaps',     value: carePlanGaps,                  sub: planOverview?.coveragePercent != null ? `${planOverview.coveragePercent}% of residents have a plan` : 'No plans yet', icon: '📖', color: carePlanGaps > 0 ? '#dc2626' : '#16a34a', link: '/care-plans' },
+    { label: 'Complaints Overdue', value: feedbackOverdue,               sub: `${feedbackSummary?.openComplaints ?? 0} open`, icon: '💬', color: feedbackOverdue > 0 ? '#dc2626' : '#16a34a', link: '/feedback' },
+    { label: 'DoLS Problems',      value: dolsProblems,                  sub: `${libertySummary?.dolsExpiring ?? 0} expiring within 28 days`, icon: '⚖️', color: dolsProblems > 0 ? '#dc2626' : '#16a34a', link: '/dols' },
   ];
 
   return (

@@ -3,7 +3,7 @@ import React from 'react';
 import { useLang } from '../../i18n';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
-import { useDashboard, useEmar, useIncidents } from '../../hooks';
+import { useDashboard, useEmar, useIncidents, useMonitoringAlerts, useCarePlanOverview } from '../../hooks';
 import { formatDate, todayISO } from '../../utils/formatters';
 import type { Incident } from '../../types';
 
@@ -15,6 +15,10 @@ export default function NurseDashboard() {
   const emarData: any[] = emarRaw?.medications ?? [];
   const emarSummary = emarRaw?.summary ?? { totalDoses: 0, given: 0, missed: 0, refused: 0, pending: 0 };
   const { data: incidents = [] } = useIncidents({ status: 'open' });
+  const { data: monitoring } = useMonitoringAlerts();
+  const { data: planOverview } = useCarePlanOverview();
+  const chartAlerts: any[] = monitoring?.alerts || [];
+  const planGaps = (planOverview?.residentsWithoutPlan || 0) + (planOverview?.overdueReviews || 0);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -62,6 +66,49 @@ export default function NurseDashboard() {
           </Link>
         ))}
       </div>
+
+      {/* Charts falling short right now, and care plans that are missing or stale.
+          Both are read from records staff already keep — nothing extra to enter. */}
+      {(chartAlerts.length > 0 || planGaps > 0) && (
+        <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid #f59e0b' }}>
+          <div className="card-header">
+            <span className="card-title">⚠️ Needs attention now</span>
+          </div>
+          <div className="card-body" style={{ padding: 0 }}>
+            {planGaps > 0 && (
+              <Link to="/care-plans" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <span style={{ fontSize: 18 }}>📖</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600 }}>
+                      {planOverview?.residentsWithoutPlan ? `${planOverview.residentsWithoutPlan} resident(s) with no care plan` : ''}
+                      {planOverview?.residentsWithoutPlan && planOverview?.overdueReviews ? ' · ' : ''}
+                      {planOverview?.overdueReviews ? `${planOverview.overdueReviews} plan review(s) overdue` : ''}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Open care plans</div>
+                  </div>
+                </div>
+              </Link>
+            )}
+            {chartAlerts.slice(0, 6).map((a: any, i: number) => (
+              <Link key={i} to="/charts" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <span style={{ fontSize: 18 }}>{a.type === 'fluid' ? '💧' : a.type === 'food' ? '🍽' : '🛏'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600 }}>{a.residentName} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>· Room {a.roomNumber}</span></div>
+                    <div style={{ fontSize: 13, color: a.severity === 'high' ? '#dc2626' : '#b45309' }}>{a.message}</div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+            {chartAlerts.length > 6 && (
+              <div style={{ padding: '10px 18px', fontSize: 13 }}>
+                <Link to="/charts">and {chartAlerts.length - 6} more…</Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Medication snapshot */}

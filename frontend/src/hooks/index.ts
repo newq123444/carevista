@@ -18,6 +18,8 @@ import {
   rehabGoalsApi, celebrationsApi, housekeepingApi, taskTemplatesApi,
   menuAdminApi, housekeepingAdminApi, homeApi,
   analyticsApi, familyAccessApi, portalApi, kitchenApi, absencesApi, activityApi,
+  carePlansApi, appointmentsApi, feedbackApi, libertyApi, supervisionsApi,
+  monitoringApi, residentFinanceApi,
 } from '../services/api';
 import { toast } from '../utils/toast';
 
@@ -1535,3 +1537,236 @@ export function useActivityFeed(hours = 24, limit = 60) {
 export function useWeatherLocation() {
   return useQuery({ queryKey: ['home', 'weather-location'], queryFn: () => homeApi.weatherLocation().then(r => r.data), staleTime: 24 * 60 * 60 * 1000 });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Care plans (CQC Regulation 9)
+// ═══════════════════════════════════════════════════════════════════════════
+export function useCarePlanOverview() {
+  return useQuery({ queryKey: ['care-plans', 'overview'], queryFn: () => carePlansApi.overview().then(r => r.data) });
+}
+export function useCarePlans(params?: object) {
+  return useQuery({ queryKey: ['care-plans', 'list', params], queryFn: () => carePlansApi.list(params).then(r => r.data) });
+}
+export function useCarePlan(id: string) {
+  return useQuery({ queryKey: ['care-plans', id], queryFn: () => carePlansApi.get(id).then(r => r.data), enabled: !!id });
+}
+export function useResidentCarePlanFull(residentId: string) {
+  return useQuery({ queryKey: ['care-plans', 'resident', residentId], queryFn: () => carePlansApi.forResident(residentId).then(r => r.data), enabled: !!residentId });
+}
+export function useCarePlanReviews(id: string) {
+  return useQuery({ queryKey: ['care-plans', id, 'reviews'], queryFn: () => carePlansApi.reviews(id).then(r => r.data), enabled: !!id });
+}
+export function useCarePlanVersions(id: string) {
+  return useQuery({ queryKey: ['care-plans', id, 'versions'], queryFn: () => carePlansApi.versions(id).then(r => r.data), enabled: !!id });
+}
+export function useCarePlanVersion(id: string, versionId: string) {
+  return useQuery({ queryKey: ['care-plans', id, 'versions', versionId], queryFn: () => carePlansApi.version(id, versionId).then(r => r.data), enabled: !!id && !!versionId });
+}
+function invalidatePlans(qc: any) {
+  qc.invalidateQueries({ queryKey: ['care-plans'] });
+}
+export function useCreateCarePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: object) => carePlansApi.create(d).then(r => r.data),
+    onSuccess: () => { invalidatePlans(qc); toast.success('Care plan started'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not start the care plan'),
+  });
+}
+export function useUpdateCarePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => carePlansApi.update(id, data).then(r => r.data),
+    onSuccess: () => { invalidatePlans(qc); toast.success('Saved'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save'),
+  });
+}
+export function useUpdateCarePlanSection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, sectionId, data }: { id: string; sectionId: string; data: object }) =>
+      carePlansApi.updateSection(id, sectionId, data).then(r => r.data),
+    onSuccess: () => { invalidatePlans(qc); toast.success('Section saved'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save this section'),
+  });
+}
+export function useApproveCarePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, force }: { id: string; force?: boolean }) => carePlansApi.approve(id, { force }).then(r => r.data),
+    onSuccess: () => { invalidatePlans(qc); toast.success('Care plan signed off'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not sign off this plan'),
+  });
+}
+export function useAddCarePlanReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => carePlansApi.addReview(id, data).then(r => r.data),
+    onSuccess: () => { invalidatePlans(qc); toast.success('Review recorded'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not record the review'),
+  });
+}
+export function useArchiveCarePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => carePlansApi.archive(id, { reason }).then(r => r.data),
+    onSuccess: () => { invalidatePlans(qc); toast.success('Care plan archived'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not archive'),
+  });
+}
+export function useImportAiDraft() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, aiPlanId, overwrite }: { id: string; aiPlanId?: string; overwrite?: boolean }) =>
+      carePlansApi.importAi(id, { aiPlanId, overwrite }).then(r => r.data),
+    onSuccess: (d: any) => { invalidatePlans(qc); toast.success(d?.message || 'AI draft imported'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not import the AI draft'),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Healthcare appointments
+// ═══════════════════════════════════════════════════════════════════════════
+export function useAppointmentSummary() {
+  return useQuery({ queryKey: ['appointments', 'summary'], queryFn: () => appointmentsApi.summary().then(r => r.data) });
+}
+export function useAppointments(params?: object) {
+  return useQuery({ queryKey: ['appointments', params], queryFn: () => appointmentsApi.list(params).then(r => r.data) });
+}
+export function useCreateAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: object) => appointmentsApi.create(d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['appointments'] }); toast.success('Appointment booked'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not book this appointment'),
+  });
+}
+export function useUpdateAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => appointmentsApi.update(id, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['appointments'] }); toast.success('Appointment updated'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not update this appointment'),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Complaints & compliments (CQC Regulation 16)
+// ═══════════════════════════════════════════════════════════════════════════
+export function useFeedbackSummary() {
+  return useQuery({ queryKey: ['feedback', 'summary'], queryFn: () => feedbackApi.summary().then(r => r.data) });
+}
+export function useFeedbackList(params?: object) {
+  return useQuery({ queryKey: ['feedback', params], queryFn: () => feedbackApi.list(params).then(r => r.data) });
+}
+export function useCreateFeedback() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: object) => feedbackApi.create(d).then(r => r.data),
+    onSuccess: (d: any) => { qc.invalidateQueries({ queryKey: ['feedback'] }); toast.success(`Logged as ${d?.reference || 'a new record'}`); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not log this'),
+  });
+}
+export function useUpdateFeedback() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => feedbackApi.update(id, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['feedback'] }); toast.success('Updated'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not update'),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DoLS & restrictions register
+// ═══════════════════════════════════════════════════════════════════════════
+export function useLibertySummary() {
+  return useQuery({ queryKey: ['liberty', 'summary'], queryFn: () => libertyApi.summary().then(r => r.data) });
+}
+export function useLibertyProtections(params?: object) {
+  return useQuery({ queryKey: ['liberty', params], queryFn: () => libertyApi.list(params).then(r => r.data) });
+}
+export function useCreateLibertyProtection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: object) => libertyApi.create(d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['liberty'] }); toast.success('Recorded'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not record this'),
+  });
+}
+export function useUpdateLibertyProtection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => libertyApi.update(id, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['liberty'] }); toast.success('Updated'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not update'),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Staff supervision & appraisal (CQC Regulation 18)
+// ═══════════════════════════════════════════════════════════════════════════
+export function useSupervisionMatrix(targetDays?: number) {
+  return useQuery({ queryKey: ['supervisions', 'matrix', targetDays], queryFn: () => supervisionsApi.matrix(targetDays).then(r => r.data) });
+}
+export function useMySupervisions() {
+  return useQuery({ queryKey: ['supervisions', 'mine'], queryFn: () => supervisionsApi.mine().then(r => r.data) });
+}
+export function useSupervisions(params?: object) {
+  return useQuery({ queryKey: ['supervisions', params], queryFn: () => supervisionsApi.list(params).then(r => r.data) });
+}
+export function useCreateSupervision() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: object) => supervisionsApi.create(d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['supervisions'] }); toast.success('Supervision recorded'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not record this supervision'),
+  });
+}
+export function useUpdateSupervision() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => supervisionsApi.update(id, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['supervisions'] }); toast.success('Updated'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not update'),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Fluid / food / repositioning charts
+// ═══════════════════════════════════════════════════════════════════════════
+export function useMonitoringAlerts() {
+  return useQuery({ queryKey: ['monitoring', 'alerts'], queryFn: () => monitoringApi.alerts().then(r => r.data), refetchInterval: 300000 });
+}
+export function useMonitoringTargets() {
+  return useQuery({ queryKey: ['monitoring', 'targets'], queryFn: () => monitoringApi.targets().then(r => r.data) });
+}
+export function useMonitoringChart(residentId: string, date?: string) {
+  return useQuery({ queryKey: ['monitoring', 'chart', residentId, date], queryFn: () => monitoringApi.chart(residentId, date).then(r => r.data), enabled: !!residentId });
+}
+export function useSetMonitoringTarget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: object) => monitoringApi.setTarget(d).then(r => r.data),
+    onSuccess: (d: any) => { qc.invalidateQueries({ queryKey: ['monitoring'] }); toast.success(d?.monitoring === false ? 'Monitoring stopped' : 'Monitoring set up'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not set up monitoring'),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Resident personal allowance
+// ═══════════════════════════════════════════════════════════════════════════
+export function useResidentBalances() {
+  return useQuery({ queryKey: ['resident-finance'], queryFn: () => residentFinanceApi.balances().then(r => r.data) });
+}
+export function useResidentLedger(residentId: string) {
+  return useQuery({ queryKey: ['resident-finance', residentId], queryFn: () => residentFinanceApi.ledger(residentId).then(r => r.data), enabled: !!residentId });
+}
+export function useAddLedgerEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: object) => residentFinanceApi.addEntry(d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['resident-finance'] }); toast.success('Entry recorded'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not record this entry'),
+  });
+}
+

@@ -688,3 +688,72 @@ export const absencesApi = {
 export const activityApi = {
   feed: (params?: object) => api.get('/activity/feed', { params }),
 };
+
+// ── Care plans (person-centred, CQC Reg 9) ─────────────────────────────────
+export const carePlansApi = {
+  overview:      () => api.get('/care-plans/overview'),
+  list:          (params?: object) => api.get('/care-plans', { params }),
+  get:           (id: string) => api.get(`/care-plans/${id}`),
+  forResident:   (residentId: string) => api.get(`/care-plans/resident/${residentId}`),
+  create:        (d: object) => api.post('/care-plans', d),
+  update:        (id: string, d: object) => api.patch(`/care-plans/${id}`, d),
+  updateSection: (id: string, sectionId: string, d: object) => api.patch(`/care-plans/${id}/sections/${sectionId}`, d),
+  approve:       (id: string, d?: object) => api.post(`/care-plans/${id}/approve`, d || {}),
+  reviews:       (id: string) => api.get(`/care-plans/${id}/reviews`),
+  addReview:     (id: string, d: object) => api.post(`/care-plans/${id}/reviews`, d),
+  versions:      (id: string) => api.get(`/care-plans/${id}/versions`),
+  version:       (id: string, versionId: string) => api.get(`/care-plans/${id}/versions/${versionId}`),
+  archive:       (id: string, d: object) => api.post(`/care-plans/${id}/archive`, d),
+  importAi:      (id: string, d?: object) => api.post(`/care-plans/${id}/import-ai`, d || {}),
+};
+
+// ── Healthcare appointments ────────────────────────────────────────────────
+export const appointmentsApi = {
+  summary: () => api.get('/appointments/summary'),
+  list:    (params?: object) => api.get('/appointments', { params }),
+  create:  (d: object) => api.post('/appointments', d),
+  update:  (id: string, d: object) => api.patch(`/appointments/${id}`, d),
+  remove:  (id: string) => api.delete(`/appointments/${id}`),
+};
+
+// ── Complaints & compliments ───────────────────────────────────────────────
+export const feedbackApi = {
+  summary: () => api.get('/feedback/summary'),
+  list:    (params?: object) => api.get('/feedback', { params }),
+  create:  (d: object) => api.post('/feedback', d),
+  update:  (id: string, d: object) => api.patch(`/feedback/${id}`, d),
+};
+
+// ── DoLS & restrictions register ───────────────────────────────────────────
+export const libertyApi = {
+  summary: () => api.get('/liberty-protections/summary'),
+  list:    (params?: object) => api.get('/liberty-protections', { params }),
+  create:  (d: object) => api.post('/liberty-protections', d),
+  update:  (id: string, d: object) => api.patch(`/liberty-protections/${id}`, d),
+};
+
+// ── Staff supervision & appraisal ──────────────────────────────────────────
+export const supervisionsApi = {
+  matrix: (targetDays?: number) => api.get('/supervisions/matrix', { params: targetDays ? { targetDays } : {} }),
+  mine:   () => api.get('/supervisions/mine'),
+  list:   (params?: object) => api.get('/supervisions', { params }),
+  create: (d: object) => api.post('/supervisions', d),
+  update: (id: string, d: object) => api.patch(`/supervisions/${id}`, d),
+};
+
+// ── Fluid / food / repositioning charts ────────────────────────────────────
+export const monitoringApi = {
+  alerts:    () => api.get('/monitoring/alerts'),
+  targets:   () => api.get('/monitoring/targets'),
+  setTarget: (d: object) => api.post('/monitoring/targets', d),
+  chart:     (residentId: string, date?: string) =>
+               api.get(`/monitoring/chart/${residentId}`, { params: date ? { date } : {} }),
+};
+
+// ── Resident personal allowance ────────────────────────────────────────────
+export const residentFinanceApi = {
+  balances: () => api.get('/resident-finance'),
+  ledger:   (residentId: string) => api.get(`/resident-finance/${residentId}`),
+  addEntry: (d: object) => api.post('/resident-finance', d),
+};
+

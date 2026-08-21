@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
+import { Link } from 'react-router-dom';
 
 // ── Error Boundary ────────────────────────────────────────────────────────
 class AiCarePlanErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -76,7 +77,21 @@ function AiCarePlanWriterInner() {
       <div className="page-header">
         <div>
           <h1 className="page-title">🤖 AI Care Plan Writer</h1>
-          <p className="page-subtitle">Generate CQC-compliant care plans from assessment data using AI</p>
+          <p className="page-subtitle">Drafts a starting point for a care plan from what is already recorded. It is not the care plan.</p>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid #4f46e5' }}>
+        <div className="card-body" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <strong>A draft is not a care plan.</strong>{' '}
+            <span style={{ color: 'var(--text-secondary)' }}>
+              Nothing generated here is used to deliver care until a nurse pulls it into the resident’s
+              person-centred care plan, checks every section and signs it off. Use
+              &ldquo;Pre-fill from AI draft&rdquo; inside the plan itself.
+            </span>
+          </div>
+          <Link to="/care-plans" className="btn btn-primary btn-sm">Go to care plans</Link>
         </div>
       </div>
 

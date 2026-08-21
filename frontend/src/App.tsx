@@ -36,6 +36,13 @@ import ContinenceAssessment from './pages/ContinenceAssessment';
 import SmartRota from './pages/SmartRota';
 import NaturalLanguageSearch from './pages/NaturalLanguageSearch';
 import RiskAssessments from './pages/RiskAssessments';
+import CarePlans from './pages/CarePlans';
+import Appointments from './pages/Appointments';
+import ComplaintsCompliments from './pages/ComplaintsCompliments';
+import DolsRegister from './pages/DolsRegister';
+import Supervisions from './pages/Supervisions';
+import MonitoringCharts from './pages/MonitoringCharts';
+import ResidentFinance from './pages/ResidentFinance';
 import MedInteractionChecker from './pages/MedInteractionChecker';
 import AutomatedInvoicing from './pages/AutomatedInvoicing';
 import OccupancyForecasting from './pages/OccupancyForecasting';
@@ -98,7 +105,10 @@ const NAV_ALL = [
   { path: '/housekeeping-admin', label: 'Housekeeping Setup', icon: '🧹', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin','cleaning'] },
   { path: '/settings', label: 'Home Settings', icon: '⚙️', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin'] },
   { path: '/residents',  label: 'Residents',    icon: '👥', roles: null },
+  { path: '/care-plans', label: 'Care Plans', icon: '📖', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin','activities'] },
   { path: '/care-notes', label: 'Care Notes',   icon: '📝', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
+  { path: '/charts', label: 'Fluid & Food Charts', icon: '💧', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
+  { path: '/appointments', label: 'Appointments', icon: '🩺', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/emar',       label: 'Medications',  icon: '💊', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'], badge: 'meds' },
   { path: '/incidents',  label: 'Incidents',    icon: '⚠️', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'], badge: 'incidents' },
   { path: '/activities', label: 'Activities',   icon: '🎯', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','activities','admin','super_admin','group_admin'] },
@@ -113,6 +123,7 @@ const NAV_ALL = [
   { path: '/palliative-care', label: 'Palliative Care', icon: '🕊️', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
   { path: '/resident-tablet', label: 'Resident Tablet', icon: '📲', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/risk-assessments', label: 'Risk Assessments', icon: '⚡', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
+  { path: '/dols', label: 'DoLS & Restrictions', icon: '⚖️', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
   { path: '/med-interactions', label: 'Med Interactions', icon: '💊', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
   { section: 'Team', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin','registered_nurse','senior_carer'] },
   { path: '/schedule',   label: 'Rota',         icon: '📅', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin','registered_nurse','senior_carer'] },
@@ -124,9 +135,11 @@ const NAV_ALL = [
   { path: '/competency-signoff', label: 'Sign-Offs', icon: '✍️', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin','registered_nurse'] },
   { path: '/elearning', label: 'E-Learning', icon: '📚', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin','registered_nurse','senior_carer','carer'] },
   { path: '/staff-performance', label: 'Performance', icon: '📈', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin'] },
+  { path: '/supervisions', label: 'Supervision', icon: '🗣️', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin','registered_nurse','senior_carer','carer','activities','kitchen','cleaning','maintenance','finance'] },
   { path: '/sickness-absence', label: 'Absence', icon: '📊', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin'] },
   { section: 'Governance', roles: ['home_manager','deputy_manager','super_admin','group_admin','registered_nurse'] },
   { path: '/compliance', label: 'CQC Compliance', icon: '✅', roles: ['home_manager','deputy_manager','super_admin','group_admin'] },
+  { path: '/feedback', label: 'Complaints & Compliments', icon: '💬', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/policies',   label: 'Policies',     icon: '📋', roles: null },
   { path: '/infections', label: 'Infection Control', icon: '🦠', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
   { path: '/fire-log', label: 'Fire Log', icon: '🔥', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin'] },
@@ -148,6 +161,7 @@ const NAV_ALL = [
   { path: '/family',     label: 'Family Portal', icon: '💬', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','activities','admin','super_admin','group_admin'], badge: 'messages' },
   { section: 'Finance', roles: ['home_manager','deputy_manager','admin','finance','super_admin','group_admin'] },
   { path: '/billing',    label: 'Billing',      icon: '💷', roles: ['home_manager','deputy_manager','admin','finance','super_admin','group_admin'] },
+  { path: '/resident-finance', label: 'Personal Allowance', icon: '👛', roles: ['home_manager','deputy_manager','admin','finance','super_admin','group_admin','senior_carer','registered_nurse'] },
   { path: '/invoicing',  label: 'Invoicing',    icon: '🧾', roles: ['home_manager','deputy_manager','admin','finance','super_admin','group_admin'] },
   { path: '/occupancy',  label: 'Occupancy',    icon: '🏠', roles: ['home_manager','deputy_manager','admin','finance','super_admin','group_admin'] },
   { path: '/staff-costs', label: 'Staff Costs', icon: '💰', roles: ['home_manager','deputy_manager','admin','finance','super_admin','group_admin'] },
@@ -155,7 +169,7 @@ const NAV_ALL = [
   { section: 'Tools', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
   { path: '/nl-search', label: 'Smart Search', icon: '🔍', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/ai-tools',   label: 'AI Tools',     icon: '🤖', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
-  { path: '/ai-care-plans', label: 'AI Care Plans', icon: '📄', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
+  { path: '/ai-care-plans', label: 'AI Care Plan Drafts', icon: '📄', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
   { path: '/ai-insights', label: 'AI Insights',   icon: '🧠', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
   { path: '/predictive-care', label: 'Falls & Risk AI', icon: '🎯', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
   { path: '/admission-matching', label: 'Admission Match', icon: '🏠', roles: ['home_manager','deputy_manager','super_admin','group_admin'] },
@@ -611,6 +625,13 @@ export default function App() {
           <Route path="/sickness-absence" element={<SicknessAbsence />} />
           <Route path="/nl-search"       element={<NaturalLanguageSearch />} />
           <Route path="/risk-assessments" element={<RiskAssessments />} />
+          <Route path="/care-plans"      element={<CarePlans />} />
+          <Route path="/appointments"    element={<Appointments />} />
+          <Route path="/feedback"        element={<ComplaintsCompliments />} />
+          <Route path="/dols"            element={<DolsRegister />} />
+          <Route path="/supervisions"    element={<Supervisions />} />
+          <Route path="/charts"          element={<MonitoringCharts />} />
+          <Route path="/resident-finance" element={<ResidentFinance />} />
           <Route path="/med-interactions" element={<MedInteractionChecker />} />
           <Route path="/fire-log"        element={<FireLogBook />} />
           <Route path="/visitor-sign-in" element={<VisitorSignIn />} />

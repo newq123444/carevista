@@ -7,6 +7,13 @@ import * as authCtrl from '../controllers/auth.controller';
 import * as analyticsCtrl from '../controllers/analytics.controller';
 import * as kitchenCtrl from '../controllers/kitchen.controller';
 import * as absencesCtrl from '../controllers/absences.controller';
+import * as carePlansCtrl from '../controllers/carePlans.controller';
+import * as appointmentsCtrl from '../controllers/appointments.controller';
+import * as feedbackCtrl from '../controllers/feedback.controller';
+import * as libertyCtrl from '../controllers/libertyProtections.controller';
+import * as supervisionsCtrl from '../controllers/supervisions.controller';
+import * as monitoringCtrl from '../controllers/monitoring.controller';
+import * as residentFinanceCtrl from '../controllers/residentFinance.controller';
 import * as activityCtrl from '../controllers/activity.controller';
 import * as familyAccessCtrl from '../controllers/familyAccess.controller';
 import * as portalCtrl from '../controllers/portal.controller';
@@ -1155,6 +1162,69 @@ router.delete('/housekeeping/manage/:id',   isManager, housekeepingCtrl.deleteTa
 router.get('/home',   isStaff,   homeCtrl.getHome);
 router.get('/home/weather-location', isAllStaff, homeCtrl.getWeatherLocation);
 router.patch('/home',  isManager, homeCtrl.updateHome);
+
+// ── Care plans (CQC Regulation 9) ───────────────────────────────────────────
+// Everyone who delivers care must be able to READ the plan; only clinical
+// staff may change it; only clinical staff may sign it off.
+router.get('/care-plans/overview',            isStaff,    carePlansCtrl.getOverview);
+router.get('/care-plans',                     isAllStaff, carePlansCtrl.listPlans);
+router.get('/care-plans/resident/:residentId', isAllStaff, carePlansCtrl.getResidentPlan);
+router.get('/care-plans/:id',                 isAllStaff, carePlansCtrl.getPlan);
+router.post('/care-plans',                    isClinical, carePlansCtrl.createPlan);
+router.patch('/care-plans/:id',               isClinical, carePlansCtrl.updatePlan);
+router.patch('/care-plans/:id/sections/:sectionId', isClinical, carePlansCtrl.updateSection);
+router.post('/care-plans/:id/approve',        isClinical, carePlansCtrl.approvePlan);
+router.get('/care-plans/:id/reviews',         isAllStaff, carePlansCtrl.listReviews);
+router.post('/care-plans/:id/reviews',        isClinical, carePlansCtrl.createReview);
+router.get('/care-plans/:id/versions',        isAllStaff, carePlansCtrl.listVersions);
+router.get('/care-plans/:id/versions/:versionId', isAllStaff, carePlansCtrl.getVersion);
+router.post('/care-plans/:id/archive',        isManager,  carePlansCtrl.archivePlan);
+router.post('/care-plans/:id/import-ai',      isClinical, carePlansCtrl.importAiDraft);
+
+
+// ── Healthcare appointments & visiting professionals ───────────────────────
+router.get('/appointments/summary',  isAllStaff, appointmentsCtrl.getSummary);
+router.get('/appointments',          isAllStaff, appointmentsCtrl.listAppointments);
+router.post('/appointments',         isStaff,    appointmentsCtrl.createAppointment);
+router.patch('/appointments/:id',    isStaff,    appointmentsCtrl.updateAppointment);
+router.delete('/appointments/:id',   isManager,  appointmentsCtrl.deleteAppointment);
+
+
+// ── Complaints, concerns & compliments (CQC Regulation 16) ─────────────────
+// Any member of staff can log feedback they receive — that is the point of an
+// accessible complaints system. Only managers investigate and close.
+router.get('/feedback/summary', isStaff,    feedbackCtrl.getSummary);
+router.get('/feedback',         isStaff,    feedbackCtrl.listFeedback);
+router.post('/feedback',        isAllStaff, feedbackCtrl.createFeedback);
+router.patch('/feedback/:id',   isManager,  feedbackCtrl.updateFeedback);
+
+
+// ── DoLS authorisations & restrictions register ────────────────────────────
+router.get('/liberty-protections/summary', isStaff,    libertyCtrl.getSummary);
+router.get('/liberty-protections',         isAllStaff, libertyCtrl.listProtections);
+router.post('/liberty-protections',        isClinical, libertyCtrl.createProtection);
+router.patch('/liberty-protections/:id',   isClinical, libertyCtrl.updateProtection);
+
+
+// ── Staff supervision & appraisal (CQC Regulation 18) ──────────────────────
+router.get('/supervisions/matrix', isManager,  supervisionsCtrl.getMatrix);
+router.get('/supervisions/mine',   isAllStaff, supervisionsCtrl.mySupervisions);
+router.get('/supervisions',        isManager,  supervisionsCtrl.listSupervisions);
+router.post('/supervisions',       isManager,  supervisionsCtrl.createSupervision);
+router.patch('/supervisions/:id',  isAllStaff, supervisionsCtrl.updateSupervision);
+
+
+// ── Fluid, food & repositioning charts ─────────────────────────────────────
+router.get('/monitoring/alerts',            isAllStaff, monitoringCtrl.getAlerts);
+router.get('/monitoring/targets',           isAllStaff, monitoringCtrl.listTargets);
+router.post('/monitoring/targets',          isClinical, monitoringCtrl.setTarget);
+router.get('/monitoring/chart/:residentId', isAllStaff, monitoringCtrl.getChart);
+
+
+// ── Resident personal allowance ledger ─────────────────────────────────────
+router.get('/resident-finance',             isStaff, residentFinanceCtrl.listBalances);
+router.get('/resident-finance/:residentId', isStaff, residentFinanceCtrl.getLedger);
+router.post('/resident-finance',            isStaff, residentFinanceCtrl.addEntry);
 
 
 export default router;
