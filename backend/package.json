@@ -12,7 +12,8 @@
     "pretest": "npm run build",
     "test:smoke": "node tests/smoke.mjs",
     "gen-secrets": "node scripts/generate-secrets.mjs",
-    "seed:ops": "tsx src/utils/seed-operational.ts"
+    "seed:ops": "tsx src/utils/seed-operational.ts",
+    "check:grammar": "node ../scripts/check-grammar.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

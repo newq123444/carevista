@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint . --ext .ts,.tsx",
+    "check:grammar": "node ../scripts/check-grammar.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.35.1",

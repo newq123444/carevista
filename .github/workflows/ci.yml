@@ -26,6 +26,7 @@ jobs:
       - working-directory: frontend
         run: |
           npm ci
+          npm run check:grammar   # duplicate object keys / JSX attributes, before the slow build
           npm run build
           npm audit --audit-level=high || true
 
