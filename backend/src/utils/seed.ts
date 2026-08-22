@@ -777,40 +777,40 @@ async function seed() {
     // ── Task templates + today's tasks ────────────────────────────────────
     console.log('  ▶  Task templates & today\'s task board…');
     const TASK_TEMPLATES = [
-      { name: 'Morning Personal Care',   icon: '🛁', category: 'personal_care', shift: 'day',     due_time: '07:30', window_mins: 90,  sort_order: 1,  applies_to: 'all', frequency: 'daily',  day_of_week: null as number|null },
-      { name: 'Breakfast',              icon: '🌅', category: 'nutrition',     shift: 'day',     due_time: '08:00', window_mins: 60,  sort_order: 2,  applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Morning Medications',    icon: '💊', category: 'medication',    shift: 'day',     due_time: '08:00', window_mins: 60,  sort_order: 3,  applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Skin & Pressure Check',  icon: '🩺', category: 'observation',   shift: 'day',     due_time: '08:30', window_mins: 120, sort_order: 4,  applies_to: 'high_risk', frequency: 'daily', day_of_week: null },
-      { name: 'Fluid & Snack Check',    icon: '💧', category: 'nutrition',     shift: 'day',     due_time: '10:30', window_mins: 60,  sort_order: 6,  applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Repositioning Check',    icon: '🔄', category: 'repositioning', shift: 'all',     due_time: '10:00', window_mins: 60,  sort_order: 7,  applies_to: 'bed_bound,wheelchair', frequency: 'daily', day_of_week: null },
-      { name: 'Walking Exercise',       icon: '🚶', category: 'physical',      shift: 'day',     due_time: '11:00', window_mins: 60,  sort_order: 8,  applies_to: 'independent,walking_aid', frequency: 'daily', day_of_week: null },
-      { name: 'Seated Exercise',        icon: '💪', category: 'physical',      shift: 'day',     due_time: '11:00', window_mins: 60,  sort_order: 9,  applies_to: 'wheelchair,bed_bound', frequency: 'daily', day_of_week: null },
-      { name: 'Lunch',                  icon: '🍽', category: 'nutrition',     shift: 'day',     due_time: '12:00', window_mins: 60,  sort_order: 10, applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Afternoon Medications',  icon: '💊', category: 'medication',    shift: 'day',     due_time: '12:00', window_mins: 60,  sort_order: 11, applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Repositioning Check',    icon: '🔄', category: 'repositioning', shift: 'all',     due_time: '14:00', window_mins: 60,  sort_order: 12, applies_to: 'bed_bound,wheelchair', frequency: 'daily', day_of_week: null },
-      { name: 'Afternoon Tea & Snack',  icon: '☕', category: 'nutrition',     shift: 'day',     due_time: '15:00', window_mins: 60,  sort_order: 13, applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Skin Moisturising',      icon: '🧴', category: 'personal_care', shift: 'day',     due_time: '10:30', window_mins: 120, sort_order: 14, applies_to: 'bed_bound', frequency: 'daily', day_of_week: null },
-      { name: 'Continence Pad Check',   icon: '🩹', category: 'personal_care', shift: 'all',     due_time: '10:00', window_mins: 120, sort_order: 15, applies_to: 'bed_bound,wheelchair', frequency: 'daily', day_of_week: null },
-      { name: 'Sensory / Wellbeing Activity', icon: '🎵', category: 'social_wellbeing', shift: 'day', due_time: '14:30', window_mins: 90, sort_order: 16, applies_to: 'all', frequency: 'daily', day_of_week: null },
-      { name: 'Evening Personal Care', icon: '🚿', category: 'personal_care', shift: 'evening', due_time: '17:00', window_mins: 90,  sort_order: 17, applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Supper',                 icon: '🌙', category: 'nutrition',     shift: 'evening', due_time: '18:00', window_mins: 60,  sort_order: 18, applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Evening Medications',    icon: '💊', category: 'medication',    shift: 'evening', due_time: '18:00', window_mins: 60,  sort_order: 19, applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Repositioning Check',    icon: '🔄', category: 'repositioning', shift: 'all',     due_time: '20:00', window_mins: 60,  sort_order: 20, applies_to: 'bed_bound,wheelchair', frequency: 'daily', day_of_week: null },
-      { name: 'Night Settle & Check',   icon: '😴', category: 'personal_care', shift: 'evening', due_time: '21:00', window_mins: 90,  sort_order: 21, applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Night Medications',      icon: '💊', category: 'medication',    shift: 'night',   due_time: '22:00', window_mins: 60,  sort_order: 22, applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Night Observation',      icon: '🌛', category: 'observation',   shift: 'night',   due_time: '02:00', window_mins: 120, sort_order: 23, applies_to: 'all', frequency: 'daily',  day_of_week: null },
-      { name: 'Bath / Shower',          icon: '🛀', category: 'personal_care', shift: 'day',     due_time: '10:00', window_mins: 120, sort_order: 24, applies_to: 'all', frequency: 'weekly', day_of_week: 2 },
-      { name: 'Hair Care & Grooming',   icon: '💇', category: 'personal_care', shift: 'day',     due_time: '09:30', window_mins: 180, sort_order: 25, applies_to: 'all', frequency: 'weekly', day_of_week: 3 },
-      { name: 'Nail Care Check',        icon: '💅', category: 'personal_care', shift: 'day',     due_time: '10:00', window_mins: 180, sort_order: 26, applies_to: 'all', frequency: 'weekly', day_of_week: 1 },
+      { name: 'Morning Personal Care',   icon: '🛁', category: 'personal_care', shift: 'day',     due_time: '07:30', window_mins: 90,  sort_order: 1,  applies_to: 'all', frequency: 'daily',  day_of_week: null as number|null , note_type: 'personal_care', handled_in: 'care_note' },
+      { name: 'Breakfast',              icon: '🌅', category: 'nutrition',     shift: 'day',     due_time: '08:00', window_mins: 60,  sort_order: 2,  applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: 'nutrition', handled_in: 'care_note' },
+      { name: 'Morning Medications',    icon: '💊', category: 'medication',    shift: 'day',     due_time: '08:00', window_mins: 60,  sort_order: 3,  applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: null, handled_in: 'emar' },
+      { name: 'Skin & Pressure Check',  icon: '🩺', category: 'observation',   shift: 'day',     due_time: '08:30', window_mins: 120, sort_order: 4,  applies_to: 'high_risk', frequency: 'daily', day_of_week: null , note_type: 'nursing_observation', handled_in: 'care_note' },
+      { name: 'Fluid & Snack Check',    icon: '💧', category: 'nutrition',     shift: 'day',     due_time: '10:30', window_mins: 60,  sort_order: 6,  applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: 'nutrition', handled_in: 'care_note' },
+      { name: 'Repositioning Check',    icon: '🔄', category: 'repositioning', shift: 'all',     due_time: '10:00', window_mins: 60,  sort_order: 7,  applies_to: 'bed_bound,wheelchair', frequency: 'daily', day_of_week: null , note_type: 'repositioning', handled_in: 'care_note' },
+      { name: 'Walking Exercise',       icon: '🚶', category: 'physical',      shift: 'day',     due_time: '11:00', window_mins: 60,  sort_order: 8,  applies_to: 'independent,walking_aid', frequency: 'daily', day_of_week: null , note_type: 'activities', handled_in: 'care_note' },
+      { name: 'Seated Exercise',        icon: '💪', category: 'physical',      shift: 'day',     due_time: '11:00', window_mins: 60,  sort_order: 9,  applies_to: 'wheelchair,bed_bound', frequency: 'daily', day_of_week: null , note_type: 'activities', handled_in: 'care_note' },
+      { name: 'Lunch',                  icon: '🍽', category: 'nutrition',     shift: 'day',     due_time: '12:00', window_mins: 60,  sort_order: 10, applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: 'nutrition', handled_in: 'care_note' },
+      { name: 'Afternoon Medications',  icon: '💊', category: 'medication',    shift: 'day',     due_time: '12:00', window_mins: 60,  sort_order: 11, applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: null, handled_in: 'emar' },
+      { name: 'Repositioning Check',    icon: '🔄', category: 'repositioning', shift: 'all',     due_time: '14:00', window_mins: 60,  sort_order: 12, applies_to: 'bed_bound,wheelchair', frequency: 'daily', day_of_week: null , note_type: 'repositioning', handled_in: 'care_note' },
+      { name: 'Afternoon Tea & Snack',  icon: '☕', category: 'nutrition',     shift: 'day',     due_time: '15:00', window_mins: 60,  sort_order: 13, applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: 'nutrition', handled_in: 'care_note' },
+      { name: 'Skin Moisturising',      icon: '🧴', category: 'personal_care', shift: 'day',     due_time: '10:30', window_mins: 120, sort_order: 14, applies_to: 'bed_bound', frequency: 'daily', day_of_week: null , note_type: 'personal_care', handled_in: 'care_note' },
+      { name: 'Continence Pad Check',   icon: '🩹', category: 'personal_care', shift: 'all',     due_time: '10:00', window_mins: 120, sort_order: 15, applies_to: 'bed_bound,wheelchair', frequency: 'daily', day_of_week: null , note_type: 'continence', handled_in: 'care_note' },
+      { name: 'Sensory / Wellbeing Activity', icon: '🎵', category: 'social_wellbeing', shift: 'day', due_time: '14:30', window_mins: 90, sort_order: 16, applies_to: 'all', frequency: 'daily', day_of_week: null , note_type: 'social_wellbeing', handled_in: 'care_note' },
+      { name: 'Evening Personal Care', icon: '🚿', category: 'personal_care', shift: 'evening', due_time: '17:00', window_mins: 90,  sort_order: 17, applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: 'personal_care', handled_in: 'care_note' },
+      { name: 'Supper',                 icon: '🌙', category: 'nutrition',     shift: 'evening', due_time: '18:00', window_mins: 60,  sort_order: 18, applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: 'nutrition', handled_in: 'care_note' },
+      { name: 'Evening Medications',    icon: '💊', category: 'medication',    shift: 'evening', due_time: '18:00', window_mins: 60,  sort_order: 19, applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: null, handled_in: 'emar' },
+      { name: 'Repositioning Check',    icon: '🔄', category: 'repositioning', shift: 'all',     due_time: '20:00', window_mins: 60,  sort_order: 20, applies_to: 'bed_bound,wheelchair', frequency: 'daily', day_of_week: null , note_type: 'repositioning', handled_in: 'care_note' },
+      { name: 'Night Settle & Check',   icon: '😴', category: 'personal_care', shift: 'evening', due_time: '21:00', window_mins: 90,  sort_order: 21, applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: 'sleep', handled_in: 'care_note' },
+      { name: 'Night Medications',      icon: '💊', category: 'medication',    shift: 'night',   due_time: '22:00', window_mins: 60,  sort_order: 22, applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: null, handled_in: 'emar' },
+      { name: 'Night Observation',      icon: '🌛', category: 'observation',   shift: 'night',   due_time: '02:00', window_mins: 120, sort_order: 23, applies_to: 'all', frequency: 'daily',  day_of_week: null , note_type: 'sleep', handled_in: 'care_note' },
+      { name: 'Bath / Shower',          icon: '🛀', category: 'personal_care', shift: 'day',     due_time: '10:00', window_mins: 120, sort_order: 24, applies_to: 'all', frequency: 'weekly', day_of_week: 2 , note_type: 'personal_care', handled_in: 'care_note' },
+      { name: 'Hair Care & Grooming',   icon: '💇', category: 'personal_care', shift: 'day',     due_time: '09:30', window_mins: 180, sort_order: 25, applies_to: 'all', frequency: 'weekly', day_of_week: 3 , note_type: 'personal_care', handled_in: 'care_note' },
+      { name: 'Nail Care Check',        icon: '💅', category: 'personal_care', shift: 'day',     due_time: '10:00', window_mins: 180, sort_order: 26, applies_to: 'all', frequency: 'weekly', day_of_week: 1 , note_type: 'personal_care', handled_in: 'care_note' },
     ];
 
     // Insert templates
     const tmplIds: string[] = [];
     for (const t of TASK_TEMPLATES) {
       const { rows: [tmpl] } = await client.query(
-        `INSERT INTO care_task_templates (care_home_id, name, icon, category, shift, due_time, window_mins, sort_order, applies_to, frequency, day_of_week)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
-        [homeId, t.name, t.icon, t.category, t.shift, t.due_time, t.window_mins, t.sort_order, t.applies_to, t.frequency, t.day_of_week]
+        `INSERT INTO care_task_templates (care_home_id, name, icon, category, shift, due_time, window_mins, sort_order, applies_to, frequency, day_of_week, note_type, handled_in)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+        [homeId, t.name, t.icon, t.category, t.shift, t.due_time, t.window_mins, t.sort_order, t.applies_to, t.frequency, t.day_of_week, (t as any).note_type ?? null, (t as any).handled_in ?? 'care_note']
       );
       tmplIds.push(tmpl.id);
     }
@@ -835,9 +835,9 @@ async function seed() {
           if (!allowedMobilities.includes(resMobility)) continue;
         }
         await client.query(
-          `INSERT INTO care_tasks (care_home_id, resident_id, template_id, task_date, task_name, icon, category, due_time, window_mins)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING`,
-          [homeId, resId, tmplIds[i], today, t.name, t.icon, t.category, t.due_time, t.window_mins]
+          `INSERT INTO care_tasks (care_home_id, resident_id, template_id, task_date, task_name, icon, category, due_time, window_mins, note_type, handled_in)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT DO NOTHING`,
+          [homeId, resId, tmplIds[i], today, t.name, t.icon, t.category, t.due_time, t.window_mins, (t as any).note_type ?? null, (t as any).handled_in ?? 'care_note']
         );
       }
     }

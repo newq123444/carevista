@@ -43,12 +43,14 @@ const TITLES: Record<string, string> = {
   in_progress: 'Someone else is doing this',
   already_completed: 'This has already been done',
   possible_duplicate: 'This may already be recorded',
+  handled_in_emar: 'Medicines are recorded on the MAR chart',
 };
 
 const TONES: Record<string, string> = {
   in_progress: '#d97706',
   already_completed: '#dc2626',
   possible_duplicate: '#d97706',
+  handled_in_emar: '#0d9488',
 };
 
 export function ConflictDialog({ conflict, onCancel, onProceed, proceedLabel, busy }: {
@@ -90,6 +92,12 @@ export function ConflictDialog({ conflict, onCancel, onProceed, proceedLabel, bu
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary, #64748b)' }}>
               If this is the same care, cancel — it is already recorded. Save a second note only if
               something different happened.
+            </p>
+          )}
+          {conflict.conflict === 'handled_in_emar' && (
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary, #64748b)' }}>
+              A tick on the task board is not a medicines record and cannot stand in for one.
+              Open Medications and sign the MAR for each dose.
             </p>
           )}
           {conflict.conflict === 'in_progress' && (

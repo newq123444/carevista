@@ -4,8 +4,9 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export type TaskEvent = {
   type: 'TASK_COMPLETED' | 'TASK_DEFERRED' | 'TASK_STARTED' | 'TASK_RELEASED'
-      | 'TASK_TAKEN_OVER' | 'HEARTBEAT' | string;
+      | 'TASK_TAKEN_OVER' | 'TASKS_CHANGED' | 'HEARTBEAT' | string;
   taskId?: string;
+  templateId?: string;
   residentId?: string;
   taskName?: string;
   staffName?: string;
@@ -39,7 +40,8 @@ export function useTaskSSE(onEvent?: (e: TaskEvent) => void) {
     try { data = JSON.parse(event.data); } catch { return; }
     if (data.type === 'HEARTBEAT') return;
 
-    if (['TASK_COMPLETED', 'TASK_DEFERRED', 'TASK_STARTED', 'TASK_RELEASED', 'TASK_TAKEN_OVER'].includes(data.type)) {
+    if (['TASK_COMPLETED', 'TASK_DEFERRED', 'TASK_STARTED', 'TASK_RELEASED',
+         'TASK_TAKEN_OVER', 'TASKS_CHANGED'].includes(data.type)) {
       qc.invalidateQueries({ queryKey: ['tasks'], exact: false });
     }
     try { handler.current?.(data); } catch { /* a listener must never kill the stream */ }

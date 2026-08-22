@@ -79,7 +79,7 @@ export default function Emar() {
   const [activeRound, setRound]   = useState<string>(currentRound());
   const [selectedEntry, setEntry] = useState<any>(null);
   const [showAddMed, setShowAddMed] = useState(false);
-  const [residentFilter, setFilter] = useState(searchParams.get('resident_id') || '');
+  const [residentFilter, setFilter] = useState(searchParams.get('resident_id') || searchParams.get('residentId') || '');
 
   const { data: emarRaw, isLoading } = useEmar(date);
   const meds: any[]   = emarRaw?.medications ?? [];

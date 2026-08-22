@@ -193,12 +193,38 @@ export function useTasks(params?: object) {
   });
 }
 
+// Patch every cached task list in place so a tick shows immediately on the
+// device that made it, instead of waiting for a refetch. Other devices are
+// updated by the SSE stream. Returns the previous caches so a failed request
+// can roll the change back — a task must never look done when it isn't.
+function patchTaskCache(qc: any, id: string, patch: Record<string, any>) {
+  const previous = qc.getQueriesData({ queryKey: ['tasks'] });
+  qc.setQueriesData({ queryKey: ['tasks'] }, (old: any) => {
+    if (!Array.isArray(old)) return old;
+    return old.map((t: any) => (t.id === id ? { ...t, ...patch } : t));
+  });
+  return previous;
+}
+
+function restoreTaskCache(qc: any, previous: any) {
+  if (!previous) return;
+  for (const [key, data] of previous) qc.setQueryData(key, data);
+}
+
 export function useCompleteTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, notes }: { id: string; notes?: string }) =>
       api.post(`/tasks/${id}/complete`, { notes }).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'], exact: false }),
+    onMutate: async ({ id }: { id: string; notes?: string }) => {
+      await qc.cancelQueries({ queryKey: ['tasks'] });
+      return { previous: patchTaskCache(qc, id, {
+        status: 'done', completed_at: new Date().toISOString(),
+        in_progress_by: null, in_progress_name: null,
+      }) };
+    },
+    onError: (_err: any, _vars: any, ctx: any) => restoreTaskCache(qc, ctx?.previous),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['tasks'], exact: false }),
   });
 }
 
@@ -207,16 +233,26 @@ export function useDeferTask() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       api.post(`/tasks/${id}/defer`, { reason }).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'], exact: false }),
+    onMutate: async ({ id, reason }: { id: string; reason: string }) => {
+      await qc.cancelQueries({ queryKey: ['tasks'] });
+      return { previous: patchTaskCache(qc, id, {
+        status: 'deferred', deferred_reason: reason,
+        in_progress_by: null, in_progress_name: null,
+      }) };
+    },
+    onError: (_err: any, _vars: any, ctx: any) => restoreTaskCache(qc, ctx?.previous),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['tasks'], exact: false }),
   });
 }
 
 // The server refuses a claim held by somebody else. Pass takeOver to override
 // deliberately, after the carer has been shown who has it.
 export function useStartTask() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, takeOver }: { id: string; takeOver?: boolean }) =>
       api.post(`/tasks/${id}/start`, takeOver ? { takeOver: true } : {}).then(r => r.data),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['tasks'], exact: false }),
   });
 }
 
@@ -1364,13 +1400,23 @@ export function useCreateTaskTemplate() {
 export function useUpdateTaskTemplate() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: ({ id, data }: { id: string; data: object }) => taskTemplatesApi.update(id, data).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['task-templates'] }); toast.success('Task updated'); },
+    onSuccess: (d: any) => {
+      qc.invalidateQueries({ queryKey: ['task-templates'] });
+      qc.invalidateQueries({ queryKey: ['care-plan'], exact: false });
+      qc.invalidateQueries({ queryKey: ['tasks'], exact: false });
+      toast.success('Task updated — today\'s board has been brought in line');
+    },
     onError: (e: any) => toast.error(e.response?.data?.error || 'Failed to update task') });
 }
 export function useDeleteTaskTemplate() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => taskTemplatesApi.remove(id).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['task-templates'] }); toast.success('Task removed'); },
+    onSuccess: (d: any) => {
+      qc.invalidateQueries({ queryKey: ['task-templates'] });
+      qc.invalidateQueries({ queryKey: ['care-plan'], exact: false });
+      qc.invalidateQueries({ queryKey: ['tasks'], exact: false });
+      toast.success(d?.message || 'Task removed');
+    },
     onError: (e: any) => toast.error(e.response?.data?.error || 'Failed to remove task') });
 }
 
@@ -1396,9 +1442,19 @@ export function useResidentCarePlan(rid: string) {
 }
 export function useSetTaskExclusion(rid: string) {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (data: object) => taskTemplatesApi.setExclusion(rid, data).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['care-plan', rid] }),
-    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed') });
+  return useMutation({
+    mutationFn: (data: object) => taskTemplatesApi.setExclusion(rid, data).then(r => r.data),
+    // The server now also adds or removes today's rows, so the task board has
+    // to be refreshed too — otherwise the manager switches a task off and the
+    // carer keeps seeing it.
+    onSuccess: (d: any) => {
+      qc.invalidateQueries({ queryKey: ['care-plan', rid] });
+      qc.invalidateQueries({ queryKey: ['tasks'], exact: false });
+      qc.invalidateQueries({ queryKey: ['dashboard'], exact: false });
+      if (d?.message) toast.success(d.message);
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not change this task'),
+  });
 }
 
 // ── Outcomes ──────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@
 // Ad-hoc notes always available via "+ New Note" button
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLang } from '../../i18n';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import {
   useDashboard, useResidents, useCreateNote, useColleagues,
@@ -33,6 +33,12 @@ const TASK_TO_NOTE: Record<string,string> = {
 };
 
 // ── Task status config ────────────────────────────────────────────────────
+// A task nobody can action — a medication round with nothing due on the MAR —
+// should not sit in the denominator. Counting it made every resident read
+// permanently 0/15 and the board look far worse than the care actually was.
+const countable  = (t: any) => t.status !== 'na';
+const isFinished = (t: any) => t.status === 'done' || t.status === 'deferred';
+
 const TASK_STATUS: Record<string,{bg:string;border:string;text:string;dot:string}> = {
   upcoming:    { bg:'#f8fafc', border:'#e2e8f0', text:'#64748b', dot:'#94a3b8' },
   due:         { bg:'#eff6ff', border:'#93c5fd', text:'#0d9488', dot:'#3b82f6' },
@@ -979,6 +985,7 @@ export default function CarerDashboard() {
 
   const startTask = useStartTask();
   const [tapConflict, setTapConflict] = useState<{ conflict: Conflict; task: any } | null>(null);
+  const navigate = useNavigate();
   const { data: homeCfg } = useHome();
   useTaskSSE();
 
@@ -1026,7 +1033,10 @@ export default function CarerDashboard() {
   const openTaskForm = (task: any) => {
     const r = residents.find(res => res.id === task.resident_id);
     if (!r) return;
-    const mapped = TASK_TO_NOTE[task.category] || 'nursing_observation';
+    // Each task carries the form it should open. "Night Settle & Check" is
+    // filed under personal care but is a sleep record, so mapping by category
+    // used to open the full bathing form — wrong questions, wrong answers.
+    const mapped = task.note_type || TASK_TO_NOTE[task.category] || 'nursing_observation';
     const nt = NOTE_TYPES.find(n => n.value === mapped) || NOTE_TYPES[0];
     setTask(task);
     setResident(r);
@@ -1035,8 +1045,16 @@ export default function CarerDashboard() {
   };
 
   const handleTaskTap = async (task: any) => {
-    if (task.status === 'done' || task.status === 'deferred') return;
+    if (task.status === 'deferred') return;
     if (!residents.find(res => res.id === task.resident_id)) return;
+    // Medicines are signed on the MAR chart, never here. Send the carer to the
+    // right place rather than letting them write a care note that looks like a
+    // medicines record.
+    if (task.handled_in === 'emar') {
+      navigate(`/emar?resident_id=${task.resident_id}`);
+      return;
+    }
+    if (task.status === 'done') return;
     try {
       await startTask.mutateAsync({ id: task.id });
       openTaskForm(task);
@@ -1077,13 +1095,14 @@ export default function CarerDashboard() {
   // Grid view: compute columns and card border color
   const gridCols = isMobile ? 3 : isTablet ? 4 : 4;
   const getCardBorderColor = (residentTasks: any[]) => {
-    if (!residentTasks || residentTasks.length === 0) return '#e2e8f0';
-    const done = residentTasks.filter((t: any) => t.status === 'done' || t.status === 'deferred').length;
-    const hasMissed = residentTasks.some((t: any) => t.status === 'missed');
-    const hasOverdue = residentTasks.some((t: any) => t.status === 'overdue');
+    const actionable = (residentTasks || []).filter(countable);
+    if (actionable.length === 0) return '#e2e8f0';
+    const done = actionable.filter(isFinished).length;
+    const hasMissed = actionable.some((t: any) => t.status === 'missed');
+    const hasOverdue = actionable.some((t: any) => t.status === 'overdue');
     if (hasMissed) return '#ef4444';
     if (hasOverdue) return '#f59e0b';
-    if (done === residentTasks.length) return '#22c55e';
+    if (done === actionable.length) return '#22c55e';
     if (done > 0) return '#3b82f6';
     return '#e2e8f0';
   };
@@ -1204,7 +1223,7 @@ export default function CarerDashboard() {
             <div style={{ fontWeight:600, fontSize:13, marginBottom:8, color:'var(--text-primary, #e2e8f0)' }}>Pending Tasks</div>
             {(byResident[gridSelectedResident.id] || []).sort((a:any,b:any)=>(a.due_time||'').localeCompare(b.due_time||'')).map((task:any) => {
               const st = TASK_STATUS[task.status] || TASK_STATUS.upcoming;
-              const isDone = task.status==='done'||task.status==='deferred';
+              const isDone = (task.status==='done'||task.status==='deferred') && task.handled_in !== 'emar';
               return (
                 <button key={task.id} onClick={()=>handleTaskTap(task)} disabled={isDone}
                   style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 12px', marginBottom:6, borderRadius:8, border:`1px solid ${st.border}`, background:st.bg, cursor:isDone?'default':'pointer', textAlign:'left' }}>
@@ -1315,8 +1334,8 @@ export default function CarerDashboard() {
                 if (!search) return true;
                 return `${r.first_name} ${r.last_name} ${r.room_number}`.toLowerCase().includes(search.toLowerCase());
               }).map(r => {
-                const resTasks = byResident[r.id] || [];
-                const done = resTasks.filter((t:any) => t.status === 'done' || t.status === 'deferred').length;
+                const resTasks = (byResident[r.id] || []).filter(countable);
+                const done = resTasks.filter(isFinished).length;
                 const borderColor = getCardBorderColor(resTasks);
                 const photoUrl = residentPhoto(r.photo_url);
                 const initials = (r.first_name[0] + (r.last_name?.[0] || '')).toUpperCase();
@@ -1405,7 +1424,7 @@ export default function CarerDashboard() {
                 <div style={{ fontWeight:600, fontSize:12, marginBottom:8, color:'var(--text-secondary)', textTransform:'uppercase', letterSpacing:'.05em' }}>Tasks Today</div>
                 {(byResident[gridSelectedResident.id] || []).sort((a:any,b:any)=>(a.due_time||'').localeCompare(b.due_time||'')).map((task:any) => {
                   const st = TASK_STATUS[task.status] || TASK_STATUS.upcoming;
-                  const isDone = task.status==='done'||task.status==='deferred';
+                  const isDone = (task.status==='done'||task.status==='deferred') && task.handled_in !== 'emar';
                   return (
                     <button key={task.id} onClick={()=>handleTaskTap(task)} disabled={isDone}
                       style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 12px', marginBottom:6, borderRadius:8, border:`1px solid ${st.border}`, background:st.bg, cursor:isDone?'default':'pointer', textAlign:'left', transition:'all 120ms' }}>
@@ -1490,10 +1509,11 @@ export default function CarerDashboard() {
               {filteredResidentIds.map(rid => {
                 const resTasks = byResident[rid].sort((a:any,b:any)=>(a.due_time||'').localeCompare(b.due_time||''));
                 const first    = resTasks[0];
-                const done     = resTasks.filter((t:any)=>t.status==='done'||t.status==='deferred').length;
-                const hasMissed  = resTasks.some((t:any)=>t.status==='missed');
-                const hasOverdue = resTasks.some((t:any)=>t.status==='overdue');
-                const allDone    = done === resTasks.length;
+                const actionable = resTasks.filter(countable);
+                const done     = actionable.filter(isFinished).length;
+                const hasMissed  = actionable.some((t:any)=>t.status==='missed');
+                const hasOverdue = actionable.some((t:any)=>t.status==='overdue');
+                const allDone    = actionable.length > 0 && done === actionable.length;
                 const rowBorder  = hasMissed?'#fca5a5':hasOverdue?'#fcd34d':allDone?'#86efac':'var(--border)';
                 const r = residents.find(res=>res.id===rid);
 
@@ -1515,7 +1535,7 @@ export default function CarerDashboard() {
                       <div style={{ fontWeight:600, fontSize:13 }}>{first.resident_name}</div>
                         <span style={{ fontSize:11, color:'var(--text-muted)' }}>Rm {first.room_number}</span>
                         {first.risk_level==='high'&&<span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, background:'#fef2f2', color:'#dc2626', fontWeight:600, letterSpacing:'0.03em', textTransform:'uppercase' }}>High Risk</span>}
-                        <span style={{ fontSize:11, color:allDone?'#16a34a':hasMissed?'#dc2626':'var(--text-muted)', fontWeight:500 }}>{done}/{resTasks.length}</span>
+                        <span style={{ fontSize:11, color:allDone?'#16a34a':hasMissed?'#dc2626':'var(--text-muted)', fontWeight:500 }}>{done}/{actionable.length}</span>
                       </div>
                       {r && (
                         <button onClick={()=>handleAdHoc(r)} style={{ fontSize:12, padding:'5px 14px', borderRadius:8, border:'1px solid #3b82f6', background:'#eff6ff', color:'#0d9488', cursor:'pointer', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
@@ -1527,7 +1547,7 @@ export default function CarerDashboard() {
                     <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
                       {resTasks.map((task:any) => {
                         const st = TASK_STATUS[task.status] || TASK_STATUS.upcoming;
-                        const isDone = task.status==='done'||task.status==='deferred';
+                        const isDone = (task.status==='done'||task.status==='deferred') && task.handled_in !== 'emar';
                         const isActive = activeTask?.id === task.id;
                         const isSomeoneElse = task.in_progress_by && task.in_progress_by !== user?.id;
                         return (

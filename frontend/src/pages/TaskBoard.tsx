@@ -1,7 +1,7 @@
 // src/pages/TaskBoard.tsx — Real-time care task board for all roles
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLang } from '../i18n';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useTasks, useCompleteTask, useDeferTask, useStartTask, useReleaseTask, useGenerateTasks, useResidents } from '../hooks';
 import { useTaskSSE } from '../hooks/useSSE';
@@ -42,13 +42,18 @@ function TaskChip({ task, userRole, userId, onOpen }: {
   const isMyTask = task.in_progress_by === userId;
   const isSomeoneElse = task.in_progress_by && task.in_progress_by !== userId;
   const isDone = task.status === 'done' || task.status === 'deferred' || task.status === 'na';
-  const initials = task.completed_by_name ? task.completed_by_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
+  // A medication round is a view onto the MAR chart, not something to tick here.
+  const isEmar = task.handled_in === 'emar';
+  const initials = task.completed_by_name && !isEmar
+    ? task.completed_by_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
 
   return (
     <button
-      onClick={() => !isDone && onOpen(task)}
-      disabled={isDone}
-      title={`${task.task_name} — ${task.due_time?.slice(0,5)} ${isSomeoneElse ? `(${task.in_progress_name} is filling this)` : ''}`}
+      onClick={() => (isEmar || !isDone) && onOpen(task)}
+      disabled={isDone && !isEmar}
+      title={isEmar
+        ? `${task.task_name} — signed on the MAR chart${task.med_scheduled ? ` (${task.med_given || 0} of ${task.med_scheduled} given)` : ' — nothing due at this time'}`
+        : `${task.task_name} — ${task.due_time?.slice(0,5)} ${isSomeoneElse ? `(${task.in_progress_name} is filling this)` : ''}`}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 4,
         padding: '5px 9px', borderRadius: 24,
@@ -77,6 +82,12 @@ function TaskChip({ task, userRole, userId, onOpen }: {
           background: '#8b5cf6', border: '2px solid white',
           fontSize: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900,
         }} title={`${task.in_progress_name} is filling this`}>!</span>
+      )}
+      {/* Medication rounds show MAR progress, never a carer's initials */}
+      {isEmar && task.med_scheduled > 0 && (
+        <span style={{ fontSize: 10, fontWeight: 700, opacity: 0.85 }}>
+          {task.med_given || 0}/{task.med_scheduled} MAR
+        </span>
       )}
       {/* Done initials */}
       {isDone && initials && (
@@ -280,6 +291,7 @@ export default function TaskBoard() {
 
   const startTask   = useStartTask();
   const [tapConflict, setTapConflict] = useState<{ conflict: Conflict; task: any } | null>(null);
+  const navigate = useNavigate();
   const genTasks    = useGenerateTasks();
   const { data: rawResidents = [] } = useResidents({ active: true });
   const residents: any[] = Array.isArray(rawResidents) ? rawResidents : [];
@@ -342,6 +354,12 @@ export default function TaskBoard() {
   });
 
   const openTask = async (task: any) => {
+    // Medicines live on the MAR chart. Sending the user there is the only
+    // correct response to tapping a medication round.
+    if (task.handled_in === 'emar') {
+      navigate(`/emar?resident_id=${task.resident_id}`);
+      return;
+    }
     try {
       await startTask.mutateAsync({ id: task.id });
       setActive(task);
