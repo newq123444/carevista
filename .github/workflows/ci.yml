@@ -27,6 +27,7 @@ jobs:
         run: |
           npm ci
           npm run check:grammar   # duplicate object keys / JSX attributes, before the slow build
+          npm run check:icons     # every care option keeps its own distinct symbol
           npm run build
           npm audit --audit-level=high || true
 

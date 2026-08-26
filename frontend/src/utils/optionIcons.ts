@@ -1,179 +1,526 @@
 // src/utils/optionIcons.ts
 //
-// A small picture in front of every option on the care recording forms.
+// One picture per option on the care recording forms.
 //
-// Why: a large share of care staff read English as a second language, and
-// everyone is working fast, one-handed, on a phone. A symbol is recognised
-// before a phrase is read.
+// Many carers read English as a second language, and everyone is working fast,
+// one-handed, on a phone. So the picture has to carry the meaning, not just
+// decorate the words.
 //
-// Why the words stay: an icon on its own is ambiguous, and this is a clinical
-// record. A razor cannot tell you whether the shave was electric, wet, or
-// refused — and "refused" is the entry that matters most. The icon speeds
-// recognition; the words keep the record unambiguous. So: icon AND text.
+// Two rules make that work, and both were learned the hard way:
 //
-// The rules below are ordered, most specific first. The first match wins.
-// Outcome markers (refused, escalated, emergency) come before subject matter,
-// because at a glance the important thing is not "this is about bathing" but
-// "this one was refused" or "this one was escalated to a nurse".
+//  1. EVERY OPTION IN A GROUP GETS A DIFFERENT PICTURE. An earlier version
+//     matched on keywords, so "Electric shave given" and "Wet shave given"
+//     both showed a razor — which tells a carer nothing at the moment they are
+//     choosing between the two. Where options differ only by a modifier, the
+//     picture is a pair: 🛁🤝 assisted, 🛁🧍 independent. The subject stays
+//     recognisable and the difference is visible.
+//     `npm run check:icons` fails the build if two options in one group ever
+//     share a picture again.
+//
+//  2. THE WORDS STAY. A razor cannot tell you whether the shave was refused,
+//     and "refused" is the entry that matters most in a clinical record. The
+//     picture is read first; the words remove all doubt.
+//
+// Outcome markers are deliberately consistent everywhere: ➖ not needed,
+// 🚫 refused, 📢 reported to a nurse, 🚑 emergency, ✅ no concerns. Those five
+// are the ones a carer learns in the first shift.
 
-type Rule = [RegExp, string];
+const OPTION_ICONS: Record<string, string> = {
+  // 🛁 Bathing / Washing
+  'Full bath (assisted)': '🛁🤝',
+  'Full bath (independent)': '🛁🧍',
+  'Shower (assisted)': '🚿🤝',
+  'Shower (independent)': '🚿🧍',
+  'Bed bath (full)': '🛏🧽',
+  'Strip wash / freshen up': '🧼',
+  'Sponge bath': '🧽',
+  'Not completed — reason below': '➖',
 
-const RULES: Rule[] = [
-  // ── Outcome first: these change what a reader needs to do ────────────────
-  [/\b(refused|declined|resistance to care|unable to engage|activity stopped)\b/i, '🚫'],
-  [/\b(999|paramedic|urgent|urgently|emergency)\b/i, '🚑'],
-  [/\b(escalated|reported to nurse|notified urgently|nurse informed|reported)\b/i, '📢'],
-  [/\b(not required|not completed|not applicable|no concerns needed|no intervention|no equipment|none|no action required|no visible injuries|not opened today)\b/i, '➖'],
-  [/\bno change\b/i, '➖'],
+  // 💇 Hair
+  'Washed & dried': '💇',
+  'Washed & styled': '💈',
+  'Dry shampoo used': '🧴',
+  'Combed / brushed only': '🪮',
+  'Not required today': '➖',
 
-  // ── Personal care ────────────────────────────────────────────────────────
-  // Order matters: "Bed bath (full)" must not be caught by the full-bath rule,
-  // and "Own teeth brushed" must not be caught by the hair rule.
-  [/(bed bath|strip wash|sponge bath|freshen up)/i, '🧽'],
-  [/(teeth|dentures|mouth care|mouth rinse|oral hygiene)/i, '🦷'],
-  [/\bshower\b/i, '🚿'],
-  [/(full bath|bath \()/i, '🛁'],
-  [/(hair|shampoo|combed|styled)/i, '💇'],
-  [/shav(e|ing)/i, '🪒'],
-  [/\bnails?\b/i, '💅'],
-  [/(podiatrist|chiropod)/i, '🦶'],
-  [/\b(moisturiser|emollient|barrier cream|pressure cream|cream applied)\b/i, '🧴'],
-  [/\bcompression stockings\b/i, '🧦'],
-  [/\b(dressed|night clothes|fresh clothes|change)\b/i, '👕'],
+  // 🪒 Shaving / Facial Care
+  'Electric shave given': '⚡🪒',
+  'Wet shave given': '💧🪒',
+  'Cream / moisturiser applied': '🧴',
+  'Not required': '➖',
+  'Refused': '🚫',
 
-  // ── Continence ───────────────────────────────────────────────────────────
-  [/\bcatheter|conveen|sheath|csu\b/i, '🔌'],
-  [/(toilet|commode|bedpan)/i, '🚽'],
-  [/\bpads?\b/i, '🩲'],
-  [/\b(bowels|bristol|constipated|diarrhoea|pr bleed|suppository|enema)\b/i, '🟤'],
-  [/\b(urine|urinary|uti|continent)\b/i, '💧'],
+  // 💅 Nail Care
+  'Nails trimmed': '✂️',
+  'Nails filed': '💅',
+  'Cream applied': '🧴',
+  'Referred to podiatrist': '🦶➡️',
 
-  // ── Moving & positioning ─────────────────────────────────────────────────
-  [/\b(hoist|slide sheet|stand aid|transfer board|manual handling|wedge)\b/i, '🔧'],
-  [/\b(lateral|supine|recumbent|fowler|seated in chair|standing|position)\b/i, '🛏'],
-  [/\b(2-hourly|4-hourly|hourly|as tolerated)\b/i, '⏱'],
+  // 🦷 Oral Hygiene
+  'Own teeth brushed': '🪥',
+  'Upper dentures cleaned': '⬆️🦷',
+  'Lower dentures cleaned': '⬇️🦷',
+  'Both dentures cleaned / soaked': '🥛🦷',
+  'Mouth care given (foam swabs)': '🧽👄',
+  'Refused — encouraged': '🚫',
+  'Mouth rinse given': '💧👄',
 
-  // ── Skin & wounds ────────────────────────────────────────────────────────
-  [/\b(grade [1-4]|unstageable|deep tissue|pressure ulcer|moisture lesion|skin tear|ulcer)\b/i, '🩹'],
-  [/\b(dressing|hydrocolloid|foam|alginate|film)\b/i, '🩹'],
-  [/\bskin intact\b/i, '✅'],
-  [/(redness|blister|wound|abrasion|graze|laceration|bruis|haematoma|cuts)/i, '🩹'],
-  [/\btissue viability\b/i, '🩺'],
-  [/\b(healing well|improving)\b/i, '📈'],
-  [/\b(deteriorating|infected|bleeding)\b/i, '📉'],
+  // 🧴 Skin Care
+  'Moisturiser applied (full body)': '🧴🧍',
+  'Moisturiser applied (dry areas)': '🧴📍',
+  'Emollient applied (prescribed)': '💊🧴',
+  'Pressure cream applied': '🛡',
+  'Barrier cream applied': '🧱',
+  'Skin intact — no concerns': '✅',
+  'Redness noted — reported to nurse': '🔴📢',
 
-  // ── Sleep & night ────────────────────────────────────────────────────────
-  [/\b(slept|sleep|settled|awoke|awake|sundowning)\b/i, '😴'],
-  [/\b\d+(–|-)\d+ hours|\d\+ hours\b/i, '🕐'],
+  // 👕 Dressing
+  'Fully dressed (assisted)': '👕🤝',
+  'Fully dressed (independent)': '👕🧍',
+  'Night clothes on': '🌙👚',
+  'Changed into fresh clothes': '🔄👕',
+  'Declined to change': '🚫',
+  'Compression stockings on': '🧦⬆️',
+  'Compression stockings removed': '🧦⬇️',
 
-  // ── Behaviour & mood ─────────────────────────────────────────────────────
-  [/\b(aggression|aggressive|disinhibited)\b/i, '⚠️'],
-  [/\b(wandering|exit seeking|walk|fresh air|outdoor)\b/i, '🚶'],
-  [/\b(calling out|shouted|repetitive)\b/i, '🗣'],
-  [/\b(de-escalation|distraction|redirection|reassured)\b/i, '🤲'],
-  [/\b1:1\b/i, '🧑‍🤝‍🧑'],
-  [/\b(low mood|withdrawal|tearful|distressed)\b/i, '😢'],
-  [/\b(happier|lifted|enthusiastic)\b/i, '😊'],
-  [/\b(calm|content|comfortable)\b/i, '😌'],
-  [/\b(engaged|participated|initiated)\b/i, '🙌'],
-  [/\btired\b/i, '😪'],
+  // 🚽 Toileting Method
+  'Used toilet independently': '🚽🧍',
+  'Assisted to toilet': '🚽🤝',
+  'Commode used': '🪑',
+  'Bedpan used': '🛏🚽',
+  'Catheter (indwelling)': '🔌',
+  'Catheter (suprapubic)': '🔌📍',
+  'Conveen / sheath': '🩲',
+  'Pads only': '🧻',
 
-  // ── Clinical ─────────────────────────────────────────────────────────────
-  [/\b(medication|mar|prn|prescribed|dose)\b/i, '💊'],
-  [/\b(pain)\b/i, '💢'],
-  [/\bsyringe driver\b/i, '💉'],
-  [/\b(oxygen|cpap|bipap|breathing|cheyne)\b/i, '🫁'],
-  [/\b(blood test|bloods)\b/i, '🩸'],
-  [/\b(x-ray|scan)\b/i, '🩻'],
-  [/\b(observations|obs|vital signs|neuro)\b/i, '🩺'],
-  [/\b(fracture|hip injury)\b/i, '🦴'],
-  [/\bhead injury|loss of consciousness\b/i, '🤕'],
-  [/\b(fall|found on floor|near miss)\b/i, '⬇️'],
-  [/(hospital|a&e|admitted|admission|discharge|outpatient)/i, '🏥'],
-  [/\b(gp|doctor|nurse practitioner|district nurse)\b/i, '🩺'],
-  [/(referral|referred|arranged|booked|follow-up)/i, '➡️'],   // not 'review' — too greedy, it appears in half the clinical options
-  [/\b(dnacpr|dnar|lasting power of attorney|capacity)\b/i, '📄'],
-  [/\b(incident form|datix|ulysses)\b/i, '📝'],
+  // 💧 Urinary
+  'Continent today': '✅',
+  'Pad worn — no leakage': '🧻✅',
+  'Pad worn — leakage noted': '🧻💧',
+  'Pad changed': '🔄🧻',
+  'Catheter emptied': '🔌⬇️',
+  'Catheter output noted': '📏',
+  'Catheter bypassing — reported': '🔌📢',
+  'UTI suspected — reported to nurse': '🦠📢',
+  'Reduced urine output — reported': '📉📢',
+  'CSU specimen taken': '🧪',
 
-  // ── Drinks & textures ────────────────────────────────────────────────────
-  [/\bwater\b/i, '💧'],
-  [/\btea\b/i, '🍵'],
-  [/\bcoffee\b/i, '☕'],
-  [/(juice|squash)/i, '🧃'],
-  [/\bmilk\b/i, '🥛'],
-  [/(thickened|iddsi|minced|pur[ée]e|soft & bite)/i, '🥣'],
-  [/\bstandard\b/i, '🍽'],
+  // 🟤 Bowels
+  'Bowels opened (normal)': '✅',
+  'Bowels opened (Bristol type 1–2 hard)': '🪨',
+  'Bowels opened (Bristol type 3–4 normal)': '🟢',
+  'Bowels opened (Bristol type 5–7 loose)': '💦',
+  'Bowels not opened today': '⭕',
+  'Constipated — reported to nurse': '🪨📢',
+  'Diarrhoea — reported to nurse': '💦📢',
+  'Bowels not opened 3+ days — escalated': '⏳🚨',
+  'PR bleed noted — reported urgently': '🩸🚑',
 
-  // ── Food & drink ─────────────────────────────────────────────────────────
-  [/\b(drink|sips|fluid)\b/i, '🥤'],
-  [/\b(meal|food|snack|appetite|baking|cooking)\b/i, '🍽'],
-  [/\bnil by mouth\b/i, '🚱'],
+  // 🔌 Catheter Care
+  'Catheter site clean — no concerns': '✅',
+  'Catheter bag emptied and documented': '⬇️📝',
+  'Catheter changed by nurse': '🔄🔌',
+  'Blockage concern — reported': '⛔📢',
+  'Bypassing — reviewed by nurse': '💧📢',
+  'CSU sent to lab': '🧪',
 
-  // ── Activities & social ──────────────────────────────────────────────────
-  [/\b(music|singing|choir)\b/i, '🎵'],
-  [/\b(arts|crafts)\b/i, '🎨'],
-  [/\bgardening\b/i, '🪴'],
-  [/\b(reading|book)\b/i, '📖'],
-  [/\b(games|puzzles|quiz|reminiscence)\b/i, '🧩'],
-  [/\b(film|tv)\b/i, '📺'],
-  [/\b(religious|spiritual|chaplain)\b/i, '🕊'],
-  [/\bpet therapy\b/i, '🐕'],
-  [/\b(exercise|physio)\b/i, '🏃'],
-  [/\bhairdresser\b/i, '💇'],
+  // 🛏 Position Changed To
+  'Left lateral': '⬅️🛏',
+  'Right lateral': '➡️🛏',
+  'Semi-recumbent (30°)': '📐',
+  'Supine (flat)': '⬛',
+  'High Fowler (sitting up)': '⬆️🛏',
+  'Seated in chair': '🪑',
+  'Standing (hoist / transfer)': '🧍',
 
-  // ── Family & communication ───────────────────────────────────────────────
-  [/\bvideo call|facetime|whatsapp\b/i, '📹'],
-  [/\b(telephone|phone|called|call back|callback)\b/i, '📞'],
-  [/\b(email|letter)\b/i, '✉️'],
-  [/\b(family|next of kin|advocate|social worker)\b/i, '👨‍👩‍👧'],
-  [/\bcomplaint\b/i, '📣'],
-  [/\bpositive feedback\b/i, '⭐'],
-  [/\b(visit|visiting)\b/i, '🚪'],
-  [/\b(meeting|handover|shift)\b/i, '🔁'],
-  [/\bcare plan\b/i, '📖'],
+  // 🔧 Equipment Used
+  'No equipment needed': '➖',
+  'Slide sheet used': '📄',
+  'Full hoist used': '🏗',
+  'Stand aid used': '🧍🤝',
+  'Transfer board used': '🪧',
+  'Manual handling (2 carers)': '👥',
+  'Turning wedge / pillow': '🔺',
 
-  // ── Places in the home ───────────────────────────────────────────────────
-  [/\bbedroom\b/i, '🛏'],
-  [/(en-suite|bathroom)/i, '🚿'],
-  [/\bcorridor\b/i, '🚶'],
-  [/(lounge|sitting room)/i, '🛋'],
-  [/\bdining\b/i, '🍽'],
-  [/(garden|outside)/i, '🌳'],
-  [/\bstairs\b/i, '🪜'],
+  // 🩺 Pressure Area Check
+  'Grade 1 — redness (non-blanching)': '1️⃣',
+  'Grade 2 — blister / superficial break': '2️⃣',
+  'Grade 3 — deep wound': '3️⃣',
+  'Grade 4 — severe — nurse notified urgently': '4️⃣🚑',
+  'Moisture lesion noted': '💧🩹',
+  'Referred to tissue viability nurse': '🩺➡️',
 
-  // ── Body sites ───────────────────────────────────────────────────────────
-  [/(heel|ankle|foot|feet)/i, '🦶'],
-  [/(hip|knee|elbow|leg|bone)/i, '🦴'],
-  [/(sacrum|coccyx|torso|abdomen|head \/ face)/i, '📍'],
+  // ⏱ Next Turn
+  '2-hourly regime': '2️⃣',
+  '4-hourly regime': '4️⃣',
+  'As tolerated': '🔄',
+  'Resident declined repositioning': '🚫',
+  'Family informed of skin concern': '👨‍👩‍👧📢',
 
-  // ── Conversation & needs ─────────────────────────────────────────────────
-  [/(discussed|welfare update|request for information)/i, '💬'],
-  [/(hunger|thirst)/i, '🍽'],
-  [/\bnoise\b/i, '🔊'],
-  [/(unfamiliar staff|agency staff|bank staff)/i, '🧑'],
-  [/(passed away|bereavement|end of life)/i, '🕊'],
-  [/(observed only|chose to watch)/i, '👁'],
-  [/(finances|funding)/i, '💷'],
-  [/(dietitian|salt|speech|occupational therapy|physiotherapy)/i, '🩺'],
-  [/(comfort|pressure relief)/i, '🤲'],
+  // 😴 Sleep Quality
+  'Slept well — no concerns': '✅',
+  'Settled after initial wakefulness': '🌙✅',
+  'Disturbed — awoke multiple times': '🔁',
+  'Called out / shouted overnight': '🗣',
+  'Confused / disorientated at night (sundowning)': '🌆',
+  'Awake most of night': '👁',
+  'Slept in chair all night': '🪑',
 
-  // ── Generic positives / agreement, last so specifics win ─────────────────
-  [/\b(agreed|agree|happy with|confirmed|updated|completed|given|in place|checked|documented)\b/i, '✅'],
-  [/\b(monitor|monitoring|awaiting|pending|due)\b/i, '⏳'],
-  [/\b(unknown|no clear trigger|suspected|possible)\b/i, '❓'],
-  [/(other — see notes|see notes)/i, '📝'],
+  // 🕐 Hours Slept (approx)
+  '1–2 hours': '🕐',
+  '2–4 hours': '🕑',
+  '4–6 hours': '🕓',
+  '6–8 hours': '🕕',
+  '8+ hours': '🕗',
+
+  // 🤲 Intervention
+  'No intervention needed': '➖',
+  'Repositioned and settled': '🔄🛏',
+  'Reassured and settled': '🤲',
+  'Drink/snack offered': '🥤',
+  'Night medication given (check MAR)': '🌙💊',
+  'PRN given — see MAR': '💊',
+  'Family contacted': '👨‍👩‍👧',
+  'GP called': '🩺',
+
+  // ⚠️ Behaviour Type
+  'Verbal aggression': '🗣',
+  'Physical aggression': '✊',
+  'Wandering / exit seeking': '🚪',
+  'Calling out repeatedly': '📣',
+  'Repetitive questions / behaviours': '🔁',
+  'Resistance to care': '🙅',
+  'Sexually disinhibited behaviour': '⚠️',
+  'Sundowning / evening confusion': '🌆',
+  'Low mood / withdrawal': '😔',
+  'Tearful / distressed': '😢',
+
+  // 🔍 Possible Trigger
+  'Unknown / no clear trigger': '❓',
+  'Pain / discomfort': '💢',
+  'Hunger / thirst': '🍽',
+  'Toileting need': '🚽',
+  'Environmental noise': '🔊',
+  'Unfamiliar staff': '🧑',
+  'Time of day (sundowning)': '🌆',
+  'Medication change': '💊',
+  'Family visit / lack of contact': '👨‍👩‍👧',
+  'Medical issue suspected': '🩺',
+
+  // ✅ Intervention Used
+  'De-escalation technique': '🕊',
+  'Distraction / redirection': '🔀',
+  '1:1 support provided': '🧑‍🤝‍🧑',
+  'Favourite music / TV used': '🎵',
+  'Walk / fresh air offered': '🚶',
+  'PRN medication given — see MAR': '💊',
+  'Family called': '📞',
+  'GP / mental health team contacted': '🩺',
+  'Referred for behaviour review': '➡️',
+  'Incident form completed': '📝',
+
+  // 📍 Wound Site
+  'Sacrum / coccyx': '🪑',
+  'Left heel': '⬅️👣',
+  'Right heel': '➡️👣',
+  'Left hip': '⬅️🦴',
+  'Right hip': '➡️🦴',
+  'Left ankle': '⬅️🦶',
+  'Right ankle': '➡️🦶',
+  'Left elbow': '⬅️💪',
+  'Right elbow': '➡️💪',
+  'Left knee': '⬅️🦵',
+  'Right knee': '➡️🦵',
+  'Lower leg': '🧦',
+  'Torso / abdomen': '👕',
+  'Head / face': '🙂',
+  'Other — see notes': '📝',
+
+  // 🩺 Wound Type
+  'Pressure ulcer': '🛏',
+  'Moisture lesion': '💧',
+  'Skin tear': '✂️',
+  'Leg ulcer (venous)': '🔵',
+  'Leg ulcer (arterial)': '🔴',
+  'Diabetic foot ulcer': '🦶',
+  'Surgical wound': '🏥',
+  'Infected wound': '🦠',
+  'Bruising / haematoma': '🟣',
+  'Abrasion / graze': '🩹',
+
+  // 📊 Pressure Ulcer Grade (if applicable)
+  'Grade 1 — non-blanching redness': '1️⃣',
+  'Grade 2 — blister / shallow break': '2️⃣',
+  'Grade 3 — full thickness skin loss': '3️⃣',
+  'Grade 4 — deep tissue damage / bone visible': '4️⃣',
+  'Unstageable': '❓',
+  'Deep tissue injury (purple / maroon)': '🟣',
+
+  // 🩹 Dressing
+  'Dressing applied (unchanged)': '🩹',
+  'Dressing changed': '🔄',
+  'Wound cleaned prior to dressing': '🧼',
+  'Hydrocolloid applied': '🟠',
+  'Foam dressing applied': '🧽',
+  'Alginate applied': '🌿',
+  'Film dressing applied': '📄',
+  'No dressing — left open': '➖',
+  'Dressing refused by resident': '🚫',
+
+  // 📈 Wound Condition
+  'Improving — healing well': '📈',
+  'Static — no change': '➖',
+  'Deteriorating — reported to nurse': '📉📢',
+  'Infected signs — swelling / heat / smell': '🦠',
+  'Bleeding — pressure applied': '🩸',
+  'Referral to tissue viability nurse': '🩺➡️',
+  'GP notified': '📞',
+  'Hospital referral made': '🏥',
+
+  // 👁 Witnessed?
+  'Witnessed fall': '👁',
+  'Found on floor — unwitnessed': '⬇️',
+  'Near miss — caught in time': '🤲',
+  'Resident reported falling earlier': '🗣',
+
+  // 📍 Location
+  'Bedroom': '🛏',
+  'En-suite / bathroom': '🚿',
+  'Corridor': '🚪',
+  'Lounge / sitting room': '🛋',
+  'Dining room': '🍽',
+  'Garden / outside': '🌳',
+  'Stairs': '🪜',
+
+  // 🤕 Injuries
+  'No visible injuries': '✅',
+  'Minor cuts / grazes': '🩹',
+  'Bruising noted': '🟣',
+  'Head injury — neuro obs started': '🤕',
+  'Suspected fracture — 999 called': '🦴🚑',
+  'Hip injury — X-ray needed': '🩻',
+  'Laceration — wound care given': '✂️',
+  'Loss of consciousness momentarily': '😵',
+
+  // 📋 Response
+  'Post-fall observations completed': '📋',
+  'Vital signs checked': '🩺',
+  'Nurse informed immediately': '📢',
+  'GP contacted': '📞',
+  '999 / paramedic called': '🚑',
+  'Family notified': '👨‍👩‍👧',
+  'DATIX / Ulysses logged': '💻',
+  'X-ray arranged': '🩻',
+  'Physio referral made': '🏃➡️',
+
+  // 🎯 Activity Type
+  'Group activity (lounge)': '👥',
+  '1:1 individual activity': '🧑‍🤝‍🧑',
+  'Exercise / physiotherapy': '🏃',
+  'Music session': '🎵',
+  'Singing / choir': '🎤',
+  'Arts & crafts': '🎨',
+  'Gardening': '🪴',
+  'Baking / cooking': '🧁',
+  'Reading / book club': '📖',
+  'Board games / puzzles': '🧩',
+  'Quiz / reminiscence': '💭',
+  'Film / TV watching': '📺',
+  'Religious / spiritual service': '🕊',
+  'Pet therapy': '🐕',
+  'Visiting entertainer': '🎭',
+  'Video call with family': '📹',
+  'Outdoor walk / fresh air': '🌳',
+  'Hairdresser / pamper session': '💇',
+
+  // 🙌 Engagement Level
+  'Fully engaged — enthusiastic': '🌟',
+  'Engaged — participated well': '🙌',
+  'Partially engaged — in and out': '🔀',
+  'Observed only — chose to watch': '👁',
+  'Declined — offered but refused': '🚫',
+  'Unable to engage today': '➖',
+  'Initiated activity themselves': '💡',
+
+  // 😊 Mood After Activity
+  'Noticeably lifted / happier': '😊',
+  'Calm and content': '😌',
+  'No change noted': '➖',
+  'Tired — needed rest afterwards': '😪',
+  'Distressed — activity stopped': '😢',
+
+  // 🏥 Visit Type
+  'GP home visit': '🩺🏠',
+  'GP telephone consultation': '🩺📞',
+  'Nurse practitioner visit': '💉',
+  'District nurse visit': '🚗💉',
+  'Outpatient appointment': '🏥',
+  'A&E attendance': '🚑',
+  'Hospital admission': '🏥⬆️',
+  'Hospital discharge': '🏥⬇️',
+  'Dentist visit': '🦷',
+  'Optician visit': '👓',
+  'Podiatrist visit': '🦶',
+  'Physiotherapy session': '🏃',
+  'Occupational therapy assessment': '🧰',
+  'SALT (speech & language) assessment': '🗣',
+  'Dietitian review': '🍽',
+  'Palliative care team visit': '🕊',
+  'Mental health team visit': '🧠',
+
+  // 📋 Outcome / Actions
+  'New medication prescribed — see MAR': '💊➕',
+  'Medication stopped — see MAR': '💊🚫',
+  'Medication dose changed — see MAR': '💊🔄',
+  'Blood test arranged': '🩸',
+  'X-ray / scan arranged': '🩻',
+  'Referral made': '➡️',
+  'Follow-up appointment booked': '📅',
+  'No action required': '➖',
+  'Admitted to hospital': '🏥⬆️',
+  'Discharged home': '🏠',
+  'Care plan review recommended': '📖',
+  'DNAR discussed': '📄',
+  'Capacity assessment recommended': '⚖️',
+
+  // 👨‍👩‍👧 Contact Type
+  'Family visit in person': '🚪',
+  'Telephone call from family': '📞',
+  'Video call (FaceTime / WhatsApp)': '📹',
+  'Email / letter received': '✉️',
+  'Family meeting held': '👥',
+  'Social worker visit': '🧑‍💼',
+  'Advocate visit': '🗣',
+  'Legal representative visit': '⚖️',
+
+  // 💬 Topics Discussed
+  'General welfare update': '💬',
+  'Health concerns discussed': '🩺',
+  'Medication changes explained': '💊',
+  'Care plan reviewed together': '📖',
+  'End of life wishes discussed': '🕊',
+  'Finances / funding discussed': '💷',
+  'Complaint raised by family': '📣',
+  'Positive feedback given': '⭐',
+  'Request for information': '❓',
+  'Family updated on incident': '📝',
+  'Family updated on falls': '⬇️',
+  'Family updated on hospital visit': '🏥',
+
+  // ✅ Consent / Agreements
+  'Family happy with current care': '😊',
+  'Family agree to care plan changes': '📖✅',
+  'DNACPR discussed and agreed': '📄',
+  'DNAR form signed': '🖊',
+  'Lasting Power of Attorney confirmed': '⚖️',
+  'Next of kin details updated': '📇',
+  'Family request noted in care plan': '📝',
+
+  // 🕊️ End of Life Care
+  'Comfort measures in place': '🤲',
+  'Syringe driver in situ — checked': '💉✅',
+  'Syringe driver prescribed — awaiting': '💉⏳',
+  'Oral care given (mouth care)': '👄',
+  'Repositioned for comfort': '🔄🛏',
+  'Skin care — pressure relief': '🧴',
+  'Eye care given': '👁',
+  'Catheter care given': '🔌',
+  'Bowel management — suppository / enema': '🟤',
+  'Oxygen in use': '🫁',
+  'CPAP / BiPAP in use': '😷',
+  'Nil by mouth — comfort sips only': '🚱',
+
+  // 👨‍👩‍👧 Family & Support
+  'Family present at bedside': '🛏👨‍👩‍👧',
+  'Family called — coming in': '📞🚗',
+  'Family updated by phone': '📞',
+  'Family unable to visit': '🚫',
+  'Chaplain / spiritual care called': '🕊',
+  'Bereavement support offered': '🤲',
+  'Family staying overnight': '🌙',
+
+  // 🩺 Clinical
+  'DNACPR in place and reviewed': '📄',
+  'Anticipatory medications prescribed': '💊',
+  'Syringe driver dose reviewed by nurse': '💉',
+  'GP / palliative team called': '📞',
+  'Comfort care plan reviewed': '📖',
+  'Pain assessed — comfortable': '😌',
+  'Pain assessed — PRN given': '💢',
+  'Agitation noted — PRN given': '😣',
+  'Breathing changes noted': '🫁',
+  'Mottling observed — family informed': '🟣',
+  'Cheyne-Stokes breathing noted': '🌊',
+
+  // 🔁 Shift Summary
+  'Quiet shift — no concerns': '✅',
+  'One or more residents to monitor': '👁',
+  'Falls this shift': '⬇️',
+  'Medication incidents this shift': '💊',
+  'Behavioural incidents this shift': '⚠️',
+  'Hospital admission this shift': '🏥',
+  'GP called this shift': '🩺',
+  'Family notified of concern': '👨‍👩‍👧',
+  'New resident admitted': '🚪➕',
+  'Resident discharged / passed away': '🕊',
+
+  // 📋 Outstanding Tasks
+  'Medication awaiting — see MAR': '💊',
+  'Wound care due': '🩹',
+  'Bowels not opened — needs monitoring': '🟤',
+  'Referral pending': '➡️',
+  'Awaiting GP call back': '📞',
+  'Family callback needed': '👨‍👩‍👧',
+  'Incident form to complete': '📝',
+  'Care plan review due': '📖',
+  'Equipment issue reported': '🔧',
+
+  // 👋 Handing To
+  'Day shift': '☀️',
+  'Early shift': '🌅',
+  'Late shift': '🌇',
+  'Night shift': '🌙',
+  'Bank staff — full handover given': '🧑',
+  'Agency staff — care plans shared': '🧑‍💼',
+
+  // DRINK_OPTIONS
+  'Water': '💧',
+  'Tea': '🍵',
+  'Coffee': '☕',
+  'Juice': '🧃',
+  'Squash': '🥤',
+  'Milk': '🥛',
+  'Thickened (Stage 1)': '1️⃣',
+  'Thickened (Stage 2)': '2️⃣',
+  'Thickened (Stage 3)': '3️⃣',
+  'Fortisip': '🧴',
+  'Ensure': '🥛➕',
+  'Soup': '🍲',
+
+  // TEXTURE_OPTIONS
+  'Standard': '🍽',
+  'IDDSI 6 – Soft & Bite-Sized': '6️⃣',
+  'IDDSI 5 – Minced & Moist': '5️⃣',
+  'IDDSI 4 – Puréed': '4️⃣',
+  'IDDSI 3 – Liquidised': '3️⃣',
+};
+
+// Fallback only — for options added later that are not yet in the table above.
+// Keep the table authoritative: this is a safety net, not the mechanism.
+const KEYWORD_RULES: [RegExp, string][] = [
+  [/(refused|declined)/i, '🚫'],
+  [/(999|paramedic|emergency)/i, '🚑'],
+  [/(escalated|reported to nurse|notified urgently)/i, '📢'],
+  [/(not required|not completed|no action|none)/i, '➖'],
+  [/(no concerns|intact)/i, '✅'],
+  [/(medication|mar|prn)/i, '💊'],
+  [/family/i, '👨‍👩‍👧'],
+  [/(gp|nurse|doctor)/i, '🩺'],
 ];
 
-const cache = new Map<string, string>();
-
 /**
- * Returns a single symbol for a care option, or a neutral dot if nothing fits.
- * Never throws, never returns an empty string, so the layout stays stable.
- */
-/**
- * Pulls the symbol off the front of a group heading such as "💇 Hair", so
- * options that only make sense in context ("Washed & dried") inherit it
- * instead of falling back to a neutral dot.
+ * Pulls the picture off the front of a group heading such as "💇 Hair", so an
+ * unmapped option still shows something related to its section.
  */
 export function groupIcon(label: string): string | undefined {
   if (!label) return undefined;
@@ -181,16 +528,16 @@ export function groupIcon(label: string): string | undefined {
   return m ? m[1] : undefined;
 }
 
+/** The picture for one care option. Never empty, so the layout stays steady. */
 export function optionIcon(text: string, fallback = '•'): string {
   if (!text) return fallback;
-  const hit = cache.get(text);
-  if (hit !== undefined) return hit;
-  let icon = fallback;
-  for (const [pattern, symbol] of RULES) {
-    if (pattern.test(text)) { icon = symbol; break; }
+  const exact = OPTION_ICONS[text];
+  if (exact) return exact;
+  for (const [pattern, symbol] of KEYWORD_RULES) {
+    if (pattern.test(text)) return symbol;
   }
-  cache.set(text, icon);
-  return icon;
+  return fallback;
 }
 
+export { OPTION_ICONS };
 export default optionIcon;

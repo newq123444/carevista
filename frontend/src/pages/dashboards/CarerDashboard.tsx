@@ -739,7 +739,7 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ fontSize:11,fontWeight:700,color:'var(--text-secondary)',display:'block',marginBottom:6,textTransform:'uppercase',letterSpacing:'.05em' }}>Texture Modified?</label>
                   <div style={{ display:'flex',gap:8,flexWrap:'wrap' }}>
-                    {TEXTURE_OPTIONS.map(t => { const active=note.texture===t; return <button key={t} onClick={()=>set('texture',active?'':t)} style={{ padding:'7px 14px',borderRadius:20,border:`2px solid ${active?'#10b981':'var(--border)'}`,background:active?'#dcfce7':'white',color:active?'#15803d':'var(--text-secondary)',cursor:'pointer',fontSize:12,fontWeight:active?700:400,transition:'all 120ms' }}>{t}</button>; })}
+                    {TEXTURE_OPTIONS.map(t => { const active=note.texture===t; return <button key={t} onClick={()=>set('texture',active?'':t)} style={{ padding:'7px 14px',borderRadius:20,border:`2px solid ${active?'#10b981':'var(--border)'}`,background:active?'#dcfce7':'white',color:active?'#15803d':'var(--text-secondary)',cursor:'pointer',fontSize:12,fontWeight:active?700:400,transition:'all 120ms' }}><span aria-hidden="true" style={{ fontSize:15, marginRight:6 }}>{optionIcon(t)}</span>{t}</button>; })}
                   </div>
                 </div>
                 <div style={{ marginBottom: 10 }}>
