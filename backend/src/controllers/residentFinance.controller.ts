@@ -16,10 +16,10 @@ const CATEGORIES = ['deposit','pension','hairdressing','chiropody','newspapers',
   'outings','clothing','transport','refund','withdrawal','other'];
 
 export const CATEGORY_LABELS: Record<string,string> = {
-  deposit: 'Deposit', pension: 'Pension', hairdressing: 'Hairdressing',
-  chiropody: 'Chiropody', newspapers: 'Newspapers & magazines', toiletries: 'Toiletries',
-  outings: 'Outings', clothing: 'Clothing', transport: 'Transport', refund: 'Refund',
-  withdrawal: 'Cash withdrawal', other: 'Other',
+  deposit: '💷 Deposit', pension: '🏦 Pension', hairdressing: '💇 Hairdressing',
+  chiropody: '🦶 Chiropody', newspapers: '📰 Newspapers & magazines', toiletries: '🧴 Toiletries',
+  outings: '🚌 Outings', clothing: '👕 Clothing', transport: '🚕 Transport', refund: '↩️ Refund',
+  withdrawal: '💸 Cash withdrawal', other: '📝 Other',
 };
 
 async function balanceFor(residentId: string) {

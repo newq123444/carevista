@@ -14,6 +14,7 @@ import {
 import { useTaskSSE } from '../../hooks/useSSE';
 import { ConflictDialog, asConflict, type Conflict } from '../../components/ConflictDialog';
 import { formatAge, todayISO } from '../../utils/formatters';
+import { optionIcon, groupIcon } from '../../utils/optionIcons';
 import type { Resident } from '../../types';
 
 // ── Task category → note type mapping ────────────────────────────────────
@@ -328,6 +329,9 @@ const ROLE_COLORS: Record<string, string> = {
 function ChipGroup({ label, options, selected, onToggle, color = '#0d9488' }: {
   label: string; options: string[]; selected: string[]; onToggle: (v: string) => void; color?: string;
 }) {
+  // Options that only make sense under their heading ("Washed & dried") inherit
+  // the heading's own symbol rather than showing a meaningless dot.
+  const fallback = groupIcon(label) || '•';
   return (
     <div style={{ marginBottom: 14 }}>
       <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>{label}</label>
@@ -336,11 +340,17 @@ function ChipGroup({ label, options, selected, onToggle, color = '#0d9488' }: {
           const active = selected.includes(o);
           return (
             <button key={o} type="button" onClick={() => onToggle(o)} style={{
-              padding: '5px 12px', borderRadius: 20, border: `1.5px solid ${active ? color : 'var(--border)'}`,
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 20, border: `1.5px solid ${active ? color : 'var(--border)'}`,
               background: active ? color + '10' : 'var(--surface-2)', color: active ? color : 'var(--text-secondary)',
               cursor: 'pointer', fontSize: 12, fontWeight: active ? 600 : 400, transition: 'all 100ms',
+              textAlign: 'left',
             }}>
-              {active ? '✓ ' : ''}{o}
+              {/* The symbol is read before the words are. The words stay, because
+                  a razor cannot tell you whether the shave was refused. */}
+              <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>{optionIcon(o, fallback)}</span>
+              <span>{o}</span>
+              {active && <span style={{ fontWeight: 700 }}>✓</span>}
             </button>
           );
         })}

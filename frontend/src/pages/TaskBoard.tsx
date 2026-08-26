@@ -7,6 +7,7 @@ import { useTasks, useCompleteTask, useDeferTask, useStartTask, useReleaseTask, 
 import { useTaskSSE } from '../hooks/useSSE';
 import { ConflictDialog, asConflict, type Conflict } from '../components/ConflictDialog';
 import { todayISO } from '../utils/formatters';
+import { optionIcon } from '../utils/optionIcons';
 import type { Resident } from '../types';
 
 // ── Photo helper ──────────────────────────────────────────────────────────
@@ -213,12 +214,16 @@ function TaskModal({ task, onClose }: { task: any; onClose: () => void }) {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {quickNotes.map(q => (
                         <button type="button" key={q} onClick={() => setNotes(q)} style={{
-                          padding: '5px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer',
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '6px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer',
                           border: `1px solid ${notes === q ? '#16a34a' : 'var(--border)'}`,
                           background: notes === q ? '#f0fdf4' : 'white',
                           color: notes === q ? '#16a34a' : 'var(--text-secondary)',
                           fontWeight: notes === q ? 700 : 400,
-                        }}>{q}</button>
+                        }}>
+                          <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1 }}>{optionIcon(q)}</span>
+                          <span>{q}</span>
+                        </button>
                       ))}
                     </div>
                   </div>

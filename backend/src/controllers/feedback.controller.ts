@@ -18,11 +18,11 @@ const STATUSES = ['open','investigating','responded','closed','escalated'];
 const VIA = ['verbal','email','letter','phone','survey','portal','in_person','anonymous'];
 
 export const FEEDBACK_CATEGORY_LABELS: Record<string,string> = {
-  care_quality: 'Quality of care', staff_conduct: 'Staff conduct',
-  communication: 'Communication', food: 'Food & mealtimes', environment: 'Environment',
-  laundry: 'Laundry & belongings', medication: 'Medication', activities: 'Activities',
-  billing: 'Billing & fees', discrimination: 'Discrimination', safeguarding: 'Safeguarding',
-  other: 'Other',
+  care_quality: '🩺 Quality of care', staff_conduct: '🧑 Staff conduct',
+  communication: '💬 Communication', food: '🍽 Food & mealtimes', environment: '🏠 Environment',
+  laundry: '🧺 Laundry & belongings', medication: '💊 Medication', activities: '🎯 Activities',
+  billing: '💷 Billing & fees', discrimination: '⚖️ Discrimination', safeguarding: '🛡 Safeguarding',
+  other: '📝 Other',
 };
 
 function shape(f: any) {

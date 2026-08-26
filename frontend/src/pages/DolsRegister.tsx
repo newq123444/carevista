@@ -13,17 +13,17 @@ function fmtDate(d?: string | null) {
 }
 
 const CONSENT_LABELS: Record<string, string> = {
-  resident_consent: 'The person consented',
-  best_interests: 'Best interests decision',
-  dols_authorised: 'Authorised under DoLS',
-  court_authorised: 'Authorised by the Court of Protection',
-  lpa_consent: 'Consented by an attorney (LPA)',
+  resident_consent: '✅ The person consented',
+  best_interests: '⚖️ Best interests decision',
+  dols_authorised: '📄 Authorised under DoLS',
+  court_authorised: '🏛 Authorised by the Court of Protection',
+  lpa_consent: '🖊 Consented by an attorney (LPA)',
 };
 
 const DOLS_LABELS: Record<string, string> = {
-  not_applied: 'Not applied for', urgent_in_place: 'Urgent authorisation in place',
-  standard_applied: 'Standard applied for', granted: 'Granted', expired: 'Expired',
-  refused: 'Refused', withdrawn: 'Withdrawn',
+  not_applied: '➖ Not applied for', urgent_in_place: '⏳ Urgent authorisation in place',
+  standard_applied: '📤 Standard applied for', granted: '✅ Granted', expired: '⛔ Expired',
+  refused: '🚫 Refused', withdrawn: '↩️ Withdrawn',
 };
 
 function Kpi({ label, value, tone, note }: { label: string; value: React.ReactNode; tone?: string; note?: string }) {

@@ -13,9 +13,9 @@ const TYPES = ['supervision','appraisal','probation_review','return_to_work',
 const STATUSES = ['scheduled','completed','missed','cancelled'];
 
 export const SESSION_TYPE_LABELS: Record<string,string> = {
-  supervision: 'Supervision', appraisal: 'Annual appraisal',
-  probation_review: 'Probation review', return_to_work: 'Return to work',
-  competency_review: 'Competency review', disciplinary_support: 'Support meeting',
+  supervision: '🗣 Supervision', appraisal: '📋 Annual appraisal',
+  probation_review: '🌱 Probation review', return_to_work: '↩️ Return to work',
+  competency_review: '🎯 Competency review', disciplinary_support: '🤝 Support meeting',
 };
 
 function shape(s: any) {

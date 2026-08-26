@@ -16,12 +16,12 @@ import { auditLog } from '../services/audit.service';
 // below is the point of this module.
 
 const RESTRICTION_LABELS: Record<string,string> = {
-  bed_rails: 'Bed rails', lap_belt: 'Lap belt', locked_door: 'Locked door',
-  covert_medication: 'Covert medication', sensor_mat: 'Sensor mat',
-  door_sensor: 'Door sensor', restricted_access: 'Restricted access to areas',
-  supervision_1to1: '1:1 supervision', chemical_restraint: 'Medication used to calm',
-  physical_intervention: 'Physical intervention', financial_control: 'Control of finances',
-  other: 'Other',
+  bed_rails: '🛏 Bed rails', lap_belt: '🪢 Lap belt', locked_door: '🔒 Locked door',
+  covert_medication: '💊 Covert medication', sensor_mat: '📡 Sensor mat',
+  door_sensor: '🚪 Door sensor', restricted_access: '⛔ Restricted access to areas',
+  supervision_1to1: '🧑‍🤝‍🧑 1:1 supervision', chemical_restraint: '💊 Medication used to calm',
+  physical_intervention: '✋ Physical intervention', financial_control: '💷 Control of finances',
+  other: '📝 Other',
 };
 const DOLS_STATUSES = ['not_applied','urgent_in_place','standard_applied','granted','expired','refused','withdrawn'];
 const CONSENT_BASES = ['resident_consent','best_interests','dols_authorised','court_authorised','lpa_consent'];

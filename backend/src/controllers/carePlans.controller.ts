@@ -17,21 +17,21 @@ import { auditLog } from '../services/audit.service';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const CARE_PLAN_DOMAINS = [
-  { key: 'personal_care',           label: 'Personal care & appearance',       order: 1,  hint: 'Washing, dressing, oral care, grooming. What they do themselves, what they need help with, and how they prefer it done.' },
-  { key: 'mobility_transfers',      label: 'Mobility & transfers',             order: 2,  hint: 'Walking, transfers, equipment, number of staff, falls history.' },
-  { key: 'nutrition_hydration',     label: 'Eating & drinking',                order: 3,  hint: 'Diet type, texture (IDDSI), allergies, likes and dislikes, assistance needed, MUST score.' },
-  { key: 'continence',              label: 'Continence',                       order: 4,  hint: 'Continence status, products used, toileting routine, dignity considerations.' },
-  { key: 'skin_integrity',          label: 'Skin integrity & pressure care',   order: 5,  hint: 'Waterlow score, pressure areas, repositioning interval, mattress and cushion settings.' },
-  { key: 'medication',              label: 'Medication',                       order: 6,  hint: 'How they take medicines, swallowing, PRN protocols, covert arrangements, who administers.' },
-  { key: 'pain',                    label: 'Pain & comfort',                   order: 7,  hint: 'How this person shows pain, what helps, pain tool used (e.g. Abbey for non-verbal).' },
-  { key: 'breathing_circulation',   label: 'Breathing & circulation',          order: 8,  hint: 'Oxygen, inhalers, oedema, positioning, baseline observations.' },
-  { key: 'communication_sensory',   label: 'Communication, sight & hearing',   order: 9,  hint: 'Preferred language, hearing aids, glasses, how they make needs known, what helps them understand.' },
-  { key: 'cognition_mental_health', label: 'Memory, mood & mental health',     order: 10, hint: 'Diagnosis, orientation, capacity, low mood or anxiety, what reassures them.' },
-  { key: 'behaviour_support',       label: 'Behaviour & distress',             order: 11, hint: 'What distress looks like, known triggers, what helps early, least restrictive responses.' },
-  { key: 'social_emotional',        label: 'Social life, relationships & purpose', order: 12, hint: 'Who matters to them, what they enjoy, faith, routines that give the day meaning.' },
-  { key: 'night_care',              label: 'Night-time care',                  order: 13, hint: 'Usual bedtime, how they settle, checks needed and why, what to do if they wake.' },
-  { key: 'safety_risk',             label: 'Safety & risk',                    order: 14, hint: 'Falls, choking, leaving unaccompanied, smoking, bed rails. Link to the risk assessment.' },
-  { key: 'end_of_life',             label: 'Wishes for the future',            order: 15, hint: 'DNACPR / ReSPECT, preferred place of care, advance decisions, funeral wishes. Only if discussed.' },
+  { key: 'personal_care',           label: '🛁 Personal care & appearance',       order: 1,  hint: 'Washing, dressing, oral care, grooming. What they do themselves, what they need help with, and how they prefer it done.' },
+  { key: 'mobility_transfers',      label: '🚶 Mobility & transfers',             order: 2,  hint: 'Walking, transfers, equipment, number of staff, falls history.' },
+  { key: 'nutrition_hydration',     label: '🍽 Eating & drinking',                order: 3,  hint: 'Diet type, texture (IDDSI), allergies, likes and dislikes, assistance needed, MUST score.' },
+  { key: 'continence',              label: '🚽 Continence',                       order: 4,  hint: 'Continence status, products used, toileting routine, dignity considerations.' },
+  { key: 'skin_integrity',          label: '🩹 Skin integrity & pressure care',   order: 5,  hint: 'Waterlow score, pressure areas, repositioning interval, mattress and cushion settings.' },
+  { key: 'medication',              label: '💊 Medication',                       order: 6,  hint: 'How they take medicines, swallowing, PRN protocols, covert arrangements, who administers.' },
+  { key: 'pain',                    label: '💢 Pain & comfort',                   order: 7,  hint: 'How this person shows pain, what helps, pain tool used (e.g. Abbey for non-verbal).' },
+  { key: 'breathing_circulation',   label: '🫁 Breathing & circulation',          order: 8,  hint: 'Oxygen, inhalers, oedema, positioning, baseline observations.' },
+  { key: 'communication_sensory',   label: '💬 Communication, sight & hearing',   order: 9,  hint: 'Preferred language, hearing aids, glasses, how they make needs known, what helps them understand.' },
+  { key: 'cognition_mental_health', label: '🧠 Memory, mood & mental health',     order: 10, hint: 'Diagnosis, orientation, capacity, low mood or anxiety, what reassures them.' },
+  { key: 'behaviour_support',       label: '🤲 Behaviour & distress',             order: 11, hint: 'What distress looks like, known triggers, what helps early, least restrictive responses.' },
+  { key: 'social_emotional',        label: '👥 Social life, relationships & purpose', order: 12, hint: 'Who matters to them, what they enjoy, faith, routines that give the day meaning.' },
+  { key: 'night_care',              label: '🌙 Night-time care',                  order: 13, hint: 'Usual bedtime, how they settle, checks needed and why, what to do if they wake.' },
+  { key: 'safety_risk',             label: '⚠️ Safety & risk',                    order: 14, hint: 'Falls, choking, leaving unaccompanied, smoking, bed rails. Link to the risk assessment.' },
+  { key: 'end_of_life',             label: '🕊 Wishes for the future',            order: 15, hint: 'DNACPR / ReSPECT, preferred place of care, advance decisions, funeral wishes. Only if discussed.' },
 ];
 
 const DOMAIN_KEYS = CARE_PLAN_DOMAINS.map(d => d.key);

@@ -15,12 +15,12 @@ const LOCATIONS = ['in_home','clinic','hospital','video','telephone'];
 const STATUSES = ['scheduled','attended','did_not_attend','cancelled','rescheduled'];
 
 export const APPOINTMENT_TYPE_LABELS: Record<string,string> = {
-  gp: 'GP', district_nurse: 'District nurse', hospital_outpatient: 'Hospital outpatient',
-  dentist: 'Dentist', optician: 'Optician', chiropody: 'Chiropody / podiatry',
-  physiotherapy: 'Physiotherapy', occupational_therapy: 'Occupational therapy',
-  speech_language: 'Speech & language therapy', mental_health: 'Mental health',
-  audiology: 'Audiology', tissue_viability: 'Tissue viability', dietitian: 'Dietitian',
-  social_worker: 'Social worker', other: 'Other',
+  gp: '🩺 GP', district_nurse: '💉 District nurse', hospital_outpatient: '🏥 Hospital outpatient',
+  dentist: '🦷 Dentist', optician: '👓 Optician', chiropody: '🦶 Chiropody / podiatry',
+  physiotherapy: '🏃 Physiotherapy', occupational_therapy: '🧰 Occupational therapy',
+  speech_language: '🗣 Speech & language therapy', mental_health: '🧠 Mental health',
+  audiology: '👂 Audiology', tissue_viability: '🩹 Tissue viability', dietitian: '🍽 Dietitian',
+  social_worker: '👥 Social worker', other: '📝 Other',
 };
 
 function shape(a: any) {
