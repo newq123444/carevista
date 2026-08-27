@@ -107,6 +107,104 @@ export async function deleteReportTemplate(req: Request, res: Response, next: Ne
 
 // ── Report Runs ───────────────────────────────────────────────────────────
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Actually running a report.
+//
+// Until now "Run" only wrote a row saying a run was pending — nothing was ever
+// executed and no result was produced, so the Download button had nothing to
+// download. This executes the template against a fixed, allow-listed set of
+// tables and stores the rows on the run.
+//
+// Every identifier below comes from the allow-list, never from the request.
+// A report builder that interpolates user input into SQL is a SQL-injection
+// hole with a friendly UI on top.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type SourceSpec = {
+  table: string;
+  /** Columns a report may select, mapped to the SQL that produces them. */
+  columns: Record<string, string>;
+  /** Extra joins needed by those columns. */
+  join?: string;
+  /** Column used for date-range filtering. */
+  dateColumn?: string;
+  /** How the table is scoped to a care home. */
+  tenantColumn?: string;
+};
+
+const SOURCES: Record<string, SourceSpec> = {
+  residents: {
+    table: 'residents r', tenantColumn: 'r.care_home_id', dateColumn: 'r.admission_date',
+    columns: {
+      first_name: 'r.first_name', last_name: 'r.last_name', room_number: 'r.room_number',
+      date_of_birth: 'r.date_of_birth', admission_date: 'r.admission_date',
+      discharge_date: 'r.discharge_date', risk_level: 'r.risk_level',
+      funding_type: 'r.funding_type', weekly_fee: 'r.weekly_fee', nhs_number: 'r.nhs_number',
+      gp_name: 'r.gp_name', dnacpr: 'r.dnacpr', allergies: 'r.allergies', active: 'r.active',
+    },
+  },
+  care_notes: {
+    table: 'care_notes cn', tenantColumn: 'cn.care_home_id', dateColumn: 'cn.created_at',
+    join: `JOIN residents r ON r.id = cn.resident_id LEFT JOIN users u ON u.id = cn.author_id`,
+    columns: {
+      created_at: 'cn.created_at', resident: `r.first_name || ' ' || r.last_name`,
+      room_number: 'r.room_number', note_type: 'cn.note_type', content: 'cn.content',
+      author: `u.first_name || ' ' || u.last_name`, is_significant: 'cn.is_significant',
+      flagged: 'cn.flagged', pain_score: 'cn.pain_score',
+      fluid_intake_ml: 'cn.fluid_intake_ml', food_eaten_percent: 'cn.food_eaten_percent',
+    },
+  },
+  incidents: {
+    table: 'incidents i', tenantColumn: 'i.care_home_id', dateColumn: 'i.created_at',
+    join: 'LEFT JOIN residents r ON r.id = i.resident_id',
+    columns: {
+      created_at: 'i.created_at', incident_type: 'i.incident_type', severity: 'i.severity',
+      status: 'i.status', resident: `r.first_name || ' ' || r.last_name`,
+      location: 'i.location', description: 'i.description', injuries: 'i.injuries',
+      cqc_reportable: 'i.cqc_reportable', reported_to_cqc: 'i.reported_to_cqc',
+    },
+  },
+  invoices: {
+    table: 'invoices inv', tenantColumn: 'inv.care_home_id', dateColumn: 'inv.created_at',
+    join: 'LEFT JOIN residents r ON r.id = inv.resident_id',
+    columns: {
+      created_at: 'inv.created_at', resident: `r.first_name || ' ' || r.last_name`,
+      status: 'inv.status',
+    },
+  },
+  occupancy_records: {
+    table: 'occupancy_records o', tenantColumn: 'o.care_home_id', dateColumn: 'o.record_date',
+    columns: { record_date: 'o.record_date' },
+  },
+  visitor_records: {
+    table: 'visitor_records v', tenantColumn: 'v.care_home_id', dateColumn: 'v.created_at',
+    columns: { created_at: 'v.created_at' },
+  },
+};
+
+function buildReportQuery(source: string, fields: string[], params: any) {
+  const spec = SOURCES[source];
+  if (!spec) return null;
+
+  const wanted = (Array.isArray(fields) && fields.length ? fields : Object.keys(spec.columns))
+    .filter(f => spec.columns[f]);
+  if (!wanted.length) return null;
+
+  const select = wanted.map(f => `${spec.columns[f]} AS "${f}"`).join(', ');
+  const values: any[] = [];
+  const where: string[] = [];
+
+  if (spec.tenantColumn) { values.push(params.careHomeId); where.push(`${spec.tenantColumn} = $${values.length}`); }
+  if (spec.dateColumn && params.from) { values.push(params.from); where.push(`${spec.dateColumn} >= $${values.length}`); }
+  if (spec.dateColumn && params.to)   { values.push(params.to);   where.push(`${spec.dateColumn} <= $${values.length}`); }
+
+  const order = spec.dateColumn ? `ORDER BY ${spec.dateColumn} DESC` : '';
+  const sql = `SELECT ${select} FROM ${spec.table} ${spec.join || ''}
+               ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ${order} LIMIT 5000`;
+  return { sql, values, fields: wanted };
+}
+
 export async function runReport(req: Request, res: Response, next: NextFunction) {
   try {
     const careHomeId = req.user!.care_home_id;
@@ -123,19 +221,51 @@ export async function runReport(req: Request, res: Response, next: NextFunction)
     );
     if (!template) throw new AppError(404, 'Report template not found');
 
+    // Execute it, rather than only recording that somebody asked.
+    const built = buildReportQuery(template.data_source, template.fields || [], {
+      careHomeId,
+      from: parameters?.from || parameters?.dateFrom || null,
+      to: parameters?.to || parameters?.dateTo || null,
+    });
+
+    if (!built) {
+      const { rows: [failed] } = await query(
+        `INSERT INTO report_runs (care_home_id, template_id, parameters, status, error, created_by)
+         VALUES ($1,$2,$3,'failed',$4,$5) RETURNING *`,
+        [careHomeId, templateId, parameters ? JSON.stringify(parameters) : null,
+         `No report is available for the data source "${template.data_source}" yet.`, req.user!.id]);
+      return res.status(400).json({
+        error: `Reports are not available for "${template.data_source}" yet. Choose another data source.`,
+        run: failed,
+      });
+    }
+
+    let rows: any[] = [];
+    let runError: string | null = null;
+    try {
+      const result = await query(built.sql, built.values);
+      rows = result.rows;
+    } catch (e: any) {
+      runError = e?.message || 'The report could not be run';
+    }
+
     const { rows: [run] } = await query(
-      `INSERT INTO report_runs (care_home_id, template_id, parameters, status, created_by)
-       VALUES ($1, $2, $3, 'pending', $4) RETURNING *`,
-      [careHomeId, templateId, parameters ? JSON.stringify(parameters) : null, req.user!.id]
+      `INSERT INTO report_runs
+         (care_home_id, template_id, parameters, status, row_count, result_url, error, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [careHomeId, templateId, parameters ? JSON.stringify(parameters) : null,
+       runError ? 'failed' : 'completed', runError ? null : rows.length,
+       runError ? null : JSON.stringify({ fields: built.fields, rows }),
+       runError, req.user!.id]
     );
 
     await auditLog({
       careHomeId, actorId: req.user!.id,
       actorName: `${req.user!.first_name} ${req.user!.last_name}`,
       action: 'REPORT_RUN_STARTED', entityType: 'report_run', entityId: run.id,
-      afterData: { templateId, templateName: template.name }, ip: req.ip,
+      afterData: { templateId, templateName: template.name, rowCount: rows.length }, ip: req.ip,
     });
-    res.status(201).json(run);
+    res.status(201).json({ ...run, fields: built.fields, rows });
   } catch (err) { next(err); }
 }
 
@@ -176,7 +306,9 @@ export async function getReportRun(req: Request, res: Response, next: NextFuncti
       [id, careHomeId]
     );
     if (!run) throw new AppError(404, 'Report run not found');
-    res.json(run);
+    let payload: any = null;
+    try { payload = run.result_url ? JSON.parse(run.result_url) : null; } catch { payload = null; }
+    res.json({ ...run, fields: payload?.fields || [], rows: payload?.rows || [] });
   } catch (err) { next(err); }
 }
 

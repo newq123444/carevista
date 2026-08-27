@@ -10,6 +10,7 @@ import { EnvironmentCard } from '../components/EnvironmentCard';
 import { api } from '../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDate, formatAge, formatDateTime, NOTE_TYPE_LABELS } from '../utils/formatters';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
 
 const TABS = ['Overview', 'Care Plan', 'Timeline', 'Medications', 'Incidents', 'Notes', 'Activities', 'Life Story', 'Wellbeing', 'Belongings', 'Weight', 'Body Map'] as const;
 type Tab = typeof TABS[number];
@@ -518,7 +519,8 @@ export default function ResidentDetail() {
     <div>
       {/* ── Header ───────────────────────────────────────────── */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <PrintHeader title="Resident record" subject={`${r.first_name} ${r.last_name}, Room ${r.room_number}`} note={tab} />
+        <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <Link to="/residents" style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}>← Residents</Link>
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
@@ -540,6 +542,7 @@ export default function ResidentDetail() {
             </div>
           </div>
           <div className="resident-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <PrintButton label="Print record" />
             <Link to={`/care-notes?resident_id=${r.id}`} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#0d9488', color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>📝 Add Note</Link>
             <Link to={`/emar?resident_id=${r.id}`} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>💊 eMAR</Link>
             <Link to={`/incidents?resident_id=${r.id}`} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>⚠️ Incident</Link>

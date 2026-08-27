@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { useSupervisionMatrix, useSupervisions, useCreateSupervision, useUpdateSupervision, useMySupervisions } from '../hooks';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
+import { exportCsv } from '../utils/exportCsv';
 import { useAuthStore } from '../store/auth.store';
 
 // Staff supervision and appraisal (CQC Regulation 18).
@@ -58,11 +60,30 @@ export default function Supervisions() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1 className="page-title">{tr('Supervision & Appraisal')}</h1>
-        <p className="page-subtitle">
-          Regulation 18 requires every member of staff to receive supervision and appraisal. This is the record of it.
-        </p>
+      <PrintHeader title="Supervision and appraisal record" />
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h1 className="page-title">{tr('Supervision & Appraisal')}</h1>
+          <p className="page-subtitle">
+            Regulation 18 requires every member of staff to receive supervision and appraisal. This is the record of it.
+          </p>
+        </div>
+        {isManager && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <PrintButton />
+            <button className="btn btn-secondary btn-sm no-print" onClick={() => exportCsv('supervision-matrix', staff, [
+              { header: 'Staff', value: (r: any) => r.staffName },
+              { header: 'Role', value: (r: any) => r.role },
+              { header: 'Last supervision', value: (r: any) => r.lastSession },
+              { header: 'Days since', value: (r: any) => r.daysSinceLast },
+              { header: 'Sessions (12m)', value: (r: any) => r.sessions12m },
+              { header: 'Appraisals (12m)', value: (r: any) => r.appraisals12m },
+              { header: 'Overdue', value: (r: any) => r.overdue },
+              { header: 'Never supervised', value: (r: any) => r.neverSupervised },
+              { header: 'Next due', value: (r: any) => r.nextSessionDue },
+            ])}>⬇ Export CSV</button>
+          </div>
+        )}
       </div>
 
       {isManager && (

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { useMonitoringAlerts, useMonitoringTargets, useMonitoringChart, useSetMonitoringTarget, useResidents } from '../hooks';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
+import { exportCsv } from '../utils/exportCsv';
 
 // Fluid, food and repositioning charts.
 // Built from the care notes staff already write — no second place to record
@@ -55,6 +57,7 @@ export default function MonitoringCharts() {
 
   return (
     <div>
+      <PrintHeader title="Fluid, food and repositioning charts" />
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 className="page-title">{tr('Fluid & Food Charts')}</h1>
@@ -62,7 +65,20 @@ export default function MonitoringCharts() {
             Built from the care notes staff already write. Set a target for a resident and the shortfall shows here.
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setSetupOpen(true)}>Start monitoring someone</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <PrintButton />
+          <button className="btn btn-secondary btn-sm no-print" onClick={() => exportCsv('monitoring-targets', targetList, [
+            { header: 'Resident', value: (r: any) => r.residentName },
+            { header: 'Room', value: (r: any) => r.roomNumber },
+            { header: 'Fluids', value: (r: any) => r.monitorFluids },
+            { header: 'Fluid target (ml)', value: (r: any) => r.fluidTargetMl },
+            { header: 'Food', value: (r: any) => r.monitorFood },
+            { header: 'Repositioning (hrs)', value: (r: any) => r.repositionIntervalHours },
+            { header: 'Reason', value: (r: any) => r.reason },
+            { header: 'Since', value: (r: any) => r.startedOn },
+          ])}>⬇ Export CSV</button>
+          <button className="btn btn-primary" onClick={() => setSetupOpen(true)}>Start monitoring someone</button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { useReportTemplates, useCreateReportTemplate, useUpdateReportTemplate, useDeleteReportTemplate, useRunReport, useReportRuns, useReportDataSources } from '../hooks';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
+import { exportRows } from '../utils/exportCsv';
+import { api } from '../services/api';
 
 const DATA_SOURCES = [
   'residents', 'care_notes', 'incidents', 'medications', 'staff',
@@ -190,6 +193,7 @@ export default function ReportBuilder() {
 
   return (
     <div>
+      <PrintHeader title="Reports" />
       <div className="page-header">
         <div>
           <h1 className="page-title">Custom Report Builder</h1>
@@ -402,7 +406,19 @@ export default function ReportBuilder() {
                       <td>{run.row_count ?? '-'}</td>
                       <td>
                         {run.status === 'completed' && (
-                          <button className="btn btn-ghost btn-sm">{tr('Download')}</button>
+                          <button className="btn btn-ghost btn-sm" onClick={async () => {
+                            // The rows are stored with the run, so a report can be
+                            // downloaded again later without re-running it.
+                            try {
+                              const { data } = await api.get(`/reports/runs/${run.id}`);
+                              if (!data?.rows?.length) { alert('This run produced no rows.'); return; }
+                              exportRows(
+                                (run.template_name || 'report').replace(/\s+/g, '-').toLowerCase(),
+                                data.rows, data.fields);
+                            } catch {
+                              alert('Could not fetch this report run.');
+                            }
+                          }}>{tr('Download')}</button>
                         )}
                       </td>
                     </tr>

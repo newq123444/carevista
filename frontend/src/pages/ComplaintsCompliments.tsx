@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { useFeedbackSummary, useFeedbackList, useCreateFeedback, useUpdateFeedback, useResidents } from '../hooks';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
+import { exportCsv } from '../utils/exportCsv';
 
 // Complaints, concerns and compliments — CQC Regulation 16.
 // Two statutory clocks: acknowledge within 3 working days, respond within 28.
@@ -69,6 +71,7 @@ export default function ComplaintsCompliments() {
 
   return (
     <div>
+      <PrintHeader title="Complaints & compliments register" />
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 className="page-title">{tr('Complaints & Compliments')}</h1>
@@ -76,7 +79,26 @@ export default function ComplaintsCompliments() {
             Everything raised about the home, and what changed as a result. Acknowledge within 3 working days, respond within 28.
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setAddOpen(true)}>Log something</button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <PrintButton />
+          <button className="btn btn-secondary btn-sm no-print" onClick={() => exportCsv('complaints', list, [
+        { header: 'Reference', value: (r: any) => r.reference },
+        { header: 'Received', value: (r: any) => r.receivedDate },
+        { header: 'Type', value: (r: any) => r.feedbackType },
+        { header: 'Category', value: (r: any) => r.categoryLabel },
+        { header: 'Raised by', value: (r: any) => r.raisedByName },
+        { header: 'Resident', value: (r: any) => r.residentName },
+        { header: 'Summary', value: (r: any) => r.summary },
+        { header: 'Status', value: (r: any) => r.status },
+        { header: 'Outcome', value: (r: any) => r.outcome },
+        { header: 'Actions taken', value: (r: any) => r.actionsTaken },
+        { header: 'Lessons learned', value: (r: any) => r.lessonsLearned },
+        { header: 'Days open', value: (r: any) => r.daysOpen },
+      ])}>
+            ⬇ Export CSV
+          </button>
+  <button className="btn btn-primary" onClick={() => setAddOpen(true)}>Log something</button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

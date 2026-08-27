@@ -6,6 +6,8 @@ import {
   useCarePlanVersion, useCreateCarePlan, useUpdateCarePlan, useUpdateCarePlanSection,
   useApproveCarePlan, useAddCarePlanReview, useArchiveCarePlan, useImportAiDraft,
 } from '../hooks';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
+import { exportCsv } from '../utils/exportCsv';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The person-centred care plan (CQC Regulation 9).
@@ -319,8 +321,13 @@ function PlanEditor({ planId, onBack, canEdit }: { planId: string; onBack: () =>
 
   return (
     <>
+      <PrintHeader
+        title="Person-centred care plan"
+        subject={`${plan.residentName}, Room ${plan.roomNumber}`}
+        note={`Version ${plan.version}${plan.approvedByName ? `, signed off by ${plan.approvedByName}` : ', not yet signed off'}`} />
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap', marginBottom: 18 }}>
-        <button className="btn btn-ghost btn-sm" onClick={onBack}>← All care plans</button>
+        <button className="btn btn-ghost btn-sm no-print" onClick={onBack}>← All care plans</button>
+        <PrintButton label="Print plan" />
         <div style={{ flex: 1, minWidth: 240 }}>
           <h1 className="page-title" style={{ marginBottom: 2 }}>{plan.preferredName || plan.residentName}</h1>
           <div className="page-subtitle" style={{ margin: 0 }}>
@@ -674,12 +681,28 @@ export default function CarePlans() {
 
   return (
     <div>
-      <div className="page-header">
+      <PrintHeader title="Care plan coverage" />
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div>
         <h1 className="page-title">{tr('Care Plans')}</h1>
         <p className="page-subtitle">
           Every resident must have a person-centred care plan covering their assessed needs,
           the outcomes they want, and exactly what staff do — reviewed and signed off.
         </p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <PrintButton />
+          <button className="btn btn-secondary btn-sm no-print" onClick={() => exportCsv('care-plan-coverage', list, [
+            { header: 'Resident', value: (r: any) => r.residentName },
+            { header: 'Room', value: (r: any) => r.roomNumber },
+            { header: 'Status', value: (r: any) => r.status },
+            { header: 'Version', value: (r: any) => r.version },
+            { header: 'Complete %', value: (r: any) => r.completenessPercent },
+            { header: 'Next review', value: (r: any) => r.nextReviewDate },
+            { header: 'Review overdue', value: (r: any) => r.reviewOverdue },
+            { header: 'Signed off by', value: (r: any) => r.approvedByName },
+          ])}>⬇ Export CSV</button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12, marginBottom: 20 }}>

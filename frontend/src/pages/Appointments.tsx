@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { useAppointments, useAppointmentSummary, useCreateAppointment, useUpdateAppointment, useResidents, useStaff } from '../hooks';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
+import { exportCsv } from '../utils/exportCsv';
 
 // Healthcare appointments and visiting professionals.
 // A missed chiropody visit for a diabetic resident, or an unbooked GP review
@@ -84,12 +86,31 @@ export default function Appointments() {
 
   return (
     <div>
+      <PrintHeader title="Healthcare appointments" />
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 className="page-title">{tr('Appointments')}</h1>
           <p className="page-subtitle">GP rounds, district nurses, chiropody, dentists, opticians and hospital appointments.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setAddOpen(true)}>Book an appointment</button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <PrintButton />
+          <button className="btn btn-secondary btn-sm no-print" onClick={() => exportCsv('appointments', list, [
+        { header: 'When', value: (r: any) => r.scheduledAt },
+        { header: 'Resident', value: (r: any) => r.residentName },
+        { header: 'Room', value: (r: any) => r.roomNumber },
+        { header: 'Type', value: (r: any) => r.appointmentTypeLabel },
+        { header: 'Professional', value: (r: any) => r.professionalName },
+        { header: 'Organisation', value: (r: any) => r.organisation },
+        { header: 'Location', value: (r: any) => r.location },
+        { header: 'Status', value: (r: any) => r.status },
+        { header: 'Outcome', value: (r: any) => r.outcome },
+        { header: 'Actions required', value: (r: any) => r.actionsRequired },
+        { header: 'Follow-up', value: (r: any) => r.followUpDate },
+      ])}>
+            ⬇ Export CSV
+          </button>
+  <button className="btn btn-primary" onClick={() => setAddOpen(true)}>Book an appointment</button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

@@ -821,3 +821,91 @@ body.drawer-open { overflow: hidden; }
 select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15,118,110,.15); }
 a { color: var(--primary); }
 ::selection { background: rgba(15,118,110,.18); }
+
+/* -- Printing ---------------------------------------------------------------
+   Care homes hand paper to inspectors, commissioners and families. Until now
+   printing any screen produced the sidebar, the top bar, the bottom nav and
+   every button alongside the content.
+
+   What a printed care record has to do: identify the home, the person, the
+   date and who printed it; carry no interactive chrome; and not split a record
+   across a page break.
+--------------------------------------------------------------------------- */
+@media print {
+  /* Ink and legibility. Screen colours print as grey mush. */
+  :root, [data-theme="dark"] {
+    --bg: #fff; --surface: #fff; --surface-2: #fff;
+    --text-primary: #000; --text-secondary: #222; --text-muted: #444;
+    --border: #bbb;
+  }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt;
+  }
+
+  /* Nothing that cannot be done on paper. */
+  .sidebar, .sidebar-overlay, .topbar, .bottom-nav,
+  .modal-overlay, .mobile-sheet,
+  .btn, button, input, select, textarea,
+  .no-print { display: none !important; }
+
+  /* …except content that happens to sit inside a button-ish wrapper. */
+  .print-only { display: block !important; }
+
+  /* Reclaim the page. */
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+  }
+  .app-shell { display: block !important; }
+
+  /* Cards become plain sections, and do not straddle a page break. */
+  .card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 10pt;
+  }
+  .card-header { background: #f4f4f4 !important; }
+
+  /* Tables: repeat the header on every page and keep rows whole. */
+  .table-container { overflow: visible !important; }
+  .table { min-width: 0 !important; width: 100% !important; font-size: 10pt; }
+  .table thead { display: table-header-group; }
+  .table tr { break-inside: avoid; page-break-inside: avoid; }
+  .table th, .table td { border-bottom: 1px solid #ddd !important; }
+
+  /* Badges and pills need a border to survive black and white. */
+  .badge, [style*="border-radius: 20px"], [style*="borderRadius:20"] {
+    border: 1px solid #999 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Headings stay with their content. */
+  h1, h2, h3, .card-title { break-after: avoid; page-break-after: avoid; }
+
+  /* Tabs print as a single strip with the selected one marked in the header. */
+  .tab-strip { display: none !important; }
+
+  a[href]::after { content: ""; }
+
+  @page { margin: 14mm 12mm; }
+}
+
+/* The printable header is hidden on screen and appears only on paper. */
+.print-header { display: none; }
+@media print {
+  .print-header {
+    display: block !important;
+    border-bottom: 2px solid #000;
+    padding-bottom: 6pt;
+    margin-bottom: 10pt;
+  }
+  .print-header .ph-title { font-size: 14pt; font-weight: 700; margin: 0; }
+  .print-header .ph-meta  { font-size: 9pt; color: #333; margin-top: 2pt; }
+}

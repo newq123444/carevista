@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { useLibertySummary, useLibertyProtections, useCreateLibertyProtection, useUpdateLibertyProtection, useResidents } from '../hooks';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
+import { exportCsv } from '../utils/exportCsv';
 
 // DoLS authorisations and the restrictions register.
 // An expired authorisation is an unlawful deprivation of liberty, and a
@@ -72,6 +74,7 @@ export default function DolsRegister() {
 
   return (
     <div>
+      <PrintHeader title="DoLS and restrictions register" />
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 className="page-title">{tr('DoLS & Restrictions')}</h1>
@@ -79,9 +82,29 @@ export default function DolsRegister() {
             Every authorisation and every restriction on a person's liberty — with its reason, its lawful basis, and when it must be reviewed.
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setForm({ ...form, recordType: tab }); setAddOpen(true); }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <PrintButton />
+          <button className="btn btn-secondary btn-sm no-print" onClick={() => exportCsv('dols-restrictions', list, [
+        { header: 'Resident', value: (r: any) => r.residentName },
+        { header: 'Room', value: (r: any) => r.roomNumber },
+        { header: 'Record type', value: (r: any) => r.recordType },
+        { header: 'DoLS status', value: (r: any) => r.dolsStatus },
+        { header: 'Granted from', value: (r: any) => r.grantedFrom },
+        { header: 'Granted until', value: (r: any) => r.grantedUntil },
+        { header: 'Supervisory body', value: (r: any) => r.supervisoryBody },
+        { header: 'Representative', value: (r: any) => r.representativeName },
+        { header: 'Restriction', value: (r: any) => r.restrictionLabel },
+        { header: 'Reason', value: (r: any) => r.reason },
+        { header: 'Lawful basis', value: (r: any) => r.consentBasis },
+        { header: 'Next review', value: (r: any) => r.nextReviewDate },
+        { header: 'Active', value: (r: any) => r.active },
+      ])}>
+            ⬇ Export CSV
+          </button>
+  <button className="btn btn-primary" onClick={() => { setForm({ ...form, recordType: tab }); setAddOpen(true); }}>
           {tab === 'dols' ? 'Record a DoLS' : 'Record a restriction'}
         </button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
 import { useResidentBalances, useResidentLedger, useAddLedgerEntry, useResidents, useStaff } from '../hooks';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
+import { exportCsv } from '../utils/exportCsv';
 
 // Resident personal allowance ledger.
 // Money held on a resident's behalf, with a running balance, a named recorder
@@ -37,6 +39,7 @@ export default function ResidentFinance() {
 
   return (
     <div>
+      <PrintHeader title="Resident personal allowance" subject={ledger?.residentName || null} />
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 className="page-title">{tr('Personal Allowance')}</h1>
@@ -45,9 +48,23 @@ export default function ResidentFinance() {
             Local authorities audit this, and mishandling it is a safeguarding matter.
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setForm({ ...form, residentId: residentId || '' }); setAddOpen(true); }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <PrintButton />
+          <button className="btn btn-secondary btn-sm no-print" disabled={!ledger} onClick={() => ledger && exportCsv(
+            `ledger-${ledger.residentName.replace(/\s+/g, '-').toLowerCase()}`, ledger.entries, [
+              { header: 'Date', value: (r: any) => r.entryDate },
+              { header: 'What for', value: (r: any) => r.categoryLabel },
+              { header: 'Description', value: (r: any) => r.description },
+              { header: 'In', value: (r: any) => (r.direction === 'in' ? r.amount : '') },
+              { header: 'Out', value: (r: any) => (r.direction === 'out' ? r.amount : '') },
+              { header: 'Balance', value: (r: any) => r.balanceAfter },
+              { header: 'Recorded by', value: (r: any) => r.recordedByName },
+              { header: 'Witnessed by', value: (r: any) => r.witnessedByName },
+            ])}>⬇ Export ledger</button>
+          <button className="btn btn-primary" onClick={() => { setForm({ ...form, residentId: residentId || '' }); setAddOpen(true); }}>
           Record money in or out
         </button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 20 }}>
