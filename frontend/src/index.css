@@ -689,9 +689,32 @@ body.drawer-open { overflow: hidden; }
   .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .table { min-width: 480px; }
 
-  /* Anything long and unbroken (emails, NHS numbers) wraps instead of
-     stretching the layout. */
-  .card, .card-body { overflow-wrap: anywhere; }
+  /* Long unbroken strings (emails, NHS numbers) wrap instead of stretching the
+     layout — but with break-word, NOT anywhere.
+     `anywhere` also shrinks an element's min-content width to a single
+     character, which lets flexbox squeeze a text column to nothing while its
+     siblings keep their size. That is what turned the resident list into one
+     letter per line. `break-word` breaks long words only when they would
+     actually overflow, and leaves intrinsic sizing alone. */
+  .card, .card-body { overflow-wrap: break-word; }
+
+  /* Flex children default to min-width:auto, so they refuse to shrink below
+     their content and push the row sideways instead. Every list row in the app
+     is built as "avatar + flexible text + actions", so allow the flexible part
+     to shrink. This is the standard fix, applied once rather than in fifty
+     inline styles. */
+  .card [style*="flex: 1"],
+  .card [style*="flex:1"] { min-width: 0; }
+
+  /* Resident list: name and details take the full width, actions drop onto
+     their own line underneath. Without min-width:0 a flex child refuses to
+     shrink below its content, and the browser resolves the conflict by
+     squeezing whichever sibling will give — here, the name. */
+  .resident-row { align-items: flex-start; }
+  .resident-row-main { flex: 1 1 100%; min-width: 0; }
+  .resident-row-actions { flex: 1 1 100%; justify-content: flex-start; }
+  .resident-row-actions > * { flex: 0 0 auto; }
+  .resident-row-actions .btn { min-height: 36px; }
 
   /* Resident profile: the action buttons share the width instead of spilling
      off the right edge, and each keeps a thumb-sized target. */
