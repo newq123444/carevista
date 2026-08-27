@@ -253,6 +253,47 @@ export default function App() {
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
   // Close drawer on desktop resize
   useEffect(() => { if (isDesktop) setSidebarOpen(false); }, [isDesktop]);
+
+  // While the drawer is open, freeze the page behind it.
+  //
+  // Without this, two scrollable surfaces are stacked: swiping in the menu
+  // scrolls the menu until it reaches the end, then silently starts scrolling
+  // the page underneath — so closing the drawer leaves you somewhere you never
+  // meant to be. Pinning the body position (not just overflow:hidden, which
+  // iOS Safari ignores) stops it, and the saved offset is restored on close so
+  // the page does not jump back to the top.
+  useEffect(() => {
+    if (isDesktop) return;
+    if (!sidebarOpen) return;
+    const y = window.scrollY;
+    document.body.classList.add('drawer-open');
+    document.body.style.top = `-${y}px`;
+    return () => {
+      document.body.classList.remove('drawer-open');
+      document.body.style.top = '';
+      window.scrollTo(0, y);
+    };
+  }, [sidebarOpen, isDesktop]);
+
+  // The phone back gesture should close the drawer, not leave the app.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    window.history.pushState({ drawer: true }, '');
+    const onPop = () => setSidebarOpen(false);
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      if (window.history.state?.drawer) window.history.back();
+    };
+  }, [sidebarOpen]);
+
+  // Escape closes it too (tablets with keyboards, and desktop testing).
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSidebarOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sidebarOpen]);
   // Clear search when sidebar collapses
   useEffect(() => { if (collapsed) setSearchQuery(''); }, [collapsed]);
 
@@ -548,6 +589,8 @@ export default function App() {
           <div
             className={`sidebar-overlay${sidebarOpen ? ' visible' : ''}`}
             onClick={() => setSidebarOpen(false)}
+            onTouchMove={e => e.preventDefault()}
+            aria-hidden="true"
           />
           {/* Drawer */}
           <nav className={`sidebar${sidebarOpen ? ' mobile-open' : ''}`} style={{ width: sidebarW }}>

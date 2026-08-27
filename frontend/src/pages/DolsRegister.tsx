@@ -103,7 +103,7 @@ export default function DolsRegister() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18 }}>
+      <div className="tab-strip" style={{ gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18 }}>
         {([['dols', 'DoLS authorisations'], ['restriction', 'Restrictions register']] as const).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k as any)} style={{
             padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',

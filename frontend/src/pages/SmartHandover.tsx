@@ -37,7 +37,7 @@ export default function SmartHandover() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
+      <div className="tab-strip" style={{ gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
         {([['generate', '⚡ Generate Handover'], ['history', '📜 History']] as const).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} style={{ padding: '10px 20px', border: 'none', background: 'none', borderBottom: `2px solid ${tab === k ? '#ea580c' : 'transparent'}`, color: tab === k ? '#ea580c' : 'var(--text-secondary)', fontWeight: tab === k ? 700 : 500, cursor: 'pointer', fontSize: 14, marginBottom: -2 }}>{l}</button>
         ))}

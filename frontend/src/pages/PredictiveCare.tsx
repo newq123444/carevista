@@ -67,7 +67,7 @@ function PredictiveCareInner() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
+      <div className="tab-strip" style={{ gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
         {([
           ['dashboard', '📊 Risk Dashboard'],
           ['alerts', '🔔 Active Alerts'],

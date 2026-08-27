@@ -101,7 +101,7 @@ export default function ComplaintsCompliments() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18, flexWrap: 'wrap' }}>
+      <div className="tab-strip" style={{ gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18, flexWrap: 'wrap' }}>
         {[{ k: '', label: 'Everything' }, { k: 'complaint', label: 'Complaints' }, { k: 'concern', label: 'Concerns' },
           { k: 'compliment', label: 'Compliments' }, { k: 'suggestion', label: 'Suggestions' }].map(t => (
           <button key={t.k} onClick={() => setFilter(t.k)} style={{

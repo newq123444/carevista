@@ -49,7 +49,7 @@ export default function AdmissionMatching() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
+      <div className="tab-strip" style={{ gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
         {([['referrals', '📋 Referrals'], ['new', '➕ New Referral'], ['result', '📊 Match Result']] as const).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} style={{ padding: '10px 20px', border: 'none', background: 'none', borderBottom: `2px solid ${tab === k ? '#0d9488' : 'transparent'}`, color: tab === k ? '#0d9488' : 'var(--text-secondary)', fontWeight: tab === k ? 700 : 500, cursor: 'pointer', fontSize: 14, marginBottom: -2 }}>{l}</button>
         ))}

@@ -522,12 +522,12 @@ export default function ResidentDetail() {
           <Link to="/residents" style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}>← Residents</Link>
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, flex: '1 1 260px' }}>
             {/* Avatar */}
             <ResidentPhoto residentId={r.id} photoUrl={r.photo_url} name={`${r.first_name} ${r.last_name}`} />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>{r.first_name} {r.last_name}</h1>
+                <h1 style={{ fontSize: 'clamp(19px, 5.5vw, 26px)', fontWeight: 900, margin: 0, overflowWrap: 'anywhere' }}>{r.first_name} {r.last_name}</h1>
                 {r.dnacpr && <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontWeight: 700 }}>🔴 DNACPR</span>}
                 <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: rb, color: rc, border: `1px solid ${rc}40`, fontWeight: 700 }}>{r.risk_level?.toUpperCase() ?? ''} RISK</span>
               </div>
@@ -539,7 +539,7 @@ export default function ResidentDetail() {
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="resident-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link to={`/care-notes?resident_id=${r.id}`} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#0d9488', color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>📝 Add Note</Link>
             <Link to={`/emar?resident_id=${r.id}`} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>💊 eMAR</Link>
             <Link to={`/incidents?resident_id=${r.id}`} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>⚠️ Incident</Link>
@@ -548,7 +548,9 @@ export default function ResidentDetail() {
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
+      {/* 12 tabs cannot fit a phone. Rather than wrapping into an unreadable
+          block, the strip scrolls sideways — the standard phone pattern. */}
+      <div className="tab-strip" style={{ gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ padding: '10px 20px', border: 'none', background: 'none', borderBottom: `2px solid ${tab === t ? '#0d9488' : 'transparent'}`, color: tab === t ? '#0d9488' : 'var(--text-secondary)', fontWeight: tab === t ? 700 : 500, cursor: 'pointer', fontSize: 14, transition: 'all 150ms', marginBottom: -2 }}>
             {t}
@@ -618,7 +620,7 @@ export default function ResidentDetail() {
             <MobilityStatusCard residentId={r.id} currentStatus={r.mobility_status} />
 
             {/* Quick stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))', gap: 10 }}>
               {[
                 { label: 'Active Meds', value: meds.length, color: '#10b981', icon: '💊' },
                 { label: 'Open Incidents', value: incidents.filter((i: any) => i.status !== 'closed').length, color: '#dc2626', icon: '⚠️' },

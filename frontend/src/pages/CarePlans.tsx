@@ -352,7 +352,7 @@ function PlanEditor({ planId, onBack, canEdit }: { planId: string; onBack: () =>
         <Kpi label="Next review" value={<span style={{ fontSize: '0.95rem' }}>{fmtDate(plan.nextReviewDate)}</span>} tone={plan.reviewOverdue ? '#b91c1c' : undefined} />
       </div>
 
-      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18 }}>
+      <div className="tab-strip" style={{ gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18 }}>
         {(['plan', 'reviews', 'history'] as const).map(k => (
           <button key={k} onClick={() => setTab(k)} style={{
             padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',

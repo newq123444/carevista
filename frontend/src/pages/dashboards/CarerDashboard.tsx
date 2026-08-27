@@ -363,6 +363,10 @@ function ChipGroup({ label, options, selected, onToggle, color = '#0d9488' }: {
 
 // ── ClinicalForm — shared form used by both task-triggered and ad-hoc notes ──
 interface ClinicalFormProps {
+  /** On a phone the sheet around this form owns the scrolling, so the form must
+      not add a second scroller of its own — two nested scrollers is what made a
+      swipe move the wrong thing. */
+  flush?: boolean;
   resident: Resident;
   noteType: typeof NOTE_TYPES[0];
   task?: any;           // if triggered from a task chip
@@ -371,7 +375,7 @@ interface ClinicalFormProps {
   isAdHoc?: boolean;
 }
 
-function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=false }: ClinicalFormProps) {
+function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=false, flush=false }: ClinicalFormProps) {
   const { t: tr } = useLang();
   const { user } = useAuthStore();
   const { data: rawStaff = [] } = useColleagues();
@@ -593,7 +597,7 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
   );
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', height:'100%' }}>
+    <div style={{ display:'flex', flexDirection:'column', height: flush ? 'auto' : '100%' }}>
       {conflict && (
         <ConflictDialog
           conflict={conflict}
@@ -630,11 +634,16 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
             </div>
           </div>
         </div>
-        <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:20, lineHeight:1 }}>×</button>
+        {!flush && (
+          <button onClick={onClose} aria-label="Close"
+            style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:20, lineHeight:1, minWidth:44, minHeight:44 }}>×</button>
+        )}
       </div>
 
       {/* Scrollable form body */}
-      <div style={{ flex:1, overflowY:'auto', padding:'0 16px 16px', display:'flex', flexDirection:'column', gap:0, minHeight:0 }}>
+      <div style={ flush
+        ? { padding:'0 4px 8px', display:'flex', flexDirection:'column', gap:0 }
+        : { flex:1, overflowY:'auto', padding:'0 16px 16px', display:'flex', flexDirection:'column', gap:0, minHeight:0 } }>
 
         {/* Mood selector */}
         <div style={{ marginBottom:14 }}>
@@ -913,9 +922,14 @@ function ClinicalForm({ resident, noteType, task, onClose, onSaved, isAdHoc=fals
               ✍ {user?.firstName} {user?.lastName} · {now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
               {task && ' — completing task & saving note'}
             </div>
-            <button type="button" onClick={handleSubmit} disabled={isBusy} style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:isBusy?'#93c5fd':`linear-gradient(135deg,${noteType.color},${noteType.color}cc)`, color:'white', fontSize:15, fontWeight:800, cursor:isBusy?'not-allowed':'pointer', boxShadow:`0 4px 16px ${noteType.color}40` }}>
-              {isBusy ? '⏳ Saving…' : task ? `✅ Complete Task & Save Note` : `✅ Sign & Save ${noteType.label} Note`}
-            </button>
+            <div style={ flush
+              ? { position:'sticky', bottom:0, background:'var(--surface-2)', borderTop:'1px solid var(--border)',
+                  margin:'0 -4px', padding:'10px 4px calc(10px + env(safe-area-inset-bottom))', zIndex:5 }
+              : undefined }>
+              <button type="button" onClick={handleSubmit} disabled={isBusy} style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:isBusy?'#93c5fd':`linear-gradient(135deg,${noteType.color},${noteType.color}cc)`, color:'white', fontSize:15, fontWeight:800, cursor:isBusy?'not-allowed':'pointer', boxShadow:`0 4px 16px ${noteType.color}40` }}>
+                {isBusy ? '⏳ Saving…' : task ? `✅ Complete Task & Save Note` : `✅ Sign & Save ${noteType.label} Note`}
+              </button>
+            </div>
           </>
         )}
       </div>
@@ -1102,6 +1116,7 @@ export default function CarerDashboard() {
     setIsAdHoc(false);
   };
 
+
   // Grid view: compute columns and card border color
   const gridCols = isMobile ? 3 : isTablet ? 4 : 4;
   const getCardBorderColor = (residentTasks: any[]) => {
@@ -1147,6 +1162,34 @@ export default function CarerDashboard() {
   // If note type not yet chosen for ad-hoc, show type picker
   const showTypePicker = activeResident && !activeNoteType;
   const showForm       = activeResident && activeNoteType;
+
+  // On a phone the back gesture is how people leave a screen. Without this it
+  // navigated away from the dashboard entirely, losing the half-written note.
+  useEffect(() => {
+    if (!isMobile) return;
+    if (!(showForm || showTypePicker)) return;
+    window.history.pushState({ careSheet: true }, '');
+    const onPop = () => closeForm();
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      if (window.history.state?.careSheet) window.history.back();
+    };
+  }, [isMobile, showForm, showTypePicker]);
+
+  // Freeze the dashboard behind the sheet.
+  useEffect(() => {
+    if (!isMobile) return;
+    if (!(showForm || showTypePicker)) return;
+    const y = window.scrollY;
+    document.body.classList.add('drawer-open');
+    document.body.style.top = `-${y}px`;
+    return () => {
+      document.body.classList.remove('drawer-open');
+      document.body.style.top = '';
+      window.scrollTo(0, y);
+    };
+  }, [isMobile, showForm, showTypePicker]);
 
   return (
     <div>
@@ -1264,11 +1307,32 @@ export default function CarerDashboard() {
 
       {/* ── Mobile overlay for form/picker ─────────────────── */}
       {(isMobile || viewMode === 'grid') && (showForm || showTypePicker) && (
-        <div style={{ position:'fixed', inset:0, zIndex:10000, background: isMobile ? 'var(--bg-primary, #1a1d27)' : 'rgba(15,23,42,.55)', color:'var(--text-primary, #e2e8f0)', overflowY:'auto', padding: isMobile ? '16px' : '32px', display: isMobile ? 'block' : 'flex', justifyContent:'center', alignItems:'flex-start', WebkitOverflowScrolling:'touch' }}>
-          <div style={{ width:'100%', maxWidth: isMobile ? '100%' : 760 }}>
-          <button onClick={closeForm} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', fontSize:14, fontWeight:600, color:'var(--text-primary, #e2e8f0)', marginBottom:12, padding:'4px 0' }}>
-            ← Back
-          </button>
+        <div
+          className={isMobile ? 'mobile-sheet' : undefined}
+          style={isMobile ? undefined : { position:'fixed', inset:0, zIndex:10000, background:'rgba(15,23,42,.55)', overflowY:'auto', padding:'32px', display:'flex', justifyContent:'center', alignItems:'center' }}>
+          {isMobile && (
+            <div className="mobile-sheet-header">
+              <button className="mobile-sheet-back" onClick={closeForm} aria-label="Back">
+                <span aria-hidden="true">←</span> Back
+              </button>
+              <div style={{ minWidth:0, flex:1 }}>
+                <div style={{ fontWeight:600, fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  {activeResident ? `${activeResident.first_name} ${activeResident.last_name}` : 'Care note'}
+                </div>
+                <div style={{ fontSize:12, color:'var(--text-muted)' }}>
+                  {activeResident ? `Room ${activeResident.room_number}` : ''}{activeNoteType ? ` · ${activeNoteType.label}` : ''}
+                </div>
+              </div>
+            </div>
+          )}
+          <div
+            className={isMobile ? 'mobile-sheet-body' : undefined}
+            style={isMobile ? { padding:12 } : { width:'100%', maxWidth:760 }}>
+          {!isMobile && (
+            <button onClick={closeForm} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', fontSize:14, fontWeight:600, color:'#fff', marginBottom:12, padding:'4px 0' }}>
+              ← Back
+            </button>
+          )}
 
           {showTypePicker && activeResident && (
             <div className="card" style={{ border:'2px solid #0d9488' }}>
@@ -1298,7 +1362,7 @@ export default function CarerDashboard() {
           )}
 
           {showForm && activeResident && activeNoteType && (
-            <div className="card" style={{ border:`2px solid ${activeNoteType.color}`, display:'flex', flexDirection:'column', overflow:'hidden', minHeight:0 }}>
+            <div className="card" style={{ border:`2px solid ${activeNoteType.color}`, display:'flex', flexDirection:'column', overflow: isMobile ? 'visible' : 'hidden', minHeight:0 }}>
               <ClinicalForm
                 resident={activeResident}
                 noteType={activeNoteType}
@@ -1306,6 +1370,7 @@ export default function CarerDashboard() {
                 onClose={closeForm}
                 onSaved={() => { refetch(); closeForm(); }}
                 isAdHoc={isAdHoc}
+                flush={isMobile}
               />
             </div>
           )}
@@ -1598,7 +1663,7 @@ export default function CarerDashboard() {
 
         {/* ── RIGHT: Clinical Form ──────────────────────────── */}
         {!isMobile && (showForm || showTypePicker) && (
-          <div style={{ position:'sticky', top:80, height:'calc(100vh - 100px)', display:'flex', flexDirection:'column' }}>
+          <div style={{ position:'sticky', top:80, height:'calc(100dvh - 100px)', display:'flex', flexDirection:'column' }}>
             {showTypePicker && activeResident && (
               <div className="card" style={{ border:`2px solid #0d9488` }}>
                 <div className="card-header" style={{ background:'#eff6ff' }}>

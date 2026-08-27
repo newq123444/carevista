@@ -71,7 +71,7 @@ export default function MonitoringCharts() {
         <Kpi label="Urgent" value={alerts?.highCount ?? 0} tone={(alerts?.highCount || 0) > 0 ? '#b91c1c' : '#059669'} />
       </div>
 
-      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18, flexWrap: 'wrap' }}>
+      <div className="tab-strip" style={{ gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18, flexWrap: 'wrap' }}>
         {([['alerts', 'Needs attention'], ['chart', "One person's chart"], ['setup', 'Who is monitored']] as const).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k as any)} style={{
             padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',

@@ -76,7 +76,7 @@ button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 /* -- App Shell -------------------------------------------- */
-.app-shell { display: flex; min-height: 100vh; }
+.app-shell { display: flex; min-height: 100vh; min-height: 100dvh; }
 
 /* Desktop sidebar */
 .sidebar {
@@ -119,7 +119,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: var(--topbar-height);
+  height: calc(var(--topbar-height) + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
   background: #111827;
   z-index: 150;
   align-items: center;
@@ -194,6 +195,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
     width: var(--sidebar-width) !important;
   }
   .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
   .sidebar-overlay.visible { display: block; }
 
   .topbar { display: flex; }
@@ -201,7 +203,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .main-content {
     margin-left: 0 !important;
     width: 100% !important;
-    padding: calc(var(--topbar-height) + 16px) 16px 24px;
+    padding: calc(var(--topbar-height) + env(safe-area-inset-top) + 16px) 16px 24px;
   }
 }
 
@@ -210,7 +212,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   html { font-size: 13px; }
 
   .main-content {
-    padding: calc(var(--topbar-height) + 12px) 12px calc(var(--bottom-nav-height) + 16px);
+    padding: calc(var(--topbar-height) + env(safe-area-inset-top) + 12px) 12px calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 16px);
   }
 
   .bottom-nav { display: flex; }
@@ -256,7 +258,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 /* -- TABLET only (640-1023px) ----------------------------- */
 @media (min-width: 640px) and (max-width: 1023px) {
-  .main-content { padding: calc(var(--topbar-height) + 20px) 20px 28px; }
+  .main-content { padding: calc(var(--topbar-height) + env(safe-area-inset-top) + 20px) 20px 28px; }
 }
 
 /* Force inline grids to single column on phone, unless opted out with .no-mobile-collapse */
@@ -467,7 +469,11 @@ textarea.form-input { min-height: auto; }
   align-items: center;
   justify-content: center;
   padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
   backdrop-filter: blur(2px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .modal {
   background: var(--surface);
@@ -475,6 +481,7 @@ textarea.form-input { min-height: auto; }
   width: 100%;
   max-width: 560px;
   max-height: 90vh;
+  max-height: 90dvh;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-xl);
@@ -581,6 +588,125 @@ tbody tr:hover { background: rgba(30,64,175,.03); }
   justify-content: center;
   min-height: 100vh;
   background: var(--bg);
+}
+
+/* -- Mobile: scrolling, sheets and safe areas -------------- */
+/*
+   Three things were wrong on a phone and they share one cause: nothing owned
+   the scroll. The drawer, the page behind it and the recording form were all
+   scrollable at the same time, so a swipe went to whichever one the browser
+   guessed.
+
+   The rules below give each surface a single, bounded scroller.
+*/
+
+/* The drawer scrolls itself and stops — no chaining to the page behind it. */
+.sidebar { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* While the drawer is open the page underneath must not move at all.
+   position:fixed (not just overflow:hidden) is what stops iOS Safari. */
+body.drawer-open { overflow: hidden; }
+@media (max-width: 1023px) {
+  body.drawer-open { position: fixed; width: 100%; }
+}
+
+/* Full-height sheet for recording care on a phone.
+   100dvh, not 100vh: mobile browser chrome hides and shows as you scroll, and
+   100vh is the *tallest* height, so a vh-sized sheet puts its footer under the
+   address bar. */
+.mobile-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  height: 100vh;
+  height: 100dvh;
+}
+.mobile-sheet-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+/* 44px is the smallest target a thumb hits reliably. The old close control
+   was a 20px glyph with no padding. */
+.mobile-sheet-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mobile-sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+/* Save stays reachable without scrolling past every question. */
+.mobile-sheet-footer {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+/* Horizontal tab strips: many screens have more tabs than fit a phone.
+   Let them scroll sideways instead of wrapping into an unreadable block. */
+.tab-strip {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.tab-strip::-webkit-scrollbar { display: none; }
+.tab-strip > * { flex: 0 0 auto; white-space: nowrap; }
+
+@media (max-width: 639px) {
+  html, body { overflow-x: hidden; }
+
+  /* Tables are the other common overflow. Let the wrapper scroll rather than
+     letting the table push the whole page sideways. */
+  .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table { min-width: 480px; }
+
+  /* Anything long and unbroken (emails, NHS numbers) wraps instead of
+     stretching the layout. */
+  .card, .card-body { overflow-wrap: anywhere; }
+
+  /* Resident profile: the action buttons share the width instead of spilling
+     off the right edge, and each keeps a thumb-sized target. */
+  .resident-actions { width: 100%; }
+  .resident-actions > * {
+    flex: 1 1 calc(50% - 4px);
+    text-align: center;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Modals become near-full-height sheets so their content is reachable. */
+  .modal { max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; }
 }
 
 /* -- Touch improvements ----------------------------------- */

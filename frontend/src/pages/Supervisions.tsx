@@ -77,7 +77,7 @@ export default function Supervisions() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18, flexWrap: 'wrap' }}>
+      <div className="tab-strip" style={{ gap: 4, borderBottom: '1px solid #e2e8f0', marginBottom: 18, flexWrap: 'wrap' }}>
         {(isManager
           ? [['matrix', 'Who is due'], ['sessions', 'All sessions'], ['mine', 'My record']]
           : [['mine', 'My record']]
