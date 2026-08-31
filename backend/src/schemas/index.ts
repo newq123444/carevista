@@ -50,7 +50,9 @@ export const recordAdministrationSchema = z.object({
 
 export const createStaffSchema = z.object({
   email: z.string().trim().email('valid email required'),
-  password: z.string().min(8, 'password must be at least 8 characters'),
+  // Optional: if the manager does not supply one, the server generates a
+  // temporary password and returns it once, to be handed over in person.
+  password: z.string().min(8, 'password must be at least 8 characters').optional(),
   firstName: z.string().trim().min(1, 'firstName is required').max(100),
   lastName: z.string().trim().min(1, 'lastName is required').max(100),
   role: z.string().trim().max(40).optional().nullable(),

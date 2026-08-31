@@ -2,6 +2,7 @@
 // Smart Rota Builder - AI-style optimal rota generation
 import { Request, Response, NextFunction } from 'express';
 import { query } from '../models/db';
+import { readSpreadsheet } from '../utils/xlsx';
 
 // ── Generate Rota ─────────────────────────────────────────────────────────
 export async function generateRota(req: Request, res: Response, next: NextFunction) {
@@ -345,26 +346,31 @@ export async function uploadRotaCsv(req: Request, res: Response, next: NextFunct
     const userId = req.user!.id;
 
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded. Please upload a CSV file.' });
+      return res.status(400).json({ error: 'No file uploaded. Upload a spreadsheet (.xlsx) or a CSV file.' });
     }
 
-    // Parse CSV content from the uploaded buffer
-    const content = req.file.buffer.toString('utf-8');
-    const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
-
-    if (lines.length < 2) {
-      return res.status(400).json({ error: 'CSV file is empty or has no data rows. Expected header: staff_name,date,shift_type' });
+    // Reads .xlsx as well as .csv, so a manager can upload the rota they
+    // already keep rather than converting it first.
+    let rows: string[][];
+    try {
+      rows = readSpreadsheet((req as any).file.buffer, (req as any).file.originalname || '');
+    } catch (e: any) {
+      return res.status(400).json({ error: e?.message || 'That file could not be read' });
     }
 
-    // Parse header row
-    const header = lines[0].toLowerCase().split(',').map(h => h.trim());
+    if (rows.length < 2) {
+      return res.status(400).json({ error: 'The file is empty or has no rows below the header. Expected columns: staff_name, date, shift_type' });
+    }
+
+    const header = rows[0].map(h => String(h).toLowerCase().trim());
     const nameIdx = header.findIndex(h => h === 'staff_name' || h === 'name' || h === 'staff');
     const dateIdx = header.findIndex(h => h === 'date' || h === 'shift_date');
     const typeIdx = header.findIndex(h => h === 'shift_type' || h === 'type' || h === 'shift');
 
     if (nameIdx === -1 || dateIdx === -1 || typeIdx === -1) {
       return res.status(400).json({
-        error: 'CSV must have columns: staff_name, date, shift_type. Found: ' + header.join(', ')
+        error: 'The file must have columns for staff name, date and shift type. Found: ' + header.join(', '),
+        columnsFound: rows[0],
       });
     }
 
@@ -373,8 +379,9 @@ export async function uploadRotaCsv(req: Request, res: Response, next: NextFunct
     let imported = 0;
     let skipped = 0;
 
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(c => c.trim());
+    for (let i = 1; i < rows.length; i++) {
+      const cols = rows[i].map(c => String(c ?? '').trim());
+      if (cols.every(c => c === '')) continue;
       const staffName = cols[nameIdx] || '';
       const shiftDate = cols[dateIdx] || '';
       const shiftType = cols[typeIdx]?.toLowerCase() || '';
@@ -466,7 +473,7 @@ export async function uploadRotaCsv(req: Request, res: Response, next: NextFunct
       message: `CSV processed: ${imported} shifts imported, ${skipped} rows skipped`,
       imported,
       skipped,
-      total_rows: lines.length - 1,
+      total_rows: rows.length - 1,
       details: results,
     });
   } catch (err) { next(err); }

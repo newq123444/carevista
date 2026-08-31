@@ -41,6 +41,18 @@ function findTsc() {
     const p = execFileSync('command', ['-v', 'tsc'], { shell: true, encoding: 'utf8' }).trim();
     if (p) return p;
   } catch { /* not on PATH */ }
+  // Fall back to a globally installed typescript, wherever npm put it.
+  try {
+    const prefix = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim();
+    const g = join(prefix, 'typescript/bin/tsc');
+    if (existsSync(g)) return g;
+  } catch { /* no npm on PATH */ }
+  // Some environments put the global install on NODE_PATH rather than where
+  // `npm root -g` claims. Try every entry.
+  for (const dir of (process.env.NODE_PATH || '').split(':').filter(Boolean)) {
+    const g = join(dir, 'typescript/bin/tsc');
+    if (existsSync(g)) return g;
+  }
   return null;
 }
 

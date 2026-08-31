@@ -43,7 +43,10 @@ function mapUser(raw: any): User {
     careHomeId: raw.careHomeId || raw.care_home_id || '',
     careHomeName: raw.careHomeName || raw.care_home_name || 'Care Home',
     phone: raw.phone,
-  };
+    // Set when a manager issued a one-time password. The app refuses to show
+    // anything else until the person has chosen their own.
+    mustChangePassword: raw.mustChangePassword === true || raw.must_change_password === true,
+  } as User;
 }
 
 interface AuthState {
@@ -54,6 +57,7 @@ interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
+  passwordChanged: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -100,4 +104,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  // Called after a successful change so the user is let through immediately,
+  // without a round trip that would still be serving the cached flag.
+  passwordChanged: () => set((st) => ({
+    user: st.user ? { ...st.user, mustChangePassword: false } : null,
+  })),
 }));

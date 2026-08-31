@@ -2,12 +2,14 @@
 // src/routes/index.ts — All API routes
 // ============================================================
 import { Router } from 'express';
+import { makeTemporaryPassword } from '../utils/tempPassword';
 import { authenticate, isManager, isClinical, isStaff, isFinance, isAllStaff, isFacilities, isFamily, isKitchen, tenantGuard } from '../middleware/auth';
 import * as authCtrl from '../controllers/auth.controller';
 import * as analyticsCtrl from '../controllers/analytics.controller';
 import * as kitchenCtrl from '../controllers/kitchen.controller';
 import * as absencesCtrl from '../controllers/absences.controller';
 import * as sensingCtrl from '../controllers/sensing.controller';
+import * as staffAdminCtrl from '../controllers/staffAdmin.controller';
 import * as carePlansCtrl from '../controllers/carePlans.controller';
 import * as appointmentsCtrl from '../controllers/appointments.controller';
 import * as feedbackCtrl from '../controllers/feedback.controller';
@@ -262,12 +264,18 @@ router.post('/staff', isManager, validateBody(schemas.createStaffSchema), async 
     const { rows: existing } = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.length) return res.status(409).json({ error: 'A user with that email already exists' });
 
-    const passwordHash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_ROUNDS || '12', 10));
+    // A care home office has no email server, so a new starter cannot be sent a
+    // link. The manager is given a one-time password to hand over in person,
+    // and the account is flagged so the app forces a change at first sign-in —
+    // after which the manager no longer knows the person's password.
+    const temporaryPassword = password || makeTemporaryPassword();
+    const passwordHash = await bcrypt.hash(temporaryPassword, parseInt(process.env.BCRYPT_ROUNDS || '12', 10));
 
     const created = await withTransaction(async (client) => {
       const { rows: [user] } = await client.query(
-        `INSERT INTO users (care_home_id, email, password_hash, role, first_name, last_name, phone)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
+        `INSERT INTO users (care_home_id, email, password_hash, role, first_name, last_name, phone,
+                            must_change_password)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE)
          RETURNING id, email, role, first_name, last_name, phone`,
         [careHomeId, email, passwordHash, role || 'carer', firstName, lastName, phone || null]
       );
@@ -282,7 +290,8 @@ router.post('/staff', isManager, validateBody(schemas.createStaffSchema), async 
       return { ...profile, ...user };
     });
 
-    res.status(201).json(created);
+    // Shown once, never stored in readable form and never sent by email.
+    res.status(201).json({ ...created, temporaryPassword });
   } catch (err) { next(err); }
 });
 
@@ -1238,6 +1247,18 @@ router.post('/sensing/devices',           isManager, sensingCtrl.registerDevice)
 router.patch('/sensing/devices/:id/consent', isClinical, sensingCtrl.setConsent);
 router.get('/sensing/night',              isAllStaff, sensingCtrl.nightOverview);
 router.get('/sensing/night/:residentId',  isAllStaff, sensingCtrl.analyseNight);
+
+// ── Team management ────────────────────────────────────────────────────────
+router.get('/staff/import/template',        isManager, staffAdminCtrl.staffImportTemplate);
+router.post('/staff/import',                isManager, csvUpload.single('file'), staffAdminCtrl.importStaff);
+router.patch('/staff/:id/full',             isManager, staffAdminCtrl.updateStaffFull);
+router.post('/staff/:id/deactivate',        isManager, staffAdminCtrl.deactivateStaff);
+router.post('/staff/:id/reactivate',        isManager, staffAdminCtrl.reactivateStaff);
+router.get('/staff/:id/working',            isManager, staffAdminCtrl.getStaffWorking);
+router.put('/staff/:id/preferences',        isManager, staffAdminCtrl.setStaffPreferences);
+router.post('/staff/:id/unavailability',    isManager, staffAdminCtrl.addUnavailability);
+router.delete('/staff/:id/unavailability/:entryId', isManager, staffAdminCtrl.deleteUnavailability);
+router.get('/rota/conflicts',               isManager, staffAdminCtrl.rotaConflicts);
 
 
 export default router;

@@ -16,6 +16,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     const { rows } = await query(
       `SELECT u.id, u.email, u.password_hash, u.role, u.care_home_id,
               u.first_name, u.last_name, u.active, u.deleted_at,
+              u.must_change_password,
               ch.name AS care_home_name, ch.active AS home_active
        FROM users u
        JOIN care_homes ch ON ch.id = u.care_home_id
@@ -64,6 +65,9 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         lastName: user.last_name,
         careHomeId: user.care_home_id,
         careHomeName: user.care_home_name,
+        // True when a manager issued this password. The app sends the person
+        // straight to a change-password screen and lets them nowhere else.
+        mustChangePassword: user.must_change_password === true,
       },
       accessToken,
       refreshToken,
@@ -144,8 +148,21 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
     const valid = await bcrypt.compare(currentPassword, rows[0].password_hash);
     if (!valid) throw new AppError(400, 'Current password is incorrect');
 
+    // Refuse to "change" it to the same thing. Without this, someone handed a
+    // temporary password can clear the must-change flag by retyping it, and the
+    // manager still knows their password.
+    if (currentPassword === newPassword) {
+      throw new AppError(400, 'Your new password must be different from your current one');
+    }
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+      throw new AppError(400, 'Your new password must be at least 8 characters');
+    }
+
     const hash = await bcrypt.hash(newPassword, parseInt(process.env.BCRYPT_ROUNDS || '12'));
-    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, userId]);
+    await query(
+      `UPDATE users SET password_hash = $1, must_change_password = FALSE,
+              password_changed_at = NOW()
+        WHERE id = $2`, [hash, userId]);
     await query('UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = $1', [userId]);
     await cache.del(`user:${userId}`);
 

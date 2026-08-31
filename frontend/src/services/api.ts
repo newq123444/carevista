@@ -767,3 +767,19 @@ export const sensingApi = {
                  api.get(`/sensing/night/${residentId}`, { params: night ? { night } : {} }),
 };
 
+// ── Team management ────────────────────────────────────────────────────────
+export const staffAdminApi = {
+  updateFull:   (id: string, d: object) => api.patch(`/staff/${id}/full`, d),
+  deactivate:   (id: string, d: object) => api.post(`/staff/${id}/deactivate`, d),
+  reactivate:   (id: string) => api.post(`/staff/${id}/reactivate`, {}),
+  working:      (id: string) => api.get(`/staff/${id}/working`),
+  setPrefs:     (id: string, d: object) => api.put(`/staff/${id}/preferences`, d),
+  addUnavail:   (id: string, d: object) => api.post(`/staff/${id}/unavailability`, d),
+  delUnavail:   (id: string, entryId: string) => api.delete(`/staff/${id}/unavailability/${entryId}`),
+  importStaff:  (formData: FormData, commit: boolean) =>
+                  api.post('/staff/import', formData, {
+                    params: commit ? { commit: 'true' } : {},
+                    headers: { 'Content-Type': 'multipart/form-data' } }),
+  rotaConflicts: (from?: string, to?: string) => api.get('/rota/conflicts', { params: { from, to } }),
+};
+

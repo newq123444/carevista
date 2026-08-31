@@ -7,6 +7,7 @@ import App from './App';
 import Login from './pages/Login';
 import FamilyRegister from './pages/FamilyRegister';
 import FamilyMemberDashboard from './pages/FamilyMemberDashboard';
+import FirstSignIn from './pages/FirstSignIn';
 import { useAuthStore } from './store/auth.store';
 import './index.css';
 import { LanguageProvider } from './i18n';
@@ -29,6 +30,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
+  // A manager-issued one-time password still in force. Block the whole app,
+  // not just a banner: until this person picks their own password, their
+  // manager can sign in as them, and nothing recorded under their name would
+  // truthfully be theirs.
+  if (user.mustChangePassword) return <FirstSignIn />;
   return <>{children}</>;
 }
 

@@ -19,6 +19,7 @@ import {
   menuAdminApi, housekeepingAdminApi, homeApi,
   analyticsApi, familyAccessApi, portalApi, kitchenApi, absencesApi, activityApi,
   carePlansApi, appointmentsApi, feedbackApi, libertyApi, supervisionsApi, sensingApi,
+  staffAdminApi,
   monitoringApi, residentFinanceApi,
 } from '../services/api';
 import { toast } from '../utils/toast';
@@ -1860,5 +1861,86 @@ export function useSetSensorConsent() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['sensing'] }); toast.success('Consent recorded'); },
     onError: (e: any) => toast.error(e.response?.data?.error || 'Could not record consent'),
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Team management
+// ═══════════════════════════════════════════════════════════════════════════
+function refreshStaff(qc: any) {
+  qc.invalidateQueries({ queryKey: ['staff'] });
+  qc.invalidateQueries({ queryKey: ['schedule'], exact: false });
+}
+// The POST /staff endpoint has existed all along, validated and manager-guarded
+// — but nothing in the app ever called it, so a manager could not add anybody.
+export function useAddStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: object) => staffApi.create(data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['staff'] }); toast.success('Staff member added'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not add this person'),
+  });
+}
+
+export function useStaffWorking(id: string) {
+  return useQuery({ queryKey: ['staff', id, 'working'], queryFn: () => staffAdminApi.working(id).then(r => r.data), enabled: !!id });
+}
+export function useUpdateStaffFull() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => staffAdminApi.updateFull(id, data).then(r => r.data),
+    onSuccess: () => { refreshStaff(qc); toast.success('Saved'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save'),
+  });
+}
+export function useDeactivateStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => staffAdminApi.deactivate(id, data).then(r => r.data),
+    onSuccess: (d: any) => { refreshStaff(qc); toast.success(d?.message || 'Access removed'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not deactivate'),
+  });
+}
+export function useReactivateStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => staffAdminApi.reactivate(id).then(r => r.data),
+    onSuccess: (d: any) => { refreshStaff(qc); toast.success(d?.message || 'Access restored'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not reactivate'),
+  });
+}
+export function useSetStaffPrefs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => staffAdminApi.setPrefs(id, data).then(r => r.data),
+    onSuccess: (_d: any, v: any) => { qc.invalidateQueries({ queryKey: ['staff', v.id, 'working'] }); toast.success('Preferences saved'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save preferences'),
+  });
+}
+export function useAddUnavailability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => staffAdminApi.addUnavail(id, data).then(r => r.data),
+    onSuccess: (_d: any, v: any) => { qc.invalidateQueries({ queryKey: ['staff', v.id, 'working'] }); toast.success('Added'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not add'),
+  });
+}
+export function useDeleteUnavailability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, entryId }: { id: string; entryId: string }) => staffAdminApi.delUnavail(id, entryId).then(r => r.data),
+    onSuccess: (_d: any, v: any) => qc.invalidateQueries({ queryKey: ['staff', v.id, 'working'] }),
+  });
+}
+export function useImportStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ formData, commit }: { formData: FormData; commit: boolean }) =>
+      staffAdminApi.importStaff(formData, commit).then(r => r.data),
+    onSuccess: (d: any) => { if (!d?.dryRun) refreshStaff(qc); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Import failed'),
+  });
+}
+export function useRotaConflicts(from?: string, to?: string) {
+  return useQuery({ queryKey: ['rota-conflicts', from, to], queryFn: () => staffAdminApi.rotaConflicts(from, to).then(r => r.data) });
 }
 

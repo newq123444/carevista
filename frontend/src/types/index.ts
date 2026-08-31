@@ -15,6 +15,8 @@ export interface User {
   careHomeId: string;
   careHomeName: string;
   phone?: string;
+  /** True while a manager-issued one-time password is still in force. */
+  mustChangePassword?: boolean;
 }
 
 export interface Resident {

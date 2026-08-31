@@ -46,20 +46,26 @@ export const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-// CSV upload config — accepts .csv files only (XLSX is not parsed, only CSV)
+// Spreadsheet upload — accepts both .xlsx and .csv.
+//
+// Managers keep rotas and staff lists in Excel. Telling them to "save as CSV
+// first" is the kind of small friction that stops a pilot before it starts, so
+// the app reads .xlsx directly (see utils/xlsx.ts, no dependency).
 const csvStorage = multer.memoryStorage();
 
 const csvFileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowed = [
     'text/csv',
-    'application/vnd.ms-excel',
+    'application/vnd.ms-excel',                                             // .xls and some .csv
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',     // .xlsx
+    'application/octet-stream',   // some browsers send this for .xlsx
     'text/plain',
   ];
   const ext = path.extname(file.originalname).toLowerCase();
-  if (allowed.includes(file.mimetype) || ext === '.csv') {
+  if (allowed.includes(file.mimetype) || ext === '.csv' || ext === '.xlsx' || ext === '.xls') {
     cb(null, true);
   } else {
-    cb(new Error('Only CSV files are allowed (.csv)'));
+    cb(new Error('Upload a spreadsheet (.xlsx) or a CSV file (.csv)'));
   }
 };
 

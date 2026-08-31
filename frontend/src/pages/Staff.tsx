@@ -1,7 +1,10 @@
 // src/pages/Staff.tsx — Staff directory with photos, edit, add
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
-import { useStaff } from '../hooks';
+import { useStaff, useAddStaff, useDeactivateStaff, useReactivateStaff, useImportStaff } from '../hooks';
+import WorkingModal, { Modal, ROLES, LEAVING } from './StaffAdmin';
+import { PrintHeader, PrintButton } from '../components/PrintHeader';
+import { exportCsv } from '../utils/exportCsv';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDate, ROLE_LABELS } from '../utils/formatters';
 import { api } from '../services/api';
@@ -183,8 +186,26 @@ export default function Staff() {
   const [search, setSearch]       = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [editing, setEditing]     = useState<any>(null);
+  const [adding, setAdding]       = useState(false);
+  const [leaver, setLeaver]       = useState<any>(null);
+  const [working, setWorking]     = useState<any>(null);
+  const [importOpen, setImport]   = useState(false);
+  const [showLeavers, setShowLeavers] = useState(false);
+  const [newStaff, setNewStaff]   = useState<any>({ firstName:'', lastName:'', email:'', role:'carer', jobTitle:'', phone:'', contractHours:'', startDate:'' });
+  const [leaveForm, setLeaveForm] = useState<any>({ leavingReason:'resigned', leavingDate:'', notes:'' });
+  const [file, setFile]           = useState<File | null>(null);
+  const [preview, setPreview]     = useState<any>(null);
+  const [handover, setHandover]   = useState<any>(null);
+  const addStaff    = useAddStaff();
+  const deactivate  = useDeactivateStaff();
+  const reactivate  = useReactivateStaff();
+  const importStaff = useImportStaff();
 
   const filtered = staff.filter(s => {
+    // A leaver keeps their record and their care notes, but is out of the way
+    // unless the manager asks to see them.
+    const hasLeft = s.active === false || !!s.end_date;
+    if (hasLeft !== showLeavers) return false;
     if (roleFilter && s.role !== roleFilter) return false;
     if (search && !`${s.first_name} ${s.last_name} ${s.job_title} ${s.email}`.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
@@ -199,11 +220,40 @@ export default function Staff() {
 
   return (
     <div>
-      <div className="page-header">
+      <PrintHeader title="Staff directory" />
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 className="page-title">👤 Staff Directory</h1>
-          <p className="page-subtitle">{staff.length} staff members · {filtered.length} shown</p>
+          <p className="page-subtitle">
+            {staff.filter((x: any) => x.active !== false && !x.end_date).length} current ·{' '}
+            {staff.filter((x: any) => x.active === false || x.end_date).length} left · {filtered.length} shown
+          </p>
         </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <PrintButton />
+          <button className="btn btn-secondary btn-sm no-print" onClick={() => exportCsv('staff', filtered, [
+            { header: 'First name', value: (r: any) => r.first_name },
+            { header: 'Last name', value: (r: any) => r.last_name },
+            { header: 'Email', value: (r: any) => r.email },
+            { header: 'Role', value: (r: any) => r.role },
+            { header: 'Job title', value: (r: any) => r.job_title },
+            { header: 'Contract hours', value: (r: any) => r.contract_hours },
+            { header: 'Start date', value: (r: any) => r.start_date },
+            { header: 'DBS expires', value: (r: any) => r.dbs_expires },
+          ])}>⬇ Export</button>
+          <button className="btn btn-secondary btn-sm no-print" onClick={() => setImport(true)}>⬆ Import from Excel</button>
+          <button className="btn btn-primary no-print" onClick={() => setAdding(true)}>+ Add staff</button>
+        </div>
+      </div>
+
+      <div className="no-print" style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+        {[[false, 'Current staff'], [true, 'Left']].map(([v, label]: any) => (
+          <button key={String(v)} onClick={() => setShowLeavers(v)} style={{
+            padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',
+            borderBottom: showLeavers === v ? '3px solid #4f46e5' : '3px solid transparent',
+            color: showLeavers === v ? '#4f46e5' : 'var(--text-secondary)', fontWeight: showLeavers === v ? 600 : 400,
+          }}>{label}</button>
+        ))}
       </div>
 
       {/* DBS alert banner */}
@@ -251,10 +301,29 @@ export default function Staff() {
                         {ROLE_LABELS[s.role] || s.role}
                       </div>
                     </div>
+                    <div className="no-print" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {(s.active === false || s.end_date) ? (
+                      <button onClick={() => reactivate.mutate(s.id)}
+                        style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid #16a34a', background: '#f0fdf4', color: '#15803d', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        Reinstate
+                      </button>
+                    ) : (
+                      <>
+                        <button onClick={() => setWorking(s)}
+                          style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2)', cursor: 'pointer', fontSize: 12 }}>
+                          🗓 Availability
+                        </button>
+                        <button onClick={() => { setLeaver(s); setLeaveForm({ leavingReason: 'resigned', leavingDate: '', notes: '' }); }}
+                          style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c', cursor: 'pointer', fontSize: 12 }}>
+                          Left
+                        </button>
+                      </>
+                    )}
                     <button onClick={() => setEditing(s)}
                       style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2)', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', flexShrink: 0 }}>
                       ✏️ Edit
                     </button>
+                    </div>
                   </div>
 
                   {/* Details */}
@@ -298,6 +367,176 @@ export default function Staff() {
       )}
 
       {editing && <EditStaffModal staff={editing} onClose={() => setEditing(null)} />}
+      {working && <WorkingModal staff={working} onClose={() => setWorking(null)} />}
+
+      {adding && (
+        <Modal title="Add a staff member" onClose={() => setAdding(false)}
+          footer={<>
+            <button className="btn btn-ghost" onClick={() => setAdding(false)}>Cancel</button>
+            <button className="btn btn-primary" disabled={addStaff.isPending}
+              onClick={() => addStaff.mutate({
+                ...newStaff,
+                contractHours: newStaff.contractHours === '' ? null : Number(newStaff.contractHours),
+                // No password is sent. The server generates a one-time one and
+                // returns it below, to be handed over in person.
+              } as any, { onSuccess: (d: any) => {
+                setAdding(false);
+                setNewStaff({ firstName:'', lastName:'', email:'', role:'carer', jobTitle:'', phone:'', contractHours:'', startDate:'' });
+                if (d?.temporaryPassword) setHandover({ name: `${d.first_name} ${d.last_name}`, email: d.email, password: d.temporaryPassword });
+              } })}>
+              {addStaff.isPending ? 'Adding…' : 'Add'}
+            </button>
+          </>}>
+          <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="form-group"><label className="form-label">First name</label>
+              <input className="form-input" value={newStaff.firstName} onChange={e => setNewStaff({ ...newStaff, firstName: e.target.value })} /></div>
+            <div className="form-group"><label className="form-label">Last name</label>
+              <input className="form-input" value={newStaff.lastName} onChange={e => setNewStaff({ ...newStaff, lastName: e.target.value })} /></div>
+          </div>
+          <div className="form-group"><label className="form-label">Email — they sign in with this</label>
+            <input className="form-input" type="email" value={newStaff.email} onChange={e => setNewStaff({ ...newStaff, email: e.target.value })} /></div>
+          <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="form-group"><label className="form-label">Role — decides what they can see</label>
+              <select className="form-input" value={newStaff.role} onChange={e => setNewStaff({ ...newStaff, role: e.target.value })}>
+                {ROLES.map(([v, l]: any) => <option key={v} value={v}>{l}</option>)}
+              </select></div>
+            <div className="form-group"><label className="form-label">Job title</label>
+              <input className="form-input" value={newStaff.jobTitle} onChange={e => setNewStaff({ ...newStaff, jobTitle: e.target.value })} /></div>
+          </div>
+          <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 12 }}>
+            <div className="form-group"><label className="form-label">Phone</label>
+              <input className="form-input" value={newStaff.phone} onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })} /></div>
+            <div className="form-group"><label className="form-label">Contract hours</label>
+              <input className="form-input" type="number" value={newStaff.contractHours} onChange={e => setNewStaff({ ...newStaff, contractHours: e.target.value })} /></div>
+            <div className="form-group"><label className="form-label">Start date</label>
+              <input className="form-input" type="date" value={newStaff.startDate} onChange={e => setNewStaff({ ...newStaff, startDate: e.target.value })} /></div>
+          </div>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+            You will be shown a one-time password to give them. The app makes them choose their own
+            the first time they sign in, so after that nobody — including you — knows it.
+          </p>
+        </Modal>
+      )}
+
+      {leaver && (
+        <Modal title={`${leaver.first_name} ${leaver.last_name} has left`} onClose={() => setLeaver(null)}
+          footer={<>
+            <button className="btn btn-ghost" onClick={() => setLeaver(null)}>Cancel</button>
+            <button className="btn btn-danger" disabled={deactivate.isPending}
+              onClick={() => deactivate.mutate({ id: leaver.id, data: leaveForm } as any, { onSuccess: () => setLeaver(null) })}>
+              {deactivate.isPending ? 'Saving…' : 'Remove access'}
+            </button>
+          </>}>
+          <p style={{ margin: 0, fontSize: 14 }}>
+            Their sign-in stops working immediately. Their record and every care note they wrote are
+            kept — a care record must never lose its author. Any future shifts are removed from the
+            rota so it does not look covered when it is not.
+          </p>
+          <div className="form-group"><label className="form-label">Reason</label>
+            <select className="form-input" value={leaveForm.leavingReason} onChange={e => setLeaveForm({ ...leaveForm, leavingReason: e.target.value })}>
+              {LEAVING.map(([v, l]: any) => <option key={v} value={v}>{l}</option>)}
+            </select></div>
+          <div className="form-group"><label className="form-label">Last day</label>
+            <input className="form-input" type="date" value={leaveForm.leavingDate} onChange={e => setLeaveForm({ ...leaveForm, leavingDate: e.target.value })} /></div>
+          <div className="form-group"><label className="form-label">Notes</label>
+            <textarea className="form-input" rows={2} value={leaveForm.notes} onChange={e => setLeaveForm({ ...leaveForm, notes: e.target.value })} /></div>
+        </Modal>
+      )}
+
+      {handover && (
+        <Modal title="Give them this to sign in" onClose={() => setHandover(null)}
+          footer={<button className="btn btn-primary" onClick={() => setHandover(null)}>Done</button>}>
+          <p style={{ margin: 0, fontSize: 14 }}>
+            <strong>{handover.name}</strong> can now sign in. This password is shown once and cannot
+            be looked up again — write it down or hand it over now. They will be asked to choose
+            their own the first time they use it.
+          </p>
+          <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 10, padding: 16 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Email</div>
+            <div style={{ fontWeight: 600, marginBottom: 10, wordBreak: 'break-all' }}>{handover.email}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>One-time password</div>
+            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 22, letterSpacing: 1, fontWeight: 700 }}>
+              {handover.password}
+            </div>
+          </div>
+          <button className="btn btn-secondary btn-sm" style={{ justifySelf: 'start' }}
+            onClick={() => navigator.clipboard?.writeText(handover.password)}>Copy password</button>
+        </Modal>
+      )}
+
+      {importOpen && (
+        <Modal wide title="Import staff from a spreadsheet" onClose={() => { setImport(false); setPreview(null); setFile(null); }}
+          footer={<>
+            <button className="btn btn-ghost" onClick={() => { setImport(false); setPreview(null); setFile(null); }}>Close</button>
+            {preview?.summary?.willCreate > 0 && (
+              <button className="btn btn-primary" disabled={importStaff.isPending}
+                onClick={() => { const fd = new FormData(); fd.append('file', file as File);
+                  importStaff.mutate({ formData: fd, commit: true } as any, { onSuccess: (d: any) => setPreview(d) }); }}>
+                {importStaff.isPending ? 'Adding…' : `Add ${preview.summary.willCreate} people`}
+              </button>
+            )}
+          </>}>
+          <p style={{ margin: 0, fontSize: 14 }}>
+            Upload the staff list you already keep — Excel (.xlsx) or CSV. Nothing is saved until you
+            have seen exactly what will happen to every row.
+          </p>
+          <button className="btn btn-secondary btn-sm" style={{ justifySelf: 'start' }}
+            onClick={async () => {
+              const res = await api.get('/staff/import/template', { responseType: 'blob' });
+              const url = URL.createObjectURL(res.data as any);
+              const a = document.createElement('a'); a.href = url; a.download = 'carevista-staff-template.csv';
+              document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            }}>⬇ Download a template</button>
+          <input className="form-input" type="file" accept=".xlsx,.csv"
+            onChange={e => { setFile(e.target.files?.[0] || null); setPreview(null); }} />
+          {file && !preview && (
+            <button className="btn btn-primary" disabled={importStaff.isPending}
+              onClick={() => { const fd = new FormData(); fd.append('file', file);
+                importStaff.mutate({ formData: fd, commit: false } as any, { onSuccess: (d: any) => setPreview(d) }); }}>
+              {importStaff.isPending ? 'Checking…' : 'Check the file'}
+            </button>
+          )}
+          {preview && (
+            <div>
+              <p style={{ fontWeight: 600 }}>{preview.message}</p>
+              {preview.results?.some((r: any) => r.temporaryPassword) && (
+                <>
+                  <p style={{ fontSize: 13, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: 10 }}>
+                    Print or write these down before you close this window — they are shown once and
+                    cannot be looked up again. Each person is asked to choose their own password the
+                    first time they sign in.
+                  </p>
+                  <button className="btn btn-secondary btn-sm" style={{ justifySelf: 'start' }}
+                    onClick={() => exportCsv('new-staff-passwords', preview.results.filter((r: any) => r.temporaryPassword), [
+                      { header: 'Name', value: (r: any) => r.name },
+                      { header: 'Email', value: (r: any) => r.email },
+                      { header: 'One-time password', value: (r: any) => r.temporaryPassword },
+                    ])}>⬇ Download the list</button>
+                </>
+              )}
+              <div className="table-container" style={{ maxHeight: 300, overflowY: 'auto' }}>
+                <table className="table">
+                  <thead><tr><th>Row</th><th>Name</th><th>Email</th><th>Result</th><th>One-time password</th></tr></thead>
+                  <tbody>
+                    {preview.results.map((r: any, i: number) => (
+                      <tr key={i}>
+                        <td>{r.line}</td><td>{r.name}</td><td style={{ fontSize: 12 }}>{r.email || '—'}</td>
+                        <td style={{ fontSize: 12, color: r.status === 'skipped' || r.status === 'failed' ? '#b91c1c' : '#059669' }}>
+                          {r.status === 'will_create' ? 'Will be added' : r.status === 'created' ? 'Added' : r.status}
+                          {r.reason ? ` — ${r.reason}` : ''}{r.note ? ` — ${r.note}` : ''}
+                        </td>
+                        <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 13, fontWeight: 600 }}>
+                          {r.temporaryPassword || '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }

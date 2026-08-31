@@ -53,7 +53,8 @@ export async function authenticate(
 
     if (!user) {
       const { rows } = await query<AuthUser>(
-        `SELECT id, email, role, care_home_id, first_name, last_name
+        `SELECT id, email, role, care_home_id, first_name, last_name,
+                must_change_password
          FROM users WHERE id = $1 AND active = TRUE AND deleted_at IS NULL`,
         [payload.sub]
       );
