@@ -308,6 +308,12 @@ function PlanEditor({ planId, onBack, canEdit }: { planId: string; onBack: () =>
       myRoutine: plan.myRoutine || '',
       communicationPreferences: plan.communicationPreferences || '',
       culturalSpiritualNeeds: plan.culturalSpiritualNeeds || '',
+      peopleWhoMatter: plan.peopleWhoMatter || '',
+      myStrengths: plan.myStrengths || '',
+      howITakeMyMedication: plan.howITakeMyMedication || '',
+      sensoryMobilitySupport: plan.sensoryMobilitySupport || '',
+      whatMakesMeAnxious: plan.whatMakesMeAnxious || '',
+      pleaseDoNot: plan.pleaseDoNot || '',
       residentInvolved: plan.residentInvolved,
       residentInvolvementNotes: plan.residentInvolvementNotes || '',
       familyInvolved: plan.familyInvolved,
@@ -375,7 +381,7 @@ function PlanEditor({ planId, onBack, canEdit }: { planId: string; onBack: () =>
         <>
           <div className="card" style={{ marginBottom: 18 }}>
             <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span className="card-title">About {plan.preferredName || String(plan.residentName || '').split(' ')[0]}</span>
+              <span className="card-title">About {plan.preferredName || String(plan.residentName || '').split(' ')[0]}<span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400, color: 'var(--text-muted)' }}>follows the PRSB About Me standard</span></span>
               {!readOnly && !editHeader && <button className="btn btn-ghost btn-sm" onClick={openHeaderEdit}>Edit</button>}
             </div>
             <div className="card-body">
@@ -388,6 +394,12 @@ function PlanEditor({ planId, onBack, canEdit }: { planId: string; onBack: () =>
                     <Field label="My routine" value={plan.myRoutine} />
                     <Field label="How I communicate" value={plan.communicationPreferences} />
                     <Field label="Culture, faith & identity" value={plan.culturalSpiritualNeeds} />
+                    <Field label="People who matter to me" value={plan.peopleWhoMatter} />
+                    <Field label="What I can do for myself" value={plan.myStrengths} />
+                    <Field label="How I take my medicines" value={plan.howITakeMyMedication} />
+                    <Field label="Glasses, hearing aids, walking aids" value={plan.sensoryMobilitySupport} />
+                    <Field label="What makes me anxious" value={plan.whatMakesMeAnxious} />
+                    <Field label="Please do not" value={plan.pleaseDoNot} />
                   </div>
                   <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 14 }}>
                     <Field label="Resident involved in this plan" value={plan.residentInvolved ? (plan.residentInvolvementNotes || 'Yes') : 'Not recorded'} />
@@ -415,6 +427,22 @@ function PlanEditor({ planId, onBack, canEdit }: { planId: string; onBack: () =>
                     value={header.communicationPreferences} onChange={x => setHeader({ ...header, communicationPreferences: x })} />
                   <TextArea label="Culture, faith & identity" rows={2}
                     value={header.culturalSpiritualNeeds} onChange={x => setHeader({ ...header, culturalSpiritualNeeds: x })} />
+                  <TextArea label="People who matter to me" rows={2}
+                    hint="Who they are and what they mean to this person."
+                    value={header.peopleWhoMatter} onChange={x => setHeader({ ...header, peopleWhoMatter: x })} />
+                  <TextArea label="What I can do for myself" rows={2}
+                    hint="Strengths to protect, not just needs to meet."
+                    value={header.myStrengths} onChange={x => setHeader({ ...header, myStrengths: x })} />
+                  <TextArea label="How I take my medicines" rows={2}
+                    hint="With food, crushed, timing, anything that helps."
+                    value={header.howITakeMyMedication} onChange={x => setHeader({ ...header, howITakeMyMedication: x })} />
+                  <TextArea label="Glasses, hearing aids, walking aids" rows={2}
+                    value={header.sensoryMobilitySupport} onChange={x => setHeader({ ...header, sensoryMobilitySupport: x })} />
+                  <TextArea label="What makes me anxious" rows={2}
+                    value={header.whatMakesMeAnxious} onChange={x => setHeader({ ...header, whatMakesMeAnxious: x })} />
+                  <TextArea label="Please do not" rows={2}
+                    hint="In this person's own words wherever possible."
+                    value={header.pleaseDoNot} onChange={x => setHeader({ ...header, pleaseDoNot: x })} />
                   <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12 }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                       <input type="checkbox" checked={!!header.residentInvolved}

@@ -460,13 +460,19 @@ textarea.form-input { min-height: auto; }
 .form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
 
 /* -- Modals ----------------------------------------------- */
+/* A scrolling overlay must NOT use align-items:center.
+   When the child is taller than the viewport, centring pushes its top edge
+   above the scroll container's origin — and nothing can scroll above the
+   origin, so the top of a long form becomes permanently unreachable. The fix
+   is margin:auto on the child instead: it centres when the content fits and
+   scrolls normally when it does not. */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(15,23,42,.5);
   z-index: 300;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
   padding-top: calc(20px + env(safe-area-inset-top));
@@ -475,6 +481,7 @@ textarea.form-input { min-height: auto; }
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+.modal-overlay > * { margin: auto; }
 .modal {
   background: var(--surface);
   border-radius: var(--radius-xl);
@@ -821,6 +828,24 @@ body.drawer-open { overflow: hidden; }
 select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15,118,110,.15); }
 a { color: var(--primary); }
 ::selection { background: rgba(15,118,110,.18); }
+
+/* Hand-rolled overlays use inline styles, which React renders as ordinary CSS
+   text, so an attribute selector can reach them. Requiring inset:0 as well as
+   position:fixed keeps this to genuine full-screen overlays and away from
+   things like centred toolbars.
+
+   Two problems are fixed at once: those that scroll cannot reach their own top
+   (the centring trap), and those that never set overflow simply clip a tall
+   modal with no way to see the rest of it. */
+[style*="position: fixed"][style*="inset: 0"][style*="align-items: center"] {
+  align-items: flex-start !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+[style*="position: fixed"][style*="inset: 0"][style*="align-items: center"] > * {
+  margin: auto;
+  flex-shrink: 0;
+}
 
 /* -- Printing ---------------------------------------------------------------
    Care homes hand paper to inspectors, commissioners and families. Until now

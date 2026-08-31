@@ -1309,7 +1309,14 @@ export default function CarerDashboard() {
       {(isMobile || viewMode === 'grid') && (showForm || showTypePicker) && (
         <div
           className={isMobile ? 'mobile-sheet' : undefined}
-          style={isMobile ? undefined : { position:'fixed', inset:0, zIndex:10000, background:'rgba(15,23,42,.55)', overflowY:'auto', padding:'32px', display:'flex', justifyContent:'center', alignItems:'center' }}>
+          style={isMobile ? undefined : {
+            position:'fixed', inset:0, zIndex:10000, background:'rgba(15,23,42,.55)',
+            overflowY:'auto', overscrollBehavior:'contain', padding:'32px',
+            // flex-start, not centre: a centred child taller than the viewport puts
+            // its top edge above the scroll origin, and nothing scrolls above the
+            // origin — so the first questions on a long form become unreachable.
+            display:'flex', justifyContent:'center', alignItems:'flex-start',
+          }}>
           {isMobile && (
             <div className="mobile-sheet-header">
               <button className="mobile-sheet-back" onClick={closeForm} aria-label="Back">
@@ -1327,7 +1334,7 @@ export default function CarerDashboard() {
           )}
           <div
             className={isMobile ? 'mobile-sheet-body' : undefined}
-            style={isMobile ? { padding:12 } : { width:'100%', maxWidth:760 }}>
+            style={isMobile ? { padding:12 } : { width:'100%', maxWidth:760, margin:'auto', flexShrink:0 }}>
           {!isMobile && (
             <button onClick={closeForm} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', fontSize:14, fontWeight:600, color:'#fff', marginBottom:12, padding:'4px 0' }}>
               ← Back

@@ -12,6 +12,11 @@ interface InteractionRule {
   description: string;
   clinicalEffect: string;
   recommendation: string;
+  /** Where this came from. Shown to the user with every result.
+   *  A warning from a table the user cannot inspect is the pattern MHRA
+   *  treats as a medical device; a referenced statement they can look up is
+   *  reference information. Always cite the source. */
+  source?: string;
 }
 
 const INTERACTION_DATABASE: InteractionRule[] = [
@@ -23,6 +28,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Warfarin and NSAID interaction',
     clinicalEffect: 'Increased bleeding risk due to combined anticoagulant and antiplatelet effects',
     recommendation: 'Avoid combination. Consider paracetamol for pain relief. Monitor INR closely if unavoidable.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['warfarin'],
@@ -32,6 +38,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Warfarin and amiodarone interaction',
     clinicalEffect: 'Increased INR and bleeding risk due to inhibition of warfarin metabolism',
     recommendation: 'Reduce warfarin dose by 30-50%. Monitor INR frequently.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['ramipril', 'lisinopril', 'enalapril'],
@@ -41,6 +48,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'ACE inhibitor and potassium-sparing diuretic interaction',
     clinicalEffect: 'Risk of hyperkalaemia (dangerously high potassium levels)',
     recommendation: 'Monitor serum potassium regularly. Consider alternative diuretic.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['metformin'],
@@ -50,6 +58,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Metformin and alcohol interaction',
     clinicalEffect: 'Increased risk of lactic acidosis',
     recommendation: 'Advise patient to limit alcohol consumption.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['sertraline', 'fluoxetine', 'citalopram', 'paroxetine'],
@@ -59,6 +68,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'SSRI and MAOI interaction',
     clinicalEffect: 'Risk of serotonin syndrome - potentially fatal',
     recommendation: 'NEVER combine. Allow washout period of at least 2 weeks (5 weeks for fluoxetine) between switching.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['sertraline', 'fluoxetine', 'citalopram', 'paroxetine'],
@@ -68,6 +78,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'SSRI and tramadol interaction',
     clinicalEffect: 'Increased risk of seizures and serotonin syndrome',
     recommendation: 'Use alternative analgesic if possible. Monitor for signs of serotonin syndrome.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['lithium'],
@@ -77,6 +88,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Lithium and NSAID interaction',
     clinicalEffect: 'Increased lithium levels leading to toxicity',
     recommendation: 'Avoid NSAIDs. Use paracetamol for analgesia. Monitor lithium levels.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['lithium'],
@@ -86,6 +98,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Lithium and ACE inhibitor interaction',
     clinicalEffect: 'Increased lithium levels leading to toxicity',
     recommendation: 'Monitor lithium levels closely. Consider dose adjustment.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['digoxin'],
@@ -95,6 +108,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Digoxin and amiodarone interaction',
     clinicalEffect: 'Increased digoxin levels leading to toxicity (nausea, arrhythmias)',
     recommendation: 'Reduce digoxin dose by 50% when starting amiodarone. Monitor digoxin levels.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['simvastatin', 'atorvastatin'],
@@ -104,6 +118,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Statin and macrolide antibiotic interaction',
     clinicalEffect: 'Increased risk of rhabdomyolysis (muscle breakdown)',
     recommendation: 'Suspend statin during macrolide course or use azithromycin instead.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['methotrexate'],
@@ -113,6 +128,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Methotrexate and trimethoprim interaction',
     clinicalEffect: 'Increased risk of bone marrow suppression and pancytopenia',
     recommendation: 'Avoid combination. Use alternative antibiotic.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['clopidogrel'],
@@ -122,6 +138,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Clopidogrel and omeprazole interaction',
     clinicalEffect: 'Reduced antiplatelet effect of clopidogrel',
     recommendation: 'Use lansoprazole or pantoprazole instead of omeprazole.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['amlodipine'],
@@ -131,6 +148,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Amlodipine and simvastatin interaction',
     clinicalEffect: 'Increased statin levels and risk of myopathy',
     recommendation: 'Limit simvastatin dose to 20mg daily when co-prescribed with amlodipine.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['ciprofloxacin'],
@@ -140,6 +158,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Ciprofloxacin and theophylline interaction',
     clinicalEffect: 'Increased theophylline levels leading to toxicity (seizures, arrhythmias)',
     recommendation: 'Avoid combination. Use alternative antibiotic or monitor theophylline levels.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['warfarin'],
@@ -149,6 +168,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Warfarin and miconazole interaction',
     clinicalEffect: 'Increased INR and bleeding risk',
     recommendation: 'Monitor INR closely. Consider alternative antifungal.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['bendroflumethiazide'],
@@ -158,6 +178,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Bendroflumethiazide and lithium interaction',
     clinicalEffect: 'Increased lithium levels leading to toxicity',
     recommendation: 'Monitor lithium levels. Consider alternative diuretic.',
+    source: 'BNF — check the current edition before acting',
   },
   {
     drugA: ['carbamazepine'],
@@ -167,6 +188,7 @@ const INTERACTION_DATABASE: InteractionRule[] = [
     description: 'Carbamazepine and oral contraceptive interaction',
     clinicalEffect: 'Reduced contraceptive effect due to enzyme induction',
     recommendation: 'Use alternative contraceptive method (IUD, injection) or higher dose pill.',
+    source: 'BNF — check the current edition before acting',
   },
 ];
 
@@ -262,6 +284,11 @@ export async function checkInteractions(req: Request, res: Response, next: NextF
     );
 
     res.json({
+      // Stated on every response, not only in the interface, so the framing
+      // survives any client that consumes this endpoint.
+      disclaimer: 'Reference information only. This is not a prescribing decision. '
+        + 'Check the current BNF and the resident\'s own clinical record before acting.',
+      notMedicalAdvice: true,
       residentId,
       residentName: `${resident.first_name} ${resident.last_name}`,
       room: resident.room_number,

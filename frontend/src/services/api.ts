@@ -757,3 +757,13 @@ export const residentFinanceApi = {
   addEntry: (d: object) => api.post('/resident-finance', d),
 };
 
+// ── Ambient night sensing ──────────────────────────────────────────────────
+export const sensingApi = {
+  devices:     () => api.get('/sensing/devices'),
+  register:    (d: object) => api.post('/sensing/devices', d),
+  setConsent:  (id: string, d: object) => api.patch(`/sensing/devices/${id}/consent`, d),
+  night:       (night?: string) => api.get('/sensing/night', { params: night ? { night } : {} }),
+  residentNight: (residentId: string, night?: string) =>
+                 api.get(`/sensing/night/${residentId}`, { params: night ? { night } : {} }),
+};
+

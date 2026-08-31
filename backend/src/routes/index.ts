@@ -7,6 +7,7 @@ import * as authCtrl from '../controllers/auth.controller';
 import * as analyticsCtrl from '../controllers/analytics.controller';
 import * as kitchenCtrl from '../controllers/kitchen.controller';
 import * as absencesCtrl from '../controllers/absences.controller';
+import * as sensingCtrl from '../controllers/sensing.controller';
 import * as carePlansCtrl from '../controllers/carePlans.controller';
 import * as appointmentsCtrl from '../controllers/appointments.controller';
 import * as feedbackCtrl from '../controllers/feedback.controller';
@@ -104,6 +105,11 @@ router.post('/auth/family-register', authCtrl.familyRegister);
 router.post('/auth/logout', authenticate, authCtrl.logout);
 router.post('/auth/change-password', authenticate, authCtrl.changePassword);
 router.get('/auth/me', authenticate, (req, res) => res.json(req.user));
+
+// ── Sensor ingestion (device-authenticated, deliberately above the staff
+//    guard: a sensor in a bedroom must never hold a member of staff's
+//    credentials, and a stolen device key must not grant access to records) ──
+router.post('/sensing/ingest', sensingCtrl.ingest);
 
 // All routes below require authentication + tenant guard
 router.use(authenticate, tenantGuard);
@@ -1225,6 +1231,13 @@ router.get('/monitoring/chart/:residentId', isAllStaff, monitoringCtrl.getChart)
 router.get('/resident-finance',             isStaff, residentFinanceCtrl.listBalances);
 router.get('/resident-finance/:residentId', isStaff, residentFinanceCtrl.getLedger);
 router.post('/resident-finance',            isStaff, residentFinanceCtrl.addEntry);
+
+// ── Ambient night sensing ──────────────────────────────────────────────────
+router.get('/sensing/devices',            isStaff,   sensingCtrl.listDevices);
+router.post('/sensing/devices',           isManager, sensingCtrl.registerDevice);
+router.patch('/sensing/devices/:id/consent', isClinical, sensingCtrl.setConsent);
+router.get('/sensing/night',              isAllStaff, sensingCtrl.nightOverview);
+router.get('/sensing/night/:residentId',  isAllStaff, sensingCtrl.analyseNight);
 
 
 export default router;

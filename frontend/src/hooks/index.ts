@@ -18,7 +18,7 @@ import {
   rehabGoalsApi, celebrationsApi, housekeepingApi, taskTemplatesApi,
   menuAdminApi, housekeepingAdminApi, homeApi,
   analyticsApi, familyAccessApi, portalApi, kitchenApi, absencesApi, activityApi,
-  carePlansApi, appointmentsApi, feedbackApi, libertyApi, supervisionsApi,
+  carePlansApi, appointmentsApi, feedbackApi, libertyApi, supervisionsApi, sensingApi,
   monitoringApi, residentFinanceApi,
 } from '../services/api';
 import { toast } from '../utils/toast';
@@ -1826,6 +1826,39 @@ export function useAddLedgerEntry() {
     mutationFn: (d: object) => residentFinanceApi.addEntry(d).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['resident-finance'] }); toast.success('Entry recorded'); },
     onError: (e: any) => toast.error(e.response?.data?.error || 'Could not record this entry'),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Ambient night sensing
+// ═══════════════════════════════════════════════════════════════════════════
+export function useSensorDevices() {
+  return useQuery({ queryKey: ['sensing', 'devices'], queryFn: () => sensingApi.devices().then(r => r.data) });
+}
+export function useNightOverview(night?: string) {
+  return useQuery({ queryKey: ['sensing', 'night', night], queryFn: () => sensingApi.night(night).then(r => r.data) });
+}
+export function useResidentNight(residentId: string, night?: string) {
+  return useQuery({
+    queryKey: ['sensing', 'night', residentId, night],
+    queryFn: () => sensingApi.residentNight(residentId, night).then(r => r.data),
+    enabled: !!residentId,
+  });
+}
+export function useRegisterSensor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: object) => sensingApi.register(d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['sensing'] }); toast.success('Device registered'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not register this device'),
+  });
+}
+export function useSetSensorConsent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => sensingApi.setConsent(id, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['sensing'] }); toast.success('Consent recorded'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not record consent'),
   });
 }
 

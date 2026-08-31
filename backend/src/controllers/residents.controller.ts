@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { query, withTransaction } from '../models/db';
+import { isValidNhsNumber, normaliseNhsNumber } from '../utils/nhsNumber';
 import { cache } from '../models/redis';
 import { AppError } from '../utils/errors';
 import { auditLog } from '../services/audit.service';
@@ -136,6 +137,17 @@ export async function createResident(req: Request, res: Response, next: NextFunc
       return res.status(400).json({ error: 'firstName, lastName, dateOfBirth, and roomNumber are required' });
     }
 
+    // An NHS number carries a check digit. Catching a transposed pair here is
+    // far cheaper than discovering it when a record cannot be matched to the
+    // right person — which is the point at which it becomes a safety problem.
+    const nhs = nhsNumber ? normaliseNhsNumber(nhsNumber) : null;
+    if (nhs && !isValidNhsNumber(nhs)) {
+      return res.status(400).json({
+        error: 'That NHS number is not valid. It should be 10 digits and the check digit must match — please re-read it from the record.',
+        field: 'nhsNumber',
+      });
+    }
+
     await withTransaction(async (client) => {
       const { rows: [resident] } = await client.query(
         `INSERT INTO residents (
@@ -147,7 +159,7 @@ export async function createResident(req: Request, res: Response, next: NextFunc
         RETURNING *`,
         [careHomeId, firstName, lastName, preferredName, dateOfBirth,
          gender, roomNumber, admissionDate, riskLevel || 'low', fundingType || 'self_funded',
-         weeklyFee, gpName, gpPractice, gpPhone, nhsNumber, dnacpr || false,
+         weeklyFee, gpName, gpPractice, gpPhone, nhs, dnacpr || false,
          notes, careNeedsSummary, religion, language || 'English']
       );
 
@@ -211,8 +223,22 @@ export async function updateResident(req: Request, res: Response, next: NextFunc
 
     const {
       riskLevel, roomNumber, notes, careNeedsSummary,
-      gpName, gpPractice, gpPhone, dnacpr, fundingType, weeklyFee
+      gpName, gpPractice, gpPhone, dnacpr, fundingType, weeklyFee,
+      nhsNumber, allergies, preferredName,
     } = req.body;
+
+    // Neither the NHS number nor allergies could previously be changed after
+    // admission. A typo in an NHS number was permanent, and an allergy
+    // discovered later could not be recorded on the record at all — which is
+    // the field most likely to matter in an emergency.
+    const nhs = nhsNumber !== undefined && nhsNumber !== null && String(nhsNumber).trim() !== ''
+      ? normaliseNhsNumber(nhsNumber) : null;
+    if (nhs && !isValidNhsNumber(nhs)) {
+      return res.status(400).json({
+        error: 'That NHS number is not valid. It should be 10 digits and the check digit must match.',
+        field: 'nhsNumber',
+      });
+    }
 
     const { rows: [updated] } = await query(
       `UPDATE residents SET
@@ -225,10 +251,15 @@ export async function updateResident(req: Request, res: Response, next: NextFunc
         gp_phone = COALESCE($7, gp_phone),
         dnacpr = COALESCE($8, dnacpr),
         funding_type = COALESCE($9, funding_type),
-        weekly_fee = COALESCE($10, weekly_fee)
-       WHERE id = $11 RETURNING *`,
+        weekly_fee = COALESCE($10, weekly_fee),
+        nhs_number = COALESCE($11, nhs_number),
+        allergies = COALESCE($12, allergies),
+        preferred_name = COALESCE($13, preferred_name),
+        updated_at = NOW()
+       WHERE id = $14 RETURNING *`,
       [riskLevel, roomNumber, notes, careNeedsSummary,
-       gpName, gpPractice, gpPhone, dnacpr, fundingType, weeklyFee, id]
+       gpName, gpPractice, gpPhone, dnacpr, fundingType, weeklyFee,
+       nhs, allergies, preferredName, id]
     );
 
     await auditLog({

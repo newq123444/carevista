@@ -102,6 +102,22 @@ export async function calculateNews2Score(req: Request, res: Response, next: Nex
 
     const totalScore = respScore + spo2Score + oxygenScore + bpScore + pulseScore + consciousnessScore + tempScore;
 
+    // The seven parameter scores are returned alongside the total so a nurse can
+    // check the arithmetic against the NEWS2 chart on the wall. This is
+    // deliberate: a calculation the user can verify is reference information,
+    // whereas one they cannot verify is the thing MHRA treats as a medical
+    // device. Never hide the working.
+    const scoreBreakdown = [
+      { parameter: 'Respiration rate', value: respiratoryRate, score: respScore },
+      { parameter: 'SpO2', value: spo2, score: spo2Score,
+        scale: supplementalOxygen ? 'Scale 2 (on oxygen)' : 'Scale 1' },
+      { parameter: 'Supplemental oxygen', value: supplementalOxygen ? 'Yes' : 'No', score: oxygenScore },
+      { parameter: 'Systolic blood pressure', value: systolicBp, score: bpScore },
+      { parameter: 'Pulse', value: pulse, score: pulseScore },
+      { parameter: 'Consciousness (ACVPU)', value: consciousness, score: consciousnessScore },
+      { parameter: 'Temperature', value: temperature, score: tempScore },
+    ];
+
     // Check if any single parameter scores 3 (critical trigger)
     const hasCriticalParameter = [respScore, spo2Score, bpScore, pulseScore, consciousnessScore, tempScore].some(s => s === 3);
 
@@ -182,6 +198,10 @@ export async function calculateNews2Score(req: Request, res: Response, next: Nex
         consciousness: consciousnessScore,
         temperature: tempScore,
       },
+      // The reading AND the score for each parameter, plus the tool it comes
+      // from, so a nurse can check every line against the chart on the wall.
+      scoreBreakdown,
+      scoringTool: 'NEWS2 — Royal College of Physicians, 2017',
     });
   } catch (err) { next(err); }
 }

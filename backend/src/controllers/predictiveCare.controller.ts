@@ -4,6 +4,32 @@ import { Request, Response, NextFunction } from 'express';
 import { query } from '../models/db';
 import { runAiOperation, AI_NOT_CONFIGURED } from '../services/ai.service';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// REGULATORY FRAMING — read before changing anything in this file.
+//
+// This module does NOT predict. It weighs things that have already been
+// recorded — falls in the last 90 days, sedating medicines on the MAR, weight
+// trend, fluid and food intake, pain scores, missed doses — and reports which
+// residents those recorded facts point at.
+//
+// The distinction is not cosmetic. Under UK MDR 2002, software that provides
+// information used to make a diagnosis, or that produces a risk score a user
+// cannot verify, is a medical device and must be registered and UKCA marked.
+// Software that surfaces recorded information for a qualified person to
+// interpret is not.
+//
+// Two rules therefore hold in this file:
+//   1. Every score returns the factors and weights that produced it, so a nurse
+//      can check the arithmetic. Never return a bare number.
+//   2. Nothing here states a prediction, a probability, or a clinical
+//      conclusion. It reports observations and lets a person decide.
+//
+// If you add a feature that forecasts an outcome rather than summarising a
+// record, this stops being reference information and the product needs an
+// MHRA determination first.
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 // ── Calculate Falls Risk ──────────────────────────────────────────────────
 export async function calculateFallsRisk(req: Request, res: Response, next: NextFunction) {
   try {
@@ -140,6 +166,8 @@ export async function calculateFallsRisk(req: Request, res: Response, next: Next
       room: resident.room_number,
       riskType: 'falls',
       score: totalScore,
+      basis: 'Derived from records already made. Not a prediction.',
+      reviewedBy: null,   // a qualified person interprets this, not the system
       riskLevel: totalScore >= 80 ? 'critical' : totalScore >= 60 ? 'high' : totalScore >= 40 ? 'moderate' : 'low',
       factors,
       generatedAt: new Date().toISOString(),
@@ -327,6 +355,8 @@ export async function calculateDeteriorationRisk(req: Request, res: Response, ne
       room: resident.room_number,
       riskType: 'deterioration',
       score: totalScore,
+      basis: 'Derived from records already made. Not a prediction.',
+      reviewedBy: null,   // a qualified person interprets this, not the system
       riskLevel: totalScore >= 80 ? 'critical' : totalScore >= 60 ? 'high' : totalScore >= 40 ? 'moderate' : 'low',
       factors,
       generatedAt: new Date().toISOString(),

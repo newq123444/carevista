@@ -37,6 +37,8 @@ import SmartRota from './pages/SmartRota';
 import NaturalLanguageSearch from './pages/NaturalLanguageSearch';
 import RiskAssessments from './pages/RiskAssessments';
 import CarePlans from './pages/CarePlans';
+import NightSensing from './pages/NightSensing';
+import AboutThisSoftware from './pages/AboutThisSoftware';
 import Appointments from './pages/Appointments';
 import ComplaintsCompliments from './pages/ComplaintsCompliments';
 import DolsRegister from './pages/DolsRegister';
@@ -154,6 +156,7 @@ const NAV_ALL = [
   { path: '/mood-environment', label: 'Mood Environment', icon: '🌤️', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/photo-frames', label: 'Photo Frames', icon: '🖼️', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','activities','admin','super_admin','group_admin'] },
   { path: '/sleep-tracker', label: 'Sleep Tracker', icon: '😴', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
+  { path: '/night-sensing', label: 'Night Sensing', icon: '📡', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/intergenerational', label: 'Intergenerational', icon: '👶', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','activities','admin','super_admin','group_admin'] },
   { path: '/rehab-goals', label: 'Rehab Goals', icon: '🏋️', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/celebrations', label: 'Celebrations', icon: '🎉', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','activities','admin','super_admin','group_admin'] },
@@ -171,7 +174,8 @@ const NAV_ALL = [
   { path: '/ai-tools',   label: 'AI Tools',     icon: '🤖', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
   { path: '/ai-care-plans', label: 'AI Care Plan Drafts', icon: '📄', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
   { path: '/ai-insights', label: 'AI Insights',   icon: '🧠', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
-  { path: '/predictive-care', label: 'Falls & Risk AI', icon: '🎯', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
+  { path: '/about-software', label: 'About This Software', icon: 'ℹ️', roles: null },
+  { path: '/predictive-care', label: 'Risk Indicators', icon: '🎯', roles: ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'] },
   { path: '/admission-matching', label: 'Admission Match', icon: '🏠', roles: ['home_manager','deputy_manager','super_admin','group_admin'] },
   { path: '/smart-handover', label: 'Smart Handover', icon: '🧠', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','super_admin','group_admin'] },
   { path: '/sbar-handover', label: 'SBAR Handover', icon: '📋', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','super_admin','group_admin'] },
@@ -669,6 +673,8 @@ export default function App() {
           <Route path="/nl-search"       element={<NaturalLanguageSearch />} />
           <Route path="/risk-assessments" element={<RiskAssessments />} />
           <Route path="/care-plans"      element={<CarePlans />} />
+          <Route path="/night-sensing"   element={<NightSensing />} />
+          <Route path="/about-software"  element={<AboutThisSoftware />} />
           <Route path="/appointments"    element={<Appointments />} />
           <Route path="/feedback"        element={<ComplaintsCompliments />} />
           <Route path="/dols"            element={<DolsRegister />} />

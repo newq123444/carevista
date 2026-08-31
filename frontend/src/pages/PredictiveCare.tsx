@@ -62,9 +62,21 @@ function PredictiveCareInner() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🎯 Falls & Risk AI</h1>
-          <p className="page-subtitle">Predictive risk scoring and early warning alerts for residents</p>
+          <h1 className="page-title">🎯 Risk Indicators</h1>
+          <p className="page-subtitle">
+            Residents whose recorded history points to a raised risk of falls or deterioration,
+            with the reasons shown so you can check them.
+          </p>
         </div>
+
+      <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid #0d9488' }}>
+        <div className="card-body" style={{ padding: '12px 18px', fontSize: 13, color: 'var(--text-secondary)' }}>
+          <strong style={{ color: 'var(--text-primary)' }}>This does not predict anything.</strong>{' '}
+          It weighs what has already been recorded — falls in the last 90 days, sedating medicines
+          on the MAR, weight and intake trends, pain scores, missed doses — and shows which residents
+          those records point at, with the working. A qualified person decides what it means.
+        </div>
+      </div>
       </div>
 
       <div className="tab-strip" style={{ gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
