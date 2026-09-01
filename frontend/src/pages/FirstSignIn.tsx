@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/auth.store';
-import toast from 'react-hot-toast';
+import { toast } from '../utils/toast';
 
 export default function FirstSignIn() {
   const { user, logout, passwordChanged } = useAuthStore();
