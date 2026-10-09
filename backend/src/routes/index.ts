@@ -10,6 +10,8 @@ import * as kitchenCtrl from '../controllers/kitchen.controller';
 import * as absencesCtrl from '../controllers/absences.controller';
 import * as sensingCtrl from '../controllers/sensing.controller';
 import * as staffAdminCtrl from '../controllers/staffAdmin.controller';
+import * as integrityCtrl from '../controllers/integrity.controller';
+import * as mcaCtrl from '../controllers/mca.controller';
 import * as carePlansCtrl from '../controllers/carePlans.controller';
 import * as appointmentsCtrl from '../controllers/appointments.controller';
 import * as feedbackCtrl from '../controllers/feedback.controller';
@@ -295,6 +297,35 @@ router.post('/staff', isManager, validateBody(schemas.createStaffSchema), async 
   } catch (err) { next(err); }
 });
 
+// ── Mental Capacity Act assessments ────────────────────────────────────────
+// Read by care staff — they act on the outcomes. Written by nurses, senior
+// carers and managers, who carry out the assessments. Literal paths before
+// :id so "register" and "validate" are never mistaken for an id.
+router.get   ('/mca',                 isStaff,    mcaCtrl.listAssessments);
+router.get   ('/mca/register',        isStaff,    mcaCtrl.register);
+router.post  ('/mca/validate',        isClinical, mcaCtrl.validateOnly);
+router.post  ('/mca',                 isClinical, mcaCtrl.createAssessment);
+router.get   ('/mca/:id',             isStaff,    mcaCtrl.getAssessment);
+router.put   ('/mca/:id',             isClinical, mcaCtrl.updateAssessment);
+router.post  ('/mca/:id/complete',    isClinical, mcaCtrl.completeAssessment);
+router.post  ('/mca/:id/review',      isClinical, mcaCtrl.startReview);
+router.delete('/mca/:id',             isClinical, mcaCtrl.deleteDraft);
+
+// ── Record integrity ───────────────────────────────────────────────────────
+// Manager-only throughout. Findings name individual members of staff, and a
+// list of "records that look odd, by person" visible to the whole team would
+// be corrosive.
+router.get   ('/integrity/summary',            isManager, integrityCtrl.summary);
+router.get   ('/integrity/verify',             isManager, integrityCtrl.verify);
+router.post  ('/integrity/seal',               isManager, integrityCtrl.sealDay);
+router.get   ('/integrity/anchors',            isManager, integrityCtrl.listAnchors);
+router.get   ('/integrity/certificate/:entityId', isManager, integrityCtrl.certificate);
+router.post  ('/integrity/detect',             isManager, integrityCtrl.runDetection);
+router.get   ('/integrity/findings',           isManager, integrityCtrl.listFindings);
+router.patch ('/integrity/findings/:id',       isManager, integrityCtrl.resolveFinding);
+router.get   ('/integrity/settings',           isManager, integrityCtrl.getSettings);
+router.put   ('/integrity/settings',           isManager, integrityCtrl.updateSettings);
+
 // ── Training ──────────────────────────────────────────────────────────────
 router.get('/training', isManager, async (req, res, next) => {
   try {
@@ -470,6 +501,7 @@ router.post('/tasks/:id/complete',    isStaff,   tasksCtrl.completeTask);
 router.post('/tasks/:id/defer',       isStaff,   tasksCtrl.deferTask);
 router.post('/tasks/:id/start',       isStaff,   tasksCtrl.startTask);
 router.post('/tasks/:id/release',     isStaff,   tasksCtrl.releaseTask);
+router.post('/tasks/:id/reopen',      isStaff,   tasksCtrl.reopenTask);
 router.get('/tasks/stream',           isStaff,   tasksCtrl.sseStream);
 
 router.get('/compliance/actions', isManager, async (req, res, next) => {
@@ -1231,6 +1263,7 @@ router.patch('/supervisions/:id',  isAllStaff, supervisionsCtrl.updateSupervisio
 
 // ── Fluid, food & repositioning charts ─────────────────────────────────────
 router.get('/monitoring/alerts',            isAllStaff, monitoringCtrl.getAlerts);
+router.get('/monitoring/today',          isStaff,   monitoringCtrl.getToday);
 router.get('/monitoring/targets',           isAllStaff, monitoringCtrl.listTargets);
 router.post('/monitoring/targets',          isClinical, monitoringCtrl.setTarget);
 router.get('/monitoring/chart/:residentId', isAllStaff, monitoringCtrl.getChart);

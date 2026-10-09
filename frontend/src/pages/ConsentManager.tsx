@@ -227,6 +227,12 @@ export default function ConsentManager() {
               <button type="button" onClick={() => setCapacityFor(null)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#6b7280' }}>×</button>
             </div>
 
+            <div style={{ padding: 12, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, fontSize: 13.5, color: '#92400e', marginBottom: 12, lineHeight: 1.5 }}>
+              <strong>Use the full assessment for anything significant.</strong> This quick form records a
+              summary only. The <a href="/mca" style={{ color: '#92400e', fontWeight: 700 }}>Mental Capacity</a> module
+              records the support given, evidence for each part of the test, the causal link, best interests,
+              DoLS and a review date — and checks it against the Act as you go.
+            </div>
             <div style={{ padding: 10, background: '#eef2ff', borderRadius: 8, fontSize: 12, color: '#3730a3', marginBottom: 16 }}>
               Under the Mental Capacity Act 2005, capacity is <strong>decision-specific</strong> and must be assumed unless shown otherwise. Assess only this decision, at this time.
             </div>

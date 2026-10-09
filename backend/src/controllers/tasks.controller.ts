@@ -1,8 +1,9 @@
 // src/controllers/tasks.controller.ts
 import { Request, Response, NextFunction } from 'express';
-import { query } from '../models/db';
+import { query, withTransaction } from '../models/db';
 import { AppError } from '../utils/errors';
 import { auditLog } from '../services/audit.service';
+import { appendQuietly } from '../services/recordChain';
 // SSE is optional - graceful fallback if not deployed
 let sseManager: any = { broadcast: () => {}, addClient: () => {}, removeClient: () => {} };
 try { sseManager = require('../utils/sse').sseManager; } catch { /* SSE not available */ }
@@ -302,14 +303,27 @@ export async function completeTask(req: Request, res: Response, next: NextFuncti
     // which means either the resident received the same care twice or the
     // record says something happened twice when it happened once. Both are
     // serious: the first distresses the resident, the second is a false record.
-    const { rows: [task] } = await query(
-      `UPDATE care_tasks
-       SET status='done', completed_by=$1, completed_at=NOW(), notes=$2,
-           in_progress_by=NULL, in_progress_since=NULL, in_progress_name=NULL
-       WHERE id=$3 AND care_home_id=$4 AND status <> 'done'
-       RETURNING *`,
-      [req.user!.id, notes || null, id, careHomeId]
-    );
+    const task = await withTransaction(async (client) => {
+      const { rows: [row] } = await client.query(
+        `UPDATE care_tasks
+         SET status='done', completed_by=$1, completed_at=NOW(), notes=$2,
+             in_progress_by=NULL, in_progress_since=NULL, in_progress_name=NULL
+         WHERE id=$3 AND care_home_id=$4 AND status <> 'done'
+         RETURNING *`,
+        [req.user!.id, notes || null, id, careHomeId]
+      );
+
+      // Only a real completion is chained. The guard above means `row` is
+      // undefined when someone else got there first, and a refused duplicate is
+      // not a care event.
+      if (row) {
+        await appendQuietly(client, {
+          careHomeId, entityType: 'care_task', entityId: row.id,
+          action: 'completed', row, recordedBy: req.user!.id, eventAt: row.completed_at,
+        });
+      }
+      return row;
+    });
 
     if (!task) {
       const { rows: [existing] } = await query(
@@ -400,6 +414,87 @@ export async function deferTask(req: Request, res: Response, next: NextFunction)
 }
 
 // ── Mark in-progress (presence indicator) ────────────────────────────────
+// ── Undo a mis-tap ──────────────────────────────────────────────────────────
+// A swipe is fast, so a wrong swipe is easy. Undo has to be real: the screen
+// offered "Undo" for months and it only moved the carer back a card, leaving
+// the false record in place.
+//
+// Deliberately narrow. Only the person who recorded it, only within a short
+// window, only the task and the note written with it. Beyond that it is not a
+// mis-tap, it is a correction, and corrections go through an amendment so the
+// original stays readable.
+//
+// Nothing is erased. The completion stays in the record chain, and the reopen
+// is appended after it, so the history reads "recorded at 10:02, undone by the
+// same carer at 10:03" — which is the truth.
+const REOPEN_WINDOW_MINUTES = 10;
+
+export async function reopenTask(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const careHomeId = req.user!.care_home_id;
+    const noteId = typeof req.body?.noteId === 'string' ? req.body.noteId : null;
+
+    const result = await withTransaction(async (client) => {
+      const { rows: [row] } = await client.query(
+        `UPDATE care_tasks
+            SET status = 'pending', completed_by = NULL, completed_at = NULL,
+                deferred_reason = NULL, notes = NULL
+          WHERE id = $1 AND care_home_id = $2
+            AND status IN ('done', 'deferred')
+            AND completed_by = $3
+            AND completed_at > NOW() - ($4 || ' minutes')::interval
+          RETURNING *`,
+        [id, careHomeId, req.user!.id, String(REOPEN_WINDOW_MINUTES)]
+      );
+      if (!row) return null;
+
+      await appendQuietly(client, {
+        careHomeId, entityType: 'care_task', entityId: id,
+        action: 'reopened', row, recordedBy: req.user!.id, eventAt: new Date(),
+      });
+
+      let withdrawn = false;
+      if (noteId) {
+        const { rows: [note] } = await client.query(
+          `UPDATE care_notes SET deleted_at = NOW(),
+                  flag_reason = COALESCE(flag_reason, 'Recorded in error — undone by the author within ${REOPEN_WINDOW_MINUTES} minutes')
+            WHERE id = $1 AND care_home_id = $2 AND author_id = $3 AND deleted_at IS NULL
+              AND created_at > NOW() - ($4 || ' minutes')::interval
+            RETURNING *`,
+          [noteId, careHomeId, req.user!.id, String(REOPEN_WINDOW_MINUTES)]
+        );
+        if (note) {
+          withdrawn = true;
+          await appendQuietly(client, {
+            careHomeId, entityType: 'care_note', entityId: note.id,
+            action: 'withdrawn', row: note, recordedBy: req.user!.id, eventAt: note.created_at,
+          });
+        }
+      }
+      return { row, withdrawn };
+    });
+
+    if (!result) {
+      return res.status(409).json({
+        error: `This can only be undone by the person who recorded it, within ${REOPEN_WINDOW_MINUTES} minutes. ` +
+               'If it was wrong, add a correction to the note instead — the original stays on the record.',
+        conflict: 'reopen_window_passed',
+      });
+    }
+
+    await auditLog({
+      careHomeId, actorId: req.user!.id,
+      actorName: `${req.user!.first_name} ${req.user!.last_name}`,
+      action: 'CARE_TASK_REOPENED', entityType: 'care_task', entityId: id,
+      afterData: { noteWithdrawn: result.withdrawn }, ip: req.ip,
+    });
+    try { sseManager.broadcast(careHomeId, { type: 'TASKS_CHANGED' }); } catch { /* optional */ }
+
+    res.json({ ok: true, noteWithdrawn: result.withdrawn });
+  } catch (err) { next(err); }
+}
+
 export async function startTask(req: Request, res: Response, next: NextFunction) {
   try {
     const careHomeId = req.user!.care_home_id;

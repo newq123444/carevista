@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { query } from '../models/db';
+import { query, withTransaction } from '../models/db';
 import { AppError } from '../utils/errors';
 import { auditLog } from '../services/audit.service';
+import { appendQuietly } from '../services/recordChain';
 
 export async function listNotes(req: Request, res: Response, next: NextFunction) {
   try {
@@ -54,7 +55,7 @@ export async function createNote(req: Request, res: Response, next: NextFunction
       vitalBpSystolic, vitalBpDiastolic, vitalHeartRate, vitalTemp,
       vitalSpo2, vitalWeight, painScore, fluidIntakeMl, fluidOutputMl,
       foodEatenPercent, mood, position,
-      writtenOnBehalfOf, coAuthors, mealContext,
+      writtenOnBehalfOf, coAuthors, mealContext, bowelsOpened, stoolType,
       flagged, flagReason,
     } = req.body;
 
@@ -146,32 +147,66 @@ export async function createNote(req: Request, res: Response, next: NextFunction
 
     // Build enriched content: append meal context summary inline if provided
     let finalContent = content;
+    // Amounts sent only inside mealContext used to stop there: the fluid chart,
+    // MUST trend and monitoring alerts read the columns and never saw them.
+    // Lift them into the columns when the client did not send them directly.
+    let fluidIntakeMlFinal = fluidIntakeMl ?? null;
+    let foodEatenPercentFinal = foodEatenPercent ?? null;
     if (mealContext) {
       try {
-        const mc = JSON.parse(mealContext);
+        const mc = typeof mealContext === 'string' ? JSON.parse(mealContext) : mealContext;
         if (mc.concerns) finalContent += `\n\n⚠ Meal concern: ${mc.concerns}`;
+        const asInt = (v: unknown) => {
+          const n = typeof v === 'number' ? v : Number(v);
+          return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
+        };
+        if (fluidIntakeMlFinal == null) fluidIntakeMlFinal = asInt(mc.fluid_ml);
+        if (foodEatenPercentFinal == null) {
+          const pct = asInt(mc.food_eaten_percent);
+          foodEatenPercentFinal = pct != null && pct <= 100 ? pct : null;
+        }
       } catch {}
     }
 
-    const { rows: [note] } = await query(
+    // The record and its chain entry are written together. A record without a
+    // chain entry would be unprovable; a chain entry without a record would
+    // look like a deletion. Neither may happen, so both go in one transaction.
+    const note = await withTransaction(async (client) => {
+      const { rows: [created] } = await client.query(
       `INSERT INTO care_notes (
         care_home_id, resident_id, author_id, note_type, content,
         is_significant, is_private, flagged, flag_reason,
         vital_bp_systolic, vital_bp_diastolic, vital_heart_rate, vital_temp,
         vital_spo2, vital_weight, pain_score, fluid_intake_ml, fluid_output_ml,
         food_eaten_percent, mood, position,
-        meal_context, written_on_behalf_of_name, co_author_names
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
+        meal_context, written_on_behalf_of_name, co_author_names,
+        bowels_opened, stool_type
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
       RETURNING *`,
       [careHomeId, residentId, req.user!.id, noteType, finalContent,
        isSignificant || false, isPrivate || false, flagged || false, flagReason || null,
        vitalBpSystolic, vitalBpDiastolic, vitalHeartRate, vitalTemp,
-       vitalSpo2, vitalWeight, painScore, fluidIntakeMl, fluidOutputMl,
-       foodEatenPercent, mood, position,
+       vitalSpo2, vitalWeight, painScore, fluidIntakeMlFinal, fluidOutputMl,
+       foodEatenPercentFinal, mood, position,
        mealContext || null,
        onBehalfOfName,
-       coAuthorNames.length ? JSON.stringify(coAuthorNames) : null]
-    );
+       coAuthorNames.length ? JSON.stringify(coAuthorNames) : null,
+       typeof bowelsOpened === 'boolean' ? bowelsOpened : null,
+       ['hard', 'normal', 'loose'].includes(stoolType) ? stoolType : null]
+      );
+
+      await appendQuietly(client, {
+        careHomeId,
+        entityType: 'care_note',
+        entityId: created.id,
+        action: 'created',
+        row: created,
+        recordedBy: req.user!.id,
+        eventAt: created.created_at,
+      });
+
+      return created;
+    });
 
     await auditLog({
       careHomeId, actorId: req.user!.id,
@@ -201,15 +236,34 @@ export async function updateNote(req: Request, res: Response, next: NextFunction
       ['home_manager','deputy_manager','super_admin'].includes(req.user!.role);
     if (!canEdit) throw new AppError(403, 'Cannot edit this note');
 
-    const { rows: [updated] } = await query(
-      `UPDATE care_notes SET
-        content = COALESCE($1, content),
-        is_significant = COALESCE($2, is_significant),
-        flagged = COALESCE($3, flagged),
-        flag_reason = COALESCE($4, flag_reason)
-       WHERE id = $5 RETURNING *`,
-      [content, isSignificant, flagged, flagReason, id]
-    );
+    // An amendment appends a new chain entry rather than rewriting the old one.
+    // Clinical practice, and CQC, expect the original to remain readable — you
+    // strike through, you do not erase. The chain mirrors that: the earlier
+    // version stays in the history, and verification compares the live row
+    // against the newest entry.
+    const updated = await withTransaction(async (client) => {
+      const { rows: [row] } = await client.query(
+        `UPDATE care_notes SET
+          content = COALESCE($1, content),
+          is_significant = COALESCE($2, is_significant),
+          flagged = COALESCE($3, flagged),
+          flag_reason = COALESCE($4, flag_reason)
+         WHERE id = $5 RETURNING *`,
+        [content, isSignificant, flagged, flagReason, id]
+      );
+
+      await appendQuietly(client, {
+        careHomeId,
+        entityType: 'care_note',
+        entityId: id,
+        action: 'amended',
+        row,
+        recordedBy: req.user!.id,
+        eventAt: row.created_at,
+      });
+
+      return row;
+    });
 
     await auditLog({
       careHomeId, actorId: req.user!.id,
@@ -228,10 +282,21 @@ export async function deleteNote(req: Request, res: Response, next: NextFunction
     const careHomeId = req.user!.care_home_id;
 
     // Only managers can delete; soft-delete only
-    await query(
-      'UPDATE care_notes SET deleted_at = NOW() WHERE id = $1 AND care_home_id = $2',
-      [id, careHomeId]
-    );
+    await withTransaction(async (client) => {
+      const { rows: [row] } = await client.query(
+        'UPDATE care_notes SET deleted_at = NOW() WHERE id = $1 AND care_home_id = $2 RETURNING *',
+        [id, careHomeId]
+      );
+      // Soft delete only — the row survives, so the chain still verifies. The
+      // withdrawal is itself recorded, so "this note was retracted, by whom and
+      // when" is answerable later.
+      if (row) {
+        await appendQuietly(client, {
+          careHomeId, entityType: 'care_note', entityId: id,
+          action: 'withdrawn', row, recordedBy: req.user!.id, eventAt: row.created_at,
+        });
+      }
+    });
 
     await auditLog({
       careHomeId, actorId: req.user!.id,

@@ -19,6 +19,11 @@ import FamilyPortal   from './pages/FamilyPortal';
 import Billing        from './pages/Billing';
 import AiTools        from './pages/AiTools';
 import AuditLog       from './pages/AuditLog';
+import RecordIntegrity from './pages/RecordIntegrity';
+import CareDeck        from './pages/simple/CareDeck';
+import SimpleHome      from './pages/simple/SimpleHome';
+import SimpleHandover  from './pages/simple/SimpleHandover';
+import { useSimpleMode } from './hooks/useSimpleMode';
 import Policies       from './pages/Policies';
 import Profile        from './pages/Profile';
 import TaskBoard      from './pages/TaskBoard';
@@ -44,6 +49,10 @@ import ComplaintsCompliments from './pages/ComplaintsCompliments';
 import DolsRegister from './pages/DolsRegister';
 import Supervisions from './pages/Supervisions';
 import MonitoringCharts from './pages/MonitoringCharts';
+import IntakeOutput from './pages/IntakeOutput';
+import MentalCapacity from './pages/MentalCapacity';
+import McaAssessment from './pages/McaAssessment';
+import { useIntakeToday } from './hooks/useIntakeToday';
 import ResidentFinance from './pages/ResidentFinance';
 import MedInteractionChecker from './pages/MedInteractionChecker';
 import AutomatedInvoicing from './pages/AutomatedInvoicing';
@@ -109,6 +118,7 @@ const NAV_ALL = [
   { path: '/residents',  label: 'Residents',    icon: '👥', roles: null },
   { path: '/care-plans', label: 'Care Plans', icon: '📖', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin','activities'] },
   { path: '/care-notes', label: 'Care Notes',   icon: '📝', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
+  { path: '/intake', label: 'Fluids, Food & Bowels', icon: '🚰', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
   { path: '/charts', label: 'Fluid & Food Charts', icon: '💧', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/appointments', label: 'Appointments', icon: '🩺', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/emar',       label: 'Medications',  icon: '💊', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'], badge: 'meds' },
@@ -126,6 +136,7 @@ const NAV_ALL = [
   { path: '/resident-tablet', label: 'Resident Tablet', icon: '📲', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/risk-assessments', label: 'Risk Assessments', icon: '⚡', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
   { path: '/dols', label: 'DoLS & Restrictions', icon: '⚖️', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
+  { path: '/mca', label: 'Mental Capacity (MCA)', icon: '🧠', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/med-interactions', label: 'Med Interactions', icon: '💊', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
   { section: 'Team', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin','registered_nurse','senior_carer'] },
   { path: '/schedule',   label: 'Rota',         icon: '📅', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin','registered_nurse','senior_carer'] },
@@ -185,17 +196,28 @@ const NAV_ALL = [
   { path: '/regulatory', label: 'Regulatory', icon: '🏛️', roles: ['home_manager','deputy_manager','super_admin','group_admin'] },
   { path: '/consent-manager', label: 'Consents', icon: '📝', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','super_admin','group_admin'] },
   { path: '/audit-log',  label: 'Audit Log',    icon: '🔍', roles: ['home_manager','super_admin','group_admin'] },
+  { path: '/record-integrity', label: 'Record Integrity', icon: '🔒', roles: ['home_manager','deputy_manager','super_admin','group_admin'] },
   { path: '/report-builder', label: 'Report Builder', icon: '📑', roles: ['home_manager','deputy_manager','super_admin','group_admin'] },
   { path: '/offline-mode', label: 'Offline Mode', icon: '📴', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
 ];
 
 // Bottom nav — most important 5 items for phone
-const BOTTOM_NAV = [
+// Simple mode shows only what a carer acts on during a shift. Everything else
+// is still reachable by switching back to the full view, which is why that
+// toggle sits below the menu and not inside it.
+const SIMPLE_NAV_PATHS = ['/', '/round', '/shift', '/intake', '/residents', '/care-notes', '/profile'];
+
+// Nurses and managers get the intake board in the fifth slot: "who needs a
+// drink, who hasn't opened their bowels" is the question they are asked most
+// on the floor. Everyone else keeps Incidents there.
+const CLINICAL_LEADS = ['home_manager','deputy_manager','registered_nurse','super_admin','group_admin'];
+const BOTTOM_NAV: { path: string; label: string; icon: string; badge: string | null; roles?: string[]; hideFor?: string[] }[] = [
   { path: '/',           label: 'Home',      icon: '📊', badge: null },
   { path: '/residents',  label: 'Residents', icon: '👥', badge: null },
   { path: '/care-notes', label: 'Notes',     icon: '📝', badge: null },
   { path: '/emar',       label: 'Meds',      icon: '💊', badge: 'meds' },
-  { path: '/incidents',  label: 'Incidents', icon: '⚠️', badge: 'incidents' },
+  { path: '/intake',     label: 'Intake',    icon: '💧', badge: 'intake', roles: CLINICAL_LEADS },
+  { path: '/incidents',  label: 'Incidents', icon: '⚠️', badge: 'incidents', hideFor: CLINICAL_LEADS },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -229,6 +251,9 @@ function useBreakpoint() {
 
 export default function App() {
   const { user, logout } = useAuthStore();
+  // Simple mode is a per-person preference, not a role, so a manager can
+  // switch it on to see exactly what their carers see.
+  const { simple, setSimple } = useSimpleMode(user?.id, user?.role);
   
   // Dark mode
   const [darkMode, setDarkMode] = React.useState(() => localStorage.getItem('darkMode') === 'true');
@@ -310,9 +335,12 @@ export default function App() {
   }, [searchQuery]);
 
   const role      = user?.role || '';
+  // Red count for the Intake tab badge. Only fetched for nurses and managers.
+  const { red: intakeRed } = useIntakeToday(CLINICAL_LEADS.includes(role));
   const roleColor = ROLE_COLORS[role] || '#2563eb';
 
   const getBadge = (key?: string | null): number => {
+    if (key === 'intake') return intakeRed;
     if (!dash || !key) return 0;
     if (key === 'incidents') return parseInt(dash.openIncidents)    || 0;
     if (key === 'messages')  return parseInt(dash.unreadMessages)   || 0;
@@ -457,9 +485,17 @@ export default function App() {
       {/* Nav items */}
       <div ref={navScrollRef} style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
         <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,.08)' }}><LanguageSwitcher /></div>
+        {simple && (
+          <NavLink to="/round" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', margin: '8px 10px', borderRadius: 10, textDecoration: 'none', background: 'rgba(79,70,229,.25)', border: '1px solid rgba(129,140,248,.45)', color: '#e0e7ff', fontSize: '0.95rem', fontWeight: 700, minHeight: 52 }}>
+            <span style={{ fontSize: 22 }}>👐</span>
+            {!(isDesktop && collapsed) && <span>Start my round</span>}
+          </NavLink>
+        )}
         {NAV_ALL.map((item, i) => {
           if ('section' in item && !('path' in item)) {
             if (item.roles && !item.roles.includes(role)) return null;
+            // Section headers mean nothing in a six-item menu.
+            if (simple) return null;
             // Hide section headers when searching
             if (searchQuery) return null;
             if (isDesktop && collapsed) return <div key={i} style={{ borderTop: '1px solid rgba(255,255,255,.05)', margin: '6px 0' }} />;
@@ -467,6 +503,7 @@ export default function App() {
           }
           const navItem = item as { path: string; label: string; icon: string; roles: string[] | null; badge?: string };
           if (navItem.roles && !navItem.roles.includes(role)) return null;
+          if (simple && !SIMPLE_NAV_PATHS.includes(navItem.path)) return null;
           // Filter by search query
           if (searchQuery && !navItem.label.toLowerCase().includes(searchQuery.toLowerCase())) return null;
           const badgeCount = getBadge(navItem.badge);
@@ -522,6 +559,13 @@ export default function App() {
               {darkMode ? '\u2600\uFE0F Light Mode' : '\uD83C\uDF19 Dark Mode'}
             </button>
           </div>
+        )}
+        {!(isDesktop && collapsed) && (
+          <button onClick={() => setSimple(!simple)}
+            title={simple ? 'Show every screen and every option' : 'Big buttons, one thing at a time — what carers see'}
+            style={{ width: '100%', marginBottom: 6, padding: '8px 10px', background: simple ? 'rgba(79,70,229,.22)' : 'rgba(255,255,255,.04)', border: `1px solid ${simple ? 'rgba(129,140,248,.5)' : 'rgba(255,255,255,.08)'}`, borderRadius: 6, color: simple ? '#c7d2fe' : '#6b7280', fontSize: '0.78rem', cursor: 'pointer', textAlign: 'left' }}>
+            {simple ? '\u2699\uFE0F Full view' : '\u270B Simple view'}
+          </button>
         )}
         {!(isDesktop && collapsed) && (
           <button onClick={handleLogout} style={{ width: '100%', padding: '8px 10px', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 6, color: '#6b7280', fontSize: '0.78rem', cursor: 'pointer', textAlign: 'left' }}>
@@ -638,7 +682,10 @@ export default function App() {
       >
         <ErrorBoundary>
         <Routes>
-          <Route path="/"               element={<Dashboard />} />
+          <Route path="/"               element={simple ? <SimpleHome /> : <Dashboard />} />
+          <Route path="/round"          element={<CareDeck />} />
+          <Route path="/shift"          element={<SimpleHandover />} />
+          <Route path="/full"           element={<Dashboard />} />
           <Route path="/tasks"          element={<TaskBoard />} />
           <Route path="/residents"      element={<Residents />} />
           <Route path="/residents/:id"  element={<ResidentDetail />} />
@@ -678,8 +725,11 @@ export default function App() {
           <Route path="/appointments"    element={<Appointments />} />
           <Route path="/feedback"        element={<ComplaintsCompliments />} />
           <Route path="/dols"            element={<DolsRegister />} />
+          <Route path="/mca"             element={<MentalCapacity />} />
+          <Route path="/mca/:id"         element={<McaAssessment />} />
           <Route path="/supervisions"    element={<Supervisions />} />
           <Route path="/charts"          element={<MonitoringCharts />} />
+          <Route path="/intake"          element={<IntakeOutput />} />
           <Route path="/resident-finance" element={<ResidentFinance />} />
           <Route path="/med-interactions" element={<MedInteractionChecker />} />
           <Route path="/fire-log"        element={<FireLogBook />} />
@@ -722,6 +772,7 @@ export default function App() {
           <Route path="/digital-twin" element={<ResidentDigitalTwin />} />
           <Route path="/environmental" element={<EnvironmentalIntelligence />} />
           <Route path="/audit-log"      element={<AuditLog />} />
+          <Route path="/record-integrity" element={<RecordIntegrity />} />
           <Route path="/profile"        element={<Profile />} />
           <Route path="*"               element={<Navigate to="/" replace />} />
         </Routes>
@@ -731,7 +782,9 @@ export default function App() {
       {/* ── Phone Bottom Nav ─────────────────────────────────────── */}
       {isPhone && (
         <nav className="bottom-nav">
-          {BOTTOM_NAV.map(item => {
+          {BOTTOM_NAV.filter(item =>
+              (!item.roles || item.roles.includes(role)) && !(item.hideFor && item.hideFor.includes(role))
+            ).map(item => {
             const badgeCount = getBadge(item.badge);
             const isActive   = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
             return (

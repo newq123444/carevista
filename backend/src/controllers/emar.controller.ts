@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { query, withTransaction } from '../models/db';
 import { AppError } from '../utils/errors';
 import { auditLog } from '../services/audit.service';
+import { appendQuietly } from '../services/recordChain';
 
 
 // Routes carers are permitted to administer (delegated tasks)
@@ -133,8 +134,11 @@ export async function recordAdministration(req: Request, res: Response, next: Ne
       throw new AppError(400, 'Reason required for omitted medication');
     }
 
-    // Upsert (handles re-recording)
-    const { rows: [admin] } = await query(
+    // Upsert (handles re-recording). The medication record and its chain entry
+    // are written together — a medication signature that cannot be proved is
+    // exactly the record that matters most in an investigation.
+    const admin = await withTransaction(async (client) => {
+      const { rows: [row] } = await client.query(
       `INSERT INTO med_administrations (
         care_home_id, medication_id, resident_id, administered_by, witnessed_by,
         administration_date, scheduled_time, actual_time, status, dose_given,
@@ -154,7 +158,22 @@ export async function recordAdministration(req: Request, res: Response, next: Ne
       [careHomeId, medicationId, residentId, req.user!.id, witnessedById,
        administrationDate, scheduledTime, actualTime || scheduledTime, status, doseGiven || med.dose,
        notes, refusalReason, omissionReason, isPrn || false, prnReason, prnEffect]
-    );
+      );
+
+      // The upsert means a second signature for the same dose amends the first.
+      // Recording that as an amendment keeps both versions in the history.
+      await appendQuietly(client, {
+        careHomeId,
+        entityType: 'med_administration',
+        entityId: row.id,
+        action: 'recorded',
+        row,
+        recordedBy: req.user!.id,
+        eventAt: row.created_at,
+      });
+
+      return row;
+    });
 
     await auditLog({
       careHomeId, actorId: req.user!.id,

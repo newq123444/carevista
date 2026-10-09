@@ -16,6 +16,31 @@ import { auditLog } from '../services/audit.service';
 
 function toDateStr(d: Date) { return d.toISOString().slice(0, 10); }
 
+// Fluid and food amounts, including those recorded before they had their own
+// columns. The full carer form used to put them ONLY inside meal_context, so a
+// chart reading the columns alone showed nothing for months of records.
+// Reading the JSON as a fallback recovers that history without rewriting a
+// single stored note — rewriting would (rightly) show as tampering on the
+// record integrity chain.
+export const FLUID_SQL = `COALESCE(n.fluid_intake_ml,
+  CASE WHEN n.meal_context->>'fluid_ml' ~ '^[0-9]+$' THEN (n.meal_context->>'fluid_ml')::int END)`;
+export const FOOD_SQL = `COALESCE(n.food_eaten_percent,
+  CASE WHEN n.meal_context->>'food_eaten_percent' ~ '^[0-9]+$'
+        AND (n.meal_context->>'food_eaten_percent')::int <= 100
+       THEN (n.meal_context->>'food_eaten_percent')::int END)`;
+
+// Bowels opened. Structured since migration 034; older notes fall back to the
+// wording, and only where the structured field was never set.
+export const BOWELS_SQL = `CASE
+  WHEN n.bowels_opened IS NOT NULL THEN n.bowels_opened
+  WHEN n.content ~* 'bowels opened' AND n.content !~* 'not opened' THEN TRUE
+  ELSE NULL END`;
+export const STOOL_SQL = `COALESCE(n.stool_type, CASE
+  WHEN n.content ~* 'bowels opened' AND n.content ~* '(type 5|loose|diarrh)' THEN 'loose'
+  WHEN n.content ~* 'bowels opened' AND n.content ~* '(type 1|hard)' THEN 'hard'
+  WHEN n.content ~* 'bowels opened' THEN 'normal'
+  ELSE NULL END)`;
+
 export async function listTargets(req: Request, res: Response, next: NextFunction) {
   try {
     const chId = req.user!.care_home_id;
@@ -140,16 +165,19 @@ export async function getChart(req: Request, res: Response, next: NextFunction) 
 
     // Every entry that carries a chartable value, in time order.
     const { rows: entries } = await query(
-      `SELECT n.id, n.created_at, n.note_type, n.content,
-              n.fluid_intake_ml, n.fluid_output_ml, n.food_eaten_percent, n.position,
-              u.first_name || ' ' || u.last_name AS recorded_by
-       FROM care_notes n
-       LEFT JOIN users u ON u.id = n.author_id
-       WHERE n.resident_id = $1 AND n.care_home_id = $2 AND n.deleted_at IS NULL
-         AND n.created_at >= $3::date AND n.created_at < $3::date + 1
-         AND (n.fluid_intake_ml IS NOT NULL OR n.fluid_output_ml IS NOT NULL
-              OR n.food_eaten_percent IS NOT NULL OR n.position IS NOT NULL)
-       ORDER BY n.created_at`, [residentId, chId, date]);
+      `SELECT * FROM (
+         SELECT n.id, n.created_at, n.note_type, n.content,
+                ${FLUID_SQL} AS fluid_intake_ml, n.fluid_output_ml,
+                ${FOOD_SQL} AS food_eaten_percent, n.position,
+                u.first_name || ' ' || u.last_name AS recorded_by
+         FROM care_notes n
+         LEFT JOIN users u ON u.id = n.author_id
+         WHERE n.resident_id = $1 AND n.care_home_id = $2 AND n.deleted_at IS NULL
+           AND n.created_at >= $3::date AND n.created_at < $3::date + 1
+       ) x
+       WHERE x.fluid_intake_ml IS NOT NULL OR x.fluid_output_ml IS NOT NULL
+          OR x.food_eaten_percent IS NOT NULL OR x.position IS NOT NULL
+       ORDER BY x.created_at`, [residentId, chId, date]);
 
     const fluidEntries = entries.filter(e => e.fluid_intake_ml != null);
     const outputEntries = entries.filter(e => e.fluid_output_ml != null);
@@ -338,5 +366,68 @@ export async function getAlerts(req: Request, res: Response, next: NextFunction)
       highCount: alerts.filter(a => a.severity === 'high').length,
       generatedAt: now.toISOString(),
     });
+  } catch (err) { next(err); }
+}
+
+
+// ── Today at a glance ───────────────────────────────────────────────────────
+// Raw rows for the window the device asks for. The device works out what is a
+// concern, because "how far through the day" and "how many days since" depend
+// on local time — see frontend/src/utils/intakeSummary.ts.
+export async function getToday(req: Request, res: Response, next: NextFunction) {
+  try {
+    const chId = req.user!.care_home_id;
+    const from = new Date(String(req.query.from || ''));
+    const to = new Date(String(req.query.to || ''));
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to <= from) {
+      return res.status(400).json({ error: 'from and to must be ISO timestamps, with to after from' });
+    }
+    if (to.getTime() - from.getTime() > 2 * 86_400_000) {
+      return res.status(400).json({ error: 'The window can be at most two days' });
+    }
+
+    const { rows: residents } = await query(
+      `SELECT r.id, r.first_name || ' ' || r.last_name AS name, r.room_number AS room,
+              (SELECT a.absence_type FROM resident_absences a
+                WHERE a.resident_id = r.id AND a.actual_return IS NULL
+                  AND a.start_date <= $2::timestamptz::date
+                ORDER BY a.start_date DESC LIMIT 1) AS away
+         FROM residents r
+        WHERE r.care_home_id = $1 AND r.active = TRUE AND r.discharge_date IS NULL
+        ORDER BY r.room_number`, [chId, to.toISOString()]);
+
+    const { rows: notes } = await query(
+      `SELECT * FROM (
+         SELECT n.resident_id, n.created_at,
+                ${FLUID_SQL} AS fluid_ml,
+                ${FOOD_SQL} AS food_pct,
+                ${BOWELS_SQL} AS bowels_opened,
+                ${STOOL_SQL} AS stool_type,
+                u.first_name || ' ' || u.last_name AS by
+           FROM care_notes n
+           LEFT JOIN users u ON u.id = n.author_id
+          WHERE n.care_home_id = $1 AND n.deleted_at IS NULL
+            AND n.created_at >= $2 AND n.created_at < $3
+       ) x
+       WHERE x.fluid_ml IS NOT NULL OR x.food_pct IS NOT NULL OR x.bowels_opened IS NOT NULL
+       ORDER BY x.created_at`, [chId, from.toISOString(), to.toISOString()]);
+
+    // Last time each resident's bowels opened, looking back a month. A month is
+    // plenty: anyone past that is already well beyond any alert threshold.
+    const { rows: lastOpened } = await query(
+      `SELECT n.resident_id, MAX(n.created_at) AS last_opened_at
+         FROM care_notes n
+        WHERE n.care_home_id = $1 AND n.deleted_at IS NULL
+          AND n.created_at < $2 AND n.created_at >= $2::timestamptz - INTERVAL '31 days'
+          AND (${BOWELS_SQL}) IS TRUE
+        GROUP BY n.resident_id`, [chId, to.toISOString()]);
+
+    const { rows: targets } = await query(
+      `SELECT resident_id, monitor_fluids, fluid_target_ml, fluid_minimum_ml,
+              monitor_food, food_minimum_percent, monitor_bowels, bowel_alert_days
+         FROM resident_chart_targets
+        WHERE care_home_id = $1 AND active = TRUE`, [chId]);
+
+    res.json({ residents, notes, lastOpened, targets, from: from.toISOString(), to: to.toISOString() });
   } catch (err) { next(err); }
 }

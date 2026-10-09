@@ -23,6 +23,8 @@ import {
   monitoringApi, residentFinanceApi,
 } from '../services/api';
 import { toast } from '../utils/toast';
+import { integrityApi } from '../services/api';
+import { mcaApi } from '../services/api';
 
 export function useResidents(params?: object) {
   return useQuery({ queryKey: ['residents', params], queryFn: () => residentsApi.list(params).then(r => Array.isArray(r.data) ? r.data : (r.data?.residents ?? r.data)) });
@@ -260,6 +262,21 @@ export function useStartTask() {
 export function useReleaseTask() {
   return useMutation({
     mutationFn: (id: string) => api.post(`/tasks/${id}/release`).then(r => r.data),
+  });
+}
+
+// Undo a mis-tap: reopens the task and withdraws the note written with it.
+// Server-enforced: the same person, within ten minutes.
+export function useReopenTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, noteId }: { id: string; noteId?: string }) =>
+      api.post(`/tasks/${id}/reopen`, noteId ? { noteId } : {}).then(r => r.data),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not undo that'),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['tasks'], exact: false });
+      qc.invalidateQueries({ queryKey: ['care-notes'] });
+    },
   });
 }
 
@@ -1944,3 +1961,107 @@ export function useRotaConflicts(from?: string, to?: string) {
   return useQuery({ queryKey: ['rota-conflicts', from, to], queryFn: () => staffAdminApi.rotaConflicts(from, to).then(r => r.data) });
 }
 
+
+
+// ── Record integrity ───────────────────────────────────────────────────────
+export function useIntegritySummary() {
+  return useQuery({ queryKey: ['integrity', 'summary'], queryFn: () => integrityApi.summary().then(r => r.data) });
+}
+export function useIntegrityFindings(status = 'open') {
+  return useQuery({ queryKey: ['integrity', 'findings', status], queryFn: () => integrityApi.findings(status).then(r => r.data) });
+}
+export function useChainAnchors() {
+  return useQuery({ queryKey: ['integrity', 'anchors'], queryFn: () => integrityApi.anchors().then(r => r.data) });
+}
+export function useIntegritySettings() {
+  return useQuery({ queryKey: ['integrity', 'settings'], queryFn: () => integrityApi.getSettings().then(r => r.data) });
+}
+export function useVerifyChain() {
+  return useMutation({
+    mutationFn: () => integrityApi.verify().then(r => r.data),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not check the records'),
+  });
+}
+export function useSealDay() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (day: string) => integrityApi.seal(day).then(r => r.data),
+    onSuccess: (d: any) => {
+      qc.invalidateQueries({ queryKey: ['integrity'] });
+      toast.success(d?.anchored ? `Sealed ${d.entryCount} records` : (d?.reason || 'Nothing to seal'));
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not seal the day'),
+  });
+}
+export function useRunDetection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (days: number) => integrityApi.detect(days).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['integrity'] }),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not run the check'),
+  });
+}
+export function useResolveFinding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => integrityApi.resolve(id, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['integrity'] }); toast.success('Thank you — recorded'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save that'),
+  });
+}
+export function useSetIntegritySettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: object) => integrityApi.setSettings(data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['integrity'] }); toast.success('Settings saved'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save settings'),
+  });
+}
+
+
+// ── Mental Capacity Act assessments ─────────────────────────────────────────
+export function useMcaList(params?: object) {
+  return useQuery({ queryKey: ['mca', 'list', params], queryFn: () => mcaApi.list(params).then(r => r.data) });
+}
+export function useMcaRegister() {
+  return useQuery({ queryKey: ['mca', 'register'], queryFn: () => mcaApi.register().then(r => r.data) });
+}
+export function useMca(id: string) {
+  return useQuery({ queryKey: ['mca', 'one', id], queryFn: () => mcaApi.get(id).then(r => r.data), enabled: !!id });
+}
+export function useCreateMca() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: object) => mcaApi.create(data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mca'] }),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not start the assessment'),
+  });
+}
+export function useUpdateMca() {
+  return useMutation({
+    mutationFn: ({ id, record }: { id: string; record: object }) => mcaApi.update(id, record).then(r => r.data),
+  });
+}
+export function useCompleteMca() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mcaApi.complete(id).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['mca'] }); toast.success('Assessment completed and sealed'); },
+  });
+}
+export function useStartMcaReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mcaApi.review(id).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mca'] }),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not start a review'),
+  });
+}
+export function useDeleteMca() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mcaApi.remove(id).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['mca'] }); toast.success('Draft deleted'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not delete the draft'),
+  });
+}

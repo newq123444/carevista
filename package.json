@@ -1,14 +1,19 @@
 {
   "name": "carevista",
   "private": true,
-  "version": "76.0.0",
+  "version": "83.0.0",
   "description": "CareVista \u2014 care home management. Root scripts run the pre-flight checks that do not need node_modules.",
   "scripts": {
-    "check": "node scripts/check-grammar.mjs && node scripts/check-imports.mjs && node scripts/check-deps.mjs && node scripts/check-types.mjs && node scripts/check-icons.mjs",
+    "check": "node scripts/check-grammar.mjs && node scripts/check-imports.mjs && node scripts/check-deps.mjs && node scripts/check-routes.mjs && node scripts/check-types.mjs && node scripts/check-icons.mjs && node scripts/check-touch-targets.mjs && node scripts/check-task-status.mjs && node scripts/check-note-types.mjs && python3 backend/scripts/check-hashed-fields.py && node backend/tests/run.mjs",
     "check:grammar": "node scripts/check-grammar.mjs",
     "check:imports": "node scripts/check-imports.mjs",
     "check:icons": "node scripts/check-icons.mjs",
     "check:types": "node scripts/check-types.mjs",
-    "check:deps": "node scripts/check-deps.mjs"
+    "check:deps": "node scripts/check-deps.mjs",
+    "test": "node backend/tests/run.mjs",
+    "check:routes": "node scripts/check-routes.mjs",
+    "check:touch": "node scripts/check-touch-targets.mjs",
+    "check:status": "node scripts/check-task-status.mjs",
+    "check:notetypes": "node scripts/check-note-types.mjs"
   }
 }

@@ -744,6 +744,7 @@ export const supervisionsApi = {
 // ── Fluid / food / repositioning charts ────────────────────────────────────
 export const monitoringApi = {
   alerts:    () => api.get('/monitoring/alerts'),
+  today:     (from: string, to: string) => api.get('/monitoring/today', { params: { from, to } }),
   targets:   () => api.get('/monitoring/targets'),
   setTarget: (d: object) => api.post('/monitoring/targets', d),
   chart:     (residentId: string, date?: string) =>
@@ -783,3 +784,29 @@ export const staffAdminApi = {
   rotaConflicts: (from?: string, to?: string) => api.get('/rota/conflicts', { params: { from, to } }),
 };
 
+// ── Record integrity ───────────────────────────────────────────────────────
+export const integrityApi = {
+  summary:     () => api.get('/integrity/summary'),
+  verify:      (params?: any) => api.get('/integrity/verify', { params }),
+  seal:        (day: string) => api.post('/integrity/seal', { day }),
+  anchors:     () => api.get('/integrity/anchors'),
+  certificate: (entityId: string) => api.get(`/integrity/certificate/${entityId}`),
+  detect:      (days = 7) => api.post(`/integrity/detect?days=${days}`, {}),
+  findings:    (status = 'open') => api.get('/integrity/findings', { params: { status } }),
+  resolve:     (id: string, data: object) => api.patch(`/integrity/findings/${id}`, data),
+  getSettings: () => api.get('/integrity/settings'),
+  setSettings: (data: object) => api.put('/integrity/settings', data),
+};
+
+// ── Mental Capacity Act assessments ─────────────────────────────────────────
+export const mcaApi = {
+  list:     (params?: object) => api.get('/mca', { params }),
+  register: () => api.get('/mca/register'),
+  get:      (id: string) => api.get(`/mca/${id}`),
+  create:   (data: object) => api.post('/mca', data),
+  update:   (id: string, record: object) => api.put(`/mca/${id}`, { record }),
+  validate: (record: object) => api.post('/mca/validate', { record }),
+  complete: (id: string) => api.post(`/mca/${id}/complete`),
+  review:   (id: string) => api.post(`/mca/${id}/review`),
+  remove:   (id: string) => api.delete(`/mca/${id}`),
+};
