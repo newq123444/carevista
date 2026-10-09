@@ -23,7 +23,8 @@ import RecordIntegrity from './pages/RecordIntegrity';
 import CareDeck        from './pages/simple/CareDeck';
 import SimpleHome      from './pages/simple/SimpleHome';
 import SimpleHandover  from './pages/simple/SimpleHandover';
-import { useSimpleMode } from './hooks/useSimpleMode';
+import { useSimpleMode, canUseSimpleMode } from './hooks/useSimpleMode';
+import CarerPreview    from './pages/simple/CarerPreview';
 import Policies       from './pages/Policies';
 import Profile        from './pages/Profile';
 import TaskBoard      from './pages/TaskBoard';
@@ -136,6 +137,7 @@ const NAV_ALL = [
   { path: '/resident-tablet', label: 'Resident Tablet', icon: '📲', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/risk-assessments', label: 'Risk Assessments', icon: '⚡', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
   { path: '/dols', label: 'DoLS & Restrictions', icon: '⚖️', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
+  { path: '/carer-view', label: 'Preview carer view', icon: '👁', roles: ['home_manager','deputy_manager','registered_nurse','admin','super_admin','group_admin'] },
   { path: '/mca', label: 'Mental Capacity (MCA)', icon: '🧠', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','carer','admin','super_admin','group_admin'] },
   { path: '/med-interactions', label: 'Med Interactions', icon: '💊', roles: ['home_manager','deputy_manager','registered_nurse','senior_carer','admin','super_admin','group_admin'] },
   { section: 'Team', roles: ['home_manager','deputy_manager','admin','super_admin','group_admin','registered_nurse','senior_carer'] },
@@ -205,7 +207,9 @@ const NAV_ALL = [
 // Simple mode shows only what a carer acts on during a shift. Everything else
 // is still reachable by switching back to the full view, which is why that
 // toggle sits below the menu and not inside it.
-const SIMPLE_NAV_PATHS = ['/', '/round', '/shift', '/intake', '/residents', '/care-notes', '/profile'];
+// '/emar' because senior carers often give medication; the role filter still
+// hides it from anyone without eMAR access.
+const SIMPLE_NAV_PATHS = ['/', '/round', '/shift', '/emar', '/intake', '/residents', '/care-notes', '/profile'];
 
 // Nurses and managers get the intake board in the fifth slot: "who needs a
 // drink, who hasn't opened their bowels" is the question they are asked most
@@ -337,6 +341,14 @@ export default function App() {
   const role      = user?.role || '';
   // Red count for the Intake tab badge. Only fetched for nurses and managers.
   const { red: intakeRed } = useIntakeToday(CLINICAL_LEADS.includes(role));
+
+  // Set when any request hits a table that has not been migrated yet.
+  const [migrationMsg, setMigrationMsg] = useState<string | null>(null);
+  useEffect(() => {
+    const on = (e: Event) => setMigrationMsg((e as CustomEvent).detail || 'The database needs updating.');
+    window.addEventListener('cv-migration-pending', on);
+    return () => window.removeEventListener('cv-migration-pending', on);
+  }, []);
   const roleColor = ROLE_COLORS[role] || '#2563eb';
 
   const getBadge = (key?: string | null): number => {
@@ -560,7 +572,7 @@ export default function App() {
             </button>
           </div>
         )}
-        {!(isDesktop && collapsed) && (
+        {!(isDesktop && collapsed) && canUseSimpleMode(role) && (
           <button onClick={() => setSimple(!simple)}
             title={simple ? 'Show every screen and every option' : 'Big buttons, one thing at a time — what carers see'}
             style={{ width: '100%', marginBottom: 6, padding: '8px 10px', background: simple ? 'rgba(79,70,229,.22)' : 'rgba(255,255,255,.04)', border: `1px solid ${simple ? 'rgba(129,140,248,.5)' : 'rgba(255,255,255,.08)'}`, borderRadius: 6, color: simple ? '#c7d2fe' : '#6b7280', fontSize: '0.78rem', cursor: 'pointer', textAlign: 'left' }}>
@@ -680,12 +692,25 @@ export default function App() {
         className={`main-content${isDesktop && collapsed ? ' collapsed' : ''}`}
         style={{ marginLeft: mainML, width: `calc(100% - ${mainML}px)` }}
       >
+        {migrationMsg && (
+          <div role="alert" style={{
+            margin: '0 0 14px', padding: '12px 14px', borderRadius: 12, background: '#fffbeb',
+            border: '1px solid #fcd34d', color: '#92400e', fontSize: 14.5, lineHeight: 1.5,
+            display: 'flex', gap: 10, alignItems: 'flex-start',
+          }}>
+            <span aria-hidden style={{ fontSize: 18 }}>⚠</span>
+            <span style={{ flex: 1 }}><strong>Database update needed.</strong> {migrationMsg}</span>
+            <button onClick={() => setMigrationMsg(null)} aria-label="Dismiss"
+              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#92400e', minWidth: 40, minHeight: 40 }}>✕</button>
+          </div>
+        )}
         <ErrorBoundary>
         <Routes>
           <Route path="/"               element={simple ? <SimpleHome /> : <Dashboard />} />
           <Route path="/round"          element={<CareDeck />} />
           <Route path="/shift"          element={<SimpleHandover />} />
           <Route path="/full"           element={<Dashboard />} />
+          <Route path="/carer-view"     element={<CarerPreview />} />
           <Route path="/tasks"          element={<TaskBoard />} />
           <Route path="/residents"      element={<Residents />} />
           <Route path="/residents/:id"  element={<ResidentDetail />} />

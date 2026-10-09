@@ -87,6 +87,9 @@ export default function McaAssessment() {
     [validation]);
   useEffect(() => { if (!steps.includes(step as any)) setStep(steps[steps.length - 1]); }, [steps, step]);
 
+  if (q.isError) {
+    return <div className="page"><p style={{ fontSize: 15 }}>{(q.error as any)?.response?.data?.error || 'Could not load this assessment.'}</p></div>;
+  }
   if (q.isLoading || !rec) return <div className="page"><p>Loading…</p></div>;
   if (!row) return <div className="page"><p>Assessment not found.</p></div>;
 

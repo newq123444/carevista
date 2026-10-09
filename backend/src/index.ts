@@ -13,6 +13,7 @@ import rateLimit from 'express-rate-limit';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import { testConnection } from './models/db';
+import { migrationStatus } from './utils/migrationStatus';
 import { isAiConfigured, aiModel } from './services/ai.service';
 import { testRedis } from './models/redis';
 import { logger } from './utils/logger';
@@ -83,6 +84,11 @@ app.get('/health/db', async (_, res) => {
   try { await testConnection(); res.json({ db: 'ok' }); }
   catch (e: any) { res.status(503).json({ db: 'error', error: e.message }); }
 });
+// Pending migrations, so a deploy that skipped them is visible immediately.
+app.get('/health/migrations', async (_, res) => {
+  const m = await migrationStatus();
+  res.status(m.pending.length || m.unknown ? 503 : 200).json(m);
+});
 app.get('/health/ai', (_, res) => res.json({ ai: isAiConfigured() ? 'configured' : 'not_configured', model: aiModel() }));
 
 // ── API routes ─────────────────────────────────────────────────────────────
@@ -146,6 +152,25 @@ function assertSecureConfig() {
 async function start() {
   assertSecureConfig();
   await testConnection();
+
+  // Say so loudly if the database is behind the code. Not fatal — the rest of
+  // the app may work — but every screen that needs a missing table will fail,
+  // and this is the line that tells you why.
+  try {
+    const m = await migrationStatus();
+    if (m.unknown) {
+      logger.warn(`Could not check migrations: ${m.unknown}`);
+    } else if (m.pending.length) {
+      logger.warn(
+        `\n  ⚠  DATABASE IS BEHIND THE CODE — ${m.pending.length} migration(s) not applied:\n` +
+        m.pending.map(f => `       • ${f}`).join('\n') +
+        `\n     Run:  cd backend && npm run migrate\n`);
+    } else {
+      logger.info(`Database schema up to date (${m.applied} migrations).`);
+    }
+  } catch (err: any) {
+    logger.warn(`Could not check migrations: ${err?.message}`);
+  }
   await testRedis();
   const port = parseInt(process.env.PORT || '3001');
   const server = app.listen(port, () => logger.info(`🚀 CareVista API running on port ${port}`));

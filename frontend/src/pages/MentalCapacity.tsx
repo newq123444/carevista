@@ -93,7 +93,13 @@ export default function MentalCapacity() {
         </select>
       </div>
 
-      {list.isLoading ? <p>Loading…</p> : rows.length === 0 ? (
+      {list.isLoading ? <p>Loading…</p> : list.isError ? (
+        <div className="card" style={{ padding: 20, borderLeft: '5px solid #d97706' }}>
+          <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5 }}>
+            {(list.error as any)?.response?.data?.error || 'Could not load the register.'}
+          </p>
+        </div>
+      ) : rows.length === 0 ? (
         <div className="card" style={{ padding: 28, textAlign: 'center' }}>
           <p style={{ fontSize: 16, fontWeight: 600, margin: '0 0 6px' }}>No assessments here</p>
           <p style={{ margin: 0, color: 'var(--text-secondary)' }}>

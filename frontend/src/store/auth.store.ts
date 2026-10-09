@@ -28,6 +28,12 @@ import('../services/api').then(({ api }) => {
         localStorage.removeItem('cv_refresh_token');
         useAuthStore.getState().logout();
       }
+      // The server is ahead of its database. Tell the app shell once, so a
+      // manager sees "the database needs updating" instead of screens that
+      // look empty for no reason.
+      if (err.response?.data?.code === 'MIGRATION_PENDING') {
+        window.dispatchEvent(new CustomEvent('cv-migration-pending', { detail: err.response.data.error }));
+      }
       return Promise.reject(err);
     }
   );

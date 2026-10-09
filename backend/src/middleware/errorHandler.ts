@@ -32,6 +32,20 @@ export function errorHandler(
     return res.status(400).json({ error: 'Invalid value provided for a field' });
   }
 
+  // Missing table or column: the code is ahead of the database because a
+  // migration has not been applied. Say exactly that, rather than a bare
+  // "relation does not exist" — which tells a manager nothing.
+  if ((err as any).code === '42P01' || (err as any).code === '42703') {
+    const what = /relation "([^"]+)"/.exec(err.message)?.[1] || /column "([^"]+)"/.exec(err.message)?.[1] || 'part of the database';
+    logger.error(`Database is behind the code: ${err.message} — run "npm run migrate" in backend/`, { path: req.path });
+    return res.status(503).json({
+      error: process.env.NODE_ENV === 'production'
+        ? 'This part of CareVista needs a database update that has not been applied yet. Please tell your administrator.'
+        : `The database is missing "${what}". A migration has not been applied — run "npm run migrate" in the backend folder, then restart.`,
+      code: 'MIGRATION_PENDING',
+    });
+  }
+
   logger.error('Unhandled error:', { message: err.message, stack: err.stack, path: req.path });
 
   res.status(500).json({

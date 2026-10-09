@@ -19,14 +19,34 @@ import { useCallback, useEffect, useState } from 'react';
 const KEY = 'cv_simple_mode';
 const EVENT = 'cv-simple-mode-changed';
 
-/** Roles the simplified screens were designed around. */
-const DEFAULT_ON = ['carer', 'senior_carer', 'activities'];
+/**
+ * Who gets simple view at all. Carers and senior carers only — the people
+ * doing hands-on care on the floor, which is what the round, the quick record
+ * and the simple handover are built for.
+ *
+ * Everyone else is deliberately excluded. Kitchen, housekeeping and
+ * maintenance staff who switched it on got a carer's round full of care tasks
+ * that are not theirs; nurses and managers need eMAR, tables and registers.
+ * Managers can still PREVIEW what carers see, without switching their own
+ * app over — see /carer-view.
+ */
+export const SIMPLE_ROLES = ['carer', 'senior_carer'];
+
+export function canUseSimpleMode(role?: string): boolean {
+  return SIMPLE_ROLES.includes(role || '');
+}
+
+/** On by default for everyone allowed it; they can switch to full view. */
+const DEFAULT_ON = SIMPLE_ROLES;
 
 function storageKey(userId?: string) {
   return userId ? `${KEY}:${userId}` : KEY;
 }
 
 export function readSimpleMode(userId?: string, role?: string): boolean {
+  // A stored "on" from before this was restricted — or from a role change —
+  // must not leave a manager or a cook stuck in the carer's view.
+  if (!canUseSimpleMode(role)) return false;
   try {
     const raw = localStorage.getItem(storageKey(userId));
     if (raw === '1') return true;
@@ -58,10 +78,11 @@ export function useSimpleMode(userId?: string, role?: string) {
   }, [userId, role]);
 
   const set = useCallback((next: boolean) => {
+    if (!canUseSimpleMode(role)) return;
     try { localStorage.setItem(storageKey(userId), next ? '1' : '0'); } catch { /* not fatal */ }
     setSimple(next);
     window.dispatchEvent(new Event(EVENT));
-  }, [userId]);
+  }, [userId, role]);
 
   return { simple, setSimple: set, toggle: () => set(!simple) };
 }

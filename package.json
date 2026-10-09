@@ -1,7 +1,7 @@
 {
   "name": "carevista",
   "private": true,
-  "version": "83.0.0",
+  "version": "85.0.0",
   "description": "CareVista \u2014 care home management. Root scripts run the pre-flight checks that do not need node_modules.",
   "scripts": {
     "check": "node scripts/check-grammar.mjs && node scripts/check-imports.mjs && node scripts/check-deps.mjs && node scripts/check-routes.mjs && node scripts/check-types.mjs && node scripts/check-icons.mjs && node scripts/check-touch-targets.mjs && node scripts/check-task-status.mjs && node scripts/check-note-types.mjs && python3 backend/scripts/check-hashed-fields.py && node backend/tests/run.mjs",
