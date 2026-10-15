@@ -32,7 +32,7 @@ export default function SmartHandover() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🧠 Smart Handover Intelligence</h1>
+          <h1 className="page-title">Smart Handover Intelligence</h1>
           <p className="page-subtitle">AI identifies the top 3 critical items the incoming shift MUST know</p>
         </div>
       </div>

@@ -40,7 +40,7 @@ export default function FamilyPortal() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">👨‍👩‍👧 Family Portal</h1>
+          <h1 className="page-title">Family Portal</h1>
           <p className="page-subtitle">Daily summaries, weekly reports, photos, and messaging</p>
         </div>
       </div>

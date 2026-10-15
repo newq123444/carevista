@@ -47,6 +47,8 @@ export const emarApi = {
   discontinue:      (id: string, data?: object) => api.delete(`/medications/${id}`, { data }),
   administer:       (data: object) => api.post('/emar/administer', data),
   missedReport:     (params?: object) => api.get('/emar/missed-report', { params }),
+  prnFollowups:     () => api.get('/emar/prn-followups'),
+  recordPrnEffect:  (id: string, data: { outcome: string; note?: string }) => api.post(`/emar/administrations/${id}/prn-effect`, data),
 };
 
 // ── Incidents ──────────────────────────────────────────────────────────────
@@ -257,14 +259,48 @@ export const nlSearchApi = {
   getHistory: () => api.get('/search/nl/history'),
 };
 
-// -- Automated Risk Assessments --
-export const riskAssessmentsApi = {
-  calculateWaterlow: (residentId: string) => api.post('/risk-assessments/waterlow', { residentId }),
-  calculateMUST: (data: object) => api.post('/risk-assessments/must', data),
-  calculateFalls: (residentId: string) => api.post('/risk-assessments/falls', { residentId }),
-  getResidentAssessments: (residentId: string) => api.get(`/risk-assessments/${residentId}`),
-  getOverdue: () => api.get('/risk-assessments/overdue'),
-  getOverview: () => api.get('/risk-assessments/overview'),
+// -- Clinical assessments (v88) --
+export const assessmentsApi = {
+  register:     () => api.get('/assessments/register'),
+  peepRegister: () => api.get('/assessments/peep-register'),
+  context:      (residentId: string) => api.get(`/assessments/context/${residentId}`),
+  forResident:  (residentId: string) => api.get(`/assessments/resident/${residentId}`),
+  get:          (id: string) => api.get(`/assessments/${id}`),
+  create:       (d: object) => api.post('/assessments', d),
+  apply:        (id: string, d: object) => api.post(`/assessments/${id}/apply`, d),
+  residentFacts: (residentId: string) => api.get(`/residents/${residentId}/safety-facts`),
+};
+
+// -- The home's own sections, fields and assessments (v90) --
+export const customApi = {
+  sections:      () => api.get('/care-plan-setup/sections'),
+  createSection: (d: object) => api.post('/care-plan-setup/sections', d),
+  updateSection: (id: string, d: object) => api.patch(`/care-plan-setup/sections/${id}`, d),
+  fields:        () => api.get('/care-plan-setup/fields'),
+  createField:   (d: object) => api.post('/care-plan-setup/fields', d),
+  updateField:   (id: string, d: object) => api.patch(`/care-plan-setup/fields/${id}`, d),
+  tools:         () => api.get('/custom-assessments'),
+  createTool:    (d: object) => api.post('/custom-assessments', d),
+  updateTool:    (id: string, d: object) => api.patch(`/custom-assessments/${id}`, d),
+  publishTool:   (id: string) => api.post(`/custom-assessments/${id}/publish`),
+  newVersion:    (id: string) => api.post(`/custom-assessments/${id}/new-version`),
+  retireTool:    (id: string) => api.post(`/custom-assessments/${id}/retire`),
+  deleteDraft:   (id: string) => api.delete(`/custom-assessments/${id}`),
+};
+
+// -- Who is with which resident right now (v89b) --
+export const presenceApi = {
+  list:  () => api.get('/presence'),
+  start: (residentId: string, careType: string) => api.post(`/residents/${residentId}/presence`, { careType }),
+  end:   (residentId: string) => api.delete(`/residents/${residentId}/presence`),
+};
+
+// -- Home safety checks (v89) --
+export const homeSafetyApi = {
+  overview: () => api.get('/home-safety'),
+  context:  () => api.get('/home-safety/context'),
+  history:  (type: string) => api.get(`/home-safety/${type}/history`),
+  create:   (d: object) => api.post('/home-safety', d),
 };
 
 // -- Medication Interaction Checker --
@@ -705,6 +741,10 @@ export const carePlansApi = {
   version:       (id: string, versionId: string) => api.get(`/care-plans/${id}/versions/${versionId}`),
   archive:       (id: string, d: object) => api.post(`/care-plans/${id}/archive`, d),
   importAi:      (id: string, d?: object) => api.post(`/care-plans/${id}/import-ai`, d || {}),
+  addSchedule:   (id: string, sectionId: string, d: object) => api.post(`/care-plans/${id}/sections/${sectionId}/schedule`, d),
+  removeSchedule: (itemId: string) => api.delete(`/care-plans/schedule/${itemId}`),
+  addEvaluation: (id: string, sectionId: string, d: object) => api.post(`/care-plans/${id}/sections/${sectionId}/evaluations`, d),
+  addSection:    (id: string, domain: string) => api.post(`/care-plans/${id}/sections`, { domain }),
 };
 
 // ── Healthcare appointments ────────────────────────────────────────────────
@@ -744,10 +784,19 @@ export const supervisionsApi = {
 // ── Fluid / food / repositioning charts ────────────────────────────────────
 export const monitoringApi = {
   alerts:    () => api.get('/monitoring/alerts'),
+  today:     (from: string, to: string) => api.get('/monitoring/today', { params: { from, to } }),
   targets:   () => api.get('/monitoring/targets'),
   setTarget: (d: object) => api.post('/monitoring/targets', d),
   chart:     (residentId: string, date?: string) =>
                api.get(`/monitoring/chart/${residentId}`, { params: date ? { date } : {} }),
+};
+
+// ── Soft signs of deterioration ────────────────────────────────────────────
+export const deteriorationApi = {
+  list:        (params?: object) => api.get('/deterioration', { params }),
+  raise:       (d: object) => api.post('/deterioration', d),
+  acknowledge: (id: string) => api.post(`/deterioration/${id}/acknowledge`),
+  close:       (id: string, d: object) => api.post(`/deterioration/${id}/close`, d),
 };
 
 // ── Resident personal allowance ────────────────────────────────────────────
@@ -783,3 +832,32 @@ export const staffAdminApi = {
   rotaConflicts: (from?: string, to?: string) => api.get('/rota/conflicts', { params: { from, to } }),
 };
 
+// ── Record integrity ───────────────────────────────────────────────────────
+export const integrityApi = {
+  summary:     () => api.get('/integrity/summary'),
+  verify:      (params?: any) => api.get('/integrity/verify', { params }),
+  seal:        (day: string) => api.post('/integrity/seal', { day }),
+  anchors:     () => api.get('/integrity/anchors'),
+  certificate: (entityId: string) => api.get(`/integrity/certificate/${entityId}`),
+  detect:      (days = 7) => api.post(`/integrity/detect?days=${days}`, {}),
+  findings:    (status = 'open') => api.get('/integrity/findings', { params: { status } }),
+  resolve:     (id: string, data: object) => api.patch(`/integrity/findings/${id}`, data),
+  getSettings: () => api.get('/integrity/settings'),
+  setSettings: (data: object) => api.put('/integrity/settings', data),
+  timestamp:   (id: string | number) => api.post(`/integrity/anchors/${id}/timestamp`, {}),
+  receipt:     (id: string | number) => api.get(`/integrity/anchors/${id}/receipt`, { responseType: 'blob' }),
+  statement:   (id: string | number) => api.get(`/integrity/anchors/${id}/statement`),
+};
+
+// ── Mental Capacity Act assessments ─────────────────────────────────────────
+export const mcaApi = {
+  list:     (params?: object) => api.get('/mca', { params }),
+  register: () => api.get('/mca/register'),
+  get:      (id: string) => api.get(`/mca/${id}`),
+  create:   (data: object) => api.post('/mca', data),
+  update:   (id: string, record: object) => api.put(`/mca/${id}`, { record }),
+  validate: (record: object) => api.post('/mca/validate', { record }),
+  complete: (id: string) => api.post(`/mca/${id}/complete`),
+  review:   (id: string) => api.post(`/mca/${id}/review`),
+  remove:   (id: string) => api.delete(`/mca/${id}`),
+};

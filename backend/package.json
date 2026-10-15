@@ -14,7 +14,12 @@
     "gen-secrets": "node scripts/generate-secrets.mjs",
     "seed:ops": "tsx src/utils/seed-operational.ts",
     "check:grammar": "node ../scripts/check-grammar.mjs",
-    "check:icons": "node ../scripts/check-icons.mjs"
+    "check:icons": "node ../scripts/check-icons.mjs",
+    "migrate:status": "tsx src/utils/migrate.ts --status",
+    "migrate:deploy": "node dist/utils/migrate.js",
+    "preflight": "node dist/utils/preflightCli.js",
+    "preflight:dev": "tsx src/utils/preflightCli.ts",
+    "db:check": "tsx src/utils/dbCheck.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

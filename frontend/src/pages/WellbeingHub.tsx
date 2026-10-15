@@ -39,7 +39,7 @@ const ENGAGEMENT_OPTIONS = [
 const ENERGY_OPTIONS = [
   { value: 'high', label: 'High', icon: '⚡' },
   { value: 'moderate', label: 'Moderate', icon: '🔋' },
-  { value: 'low', label: 'Low', icon: '🪫' },
+  { value: 'low', label: 'Low', icon: '📉' },
   { value: 'very_low', label: 'Very Low', icon: '😩' },
 ] as const;
 

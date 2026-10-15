@@ -129,3 +129,15 @@ Make sure these are all set correctly:
 - **Database connection fails:** Verify the Neon connection string includes `?sslmode=require`
 - **Login not working:** Run `npm run seed:demo` against your Neon database to create demo users
 - **Blank page on refresh:** The `vercel.json` rewrite rule handles SPA routing - ensure it is in the `frontend/` directory
+
+### Before a pilot with real residents (v86)
+
+The live demo runs with demo accounts and a published password. A pilot server must not.
+
+1. A **separate database** for the pilot — not the demo one, and not the one a laptop's `.env` points at.
+2. On Render: `ENABLE_DEMO_ACCOUNTS=false`, new `JWT_SECRET` and `JWT_REFRESH_SECRET` (`cd backend && npm run gen-secrets`), and rotate anything that was ever in a committed `.env`.
+3. `PILOT_MODE=true` — the server then refuses to start while any blocker remains.
+4. From the Render shell: `npm run preflight -- --db`. Fix everything it lists until it says **PASS**, then work through the hand checks it prints.
+5. Optional, recommended: *Record Integrity → Settings → Publish externally*, with a timestamping service, so daily seals are independently timestamped.
+
+Other v86 settings: `AUTO_SEAL` (default on), `TSA_ALLOW_ANY` (default off), `HOME_TIMEZONE` (default `Europe/London`). See `backend/.env.example`.

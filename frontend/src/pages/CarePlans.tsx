@@ -692,7 +692,8 @@ export default function CarePlans() {
   const { t: tr } = useLang();
   const { user } = useAuthStore();
   const canEdit = CLINICAL_ROLES.includes((user as any)?.role || '');
-  const [selected, setSelected] = useState('');
+  // ?plan=<id> opens one plan straight away (from a resident's care plan tab).
+  const [selected, setSelected] = useState(() => new URLSearchParams(window.location.search).get('plan') || '');
   const [filter, setFilter] = useState('');
 
   const { data: overview } = useCarePlanOverview();

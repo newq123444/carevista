@@ -12,6 +12,13 @@ declare namespace React {
   type MouseEvent<T = any> = any;
   type KeyboardEvent<T = any> = any;
   type DragEvent<T = any> = any;
+  type PointerEvent<T = any> = any;
+  type TouchEvent<T = any> = any;
+  type FocusEvent<T = any> = any;
+  type WheelEvent<T = any> = any;
+  type ClipboardEvent<T = any> = any;
+  type UIEvent<T = any> = any;
+  type SyntheticEvent<T = any> = any;
   // Not the real CSSProperties, but narrow on the properties that actually
   // break real builds: the ones typed as string-literal unions upstream. A
   // style object assembled outside JSX widens 'wrap' to string and fails there
@@ -87,6 +94,13 @@ declare module 'react' {
   export type MouseEvent<T = any> = React.MouseEvent<T>;
   export type KeyboardEvent<T = any> = React.KeyboardEvent<T>;
   export type DragEvent<T = any> = React.DragEvent<T>;
+  export type PointerEvent<T = any> = React.PointerEvent<T>;
+  export type TouchEvent<T = any> = React.TouchEvent<T>;
+  export type FocusEvent<T = any> = React.FocusEvent<T>;
+  export type WheelEvent<T = any> = React.WheelEvent<T>;
+  export type ClipboardEvent<T = any> = React.ClipboardEvent<T>;
+  export type UIEvent<T = any> = React.UIEvent<T>;
+  export type SyntheticEvent<T = any> = React.SyntheticEvent<T>;
   export type CSSProperties = React.CSSProperties;
   export type FC<P = any> = React.FC<P>;
   export type ComponentType<P = any> = React.ComponentType<P>;

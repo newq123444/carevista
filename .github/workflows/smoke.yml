@@ -33,6 +33,19 @@ jobs:
           npm run build
           npm run migrate
           npm run seed
+      - name: Migrations run twice without error
+        working-directory: backend
+        run: npm run migrate
+      - name: Database refuses forbidden edits (triggers, constraints)
+        working-directory: backend
+        run: node tests/db-integrity.mjs
+      - name: New endpoints' SQL runs against real Postgres
+        working-directory: backend
+        env:
+          # This database is the throwaway service container above. Assessments
+          # are append-only, so write checks never run anywhere else.
+          CV_ALLOW_TEST_WRITES: '1'
+        run: node tests/db-endpoints.mjs
       - name: Start API and wait for health
         working-directory: backend
         run: |

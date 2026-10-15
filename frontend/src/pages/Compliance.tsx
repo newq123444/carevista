@@ -30,7 +30,7 @@ export default function Compliance() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">✅ CQC Compliance</h1>
+          <h1 className="page-title">CQC Compliance</h1>
           <p className="page-subtitle">Inspection readiness, evidence packs, and policy management</p>
         </div>
       </div>

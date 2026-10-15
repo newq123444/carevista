@@ -1,40 +1,41 @@
 // src/pages/Dashboard.tsx — Role-router: shows the right dashboard per user
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { useAuthStore } from '../store/auth.store';
-import ManagerDashboard  from './dashboards/ManagerDashboard';
-import NurseDashboard    from './dashboards/NurseDashboard';
-import CarerDashboard    from './dashboards/CarerDashboard';
-import FinanceDashboard  from './dashboards/FinanceDashboard';
-import CleaningDashboard from './dashboards/CleaningDashboard';
-import KitchenDashboard  from './dashboards/KitchenDashboard';
-import MaintenanceDashboard from './dashboards/MaintenanceDashboard';
 
+// Each person only ever sees their own role's dashboard, so only that one is fetched.
+const ManagerDashboard = lazy(() => import('./dashboards/ManagerDashboard'));
+const NurseDashboard = lazy(() => import('./dashboards/NurseDashboard'));
+const CarerDashboard = lazy(() => import('./dashboards/CarerDashboard'));
+const FinanceDashboard = lazy(() => import('./dashboards/FinanceDashboard'));
+const CleaningDashboard = lazy(() => import('./dashboards/CleaningDashboard'));
+const KitchenDashboard = lazy(() => import('./dashboards/KitchenDashboard'));
+const MaintenanceDashboard = lazy(() => import('./dashboards/MaintenanceDashboard'));
 export default function Dashboard() {
   const { user } = useAuthStore();
   const role = user?.role;
 
   if (role === 'home_manager' || role === 'deputy_manager' || role === 'super_admin' || role === 'group_admin') {
-    return <ManagerDashboard />;
+    return <Suspense fallback={null}><ManagerDashboard /></Suspense>;
   }
   if (role === 'registered_nurse') {
-    return <NurseDashboard />;
+    return <Suspense fallback={null}><NurseDashboard /></Suspense>;
   }
   // carers, senior carers AND activities all get the carer dashboard
   if (role === 'carer' || role === 'senior_carer' || role === 'activities') {
-    return <CarerDashboard />;
+    return <Suspense fallback={null}><CarerDashboard /></Suspense>;
   }
   if (role === 'finance' || role === 'admin') {
-    return <FinanceDashboard />;
+    return <Suspense fallback={null}><FinanceDashboard /></Suspense>;
   }
   if (role === 'cleaning') {
-    return <CleaningDashboard />;
+    return <Suspense fallback={null}><CleaningDashboard /></Suspense>;
   }
   if (role === 'kitchen') {
-    return <KitchenDashboard />;
+    return <Suspense fallback={null}><KitchenDashboard /></Suspense>;
   }
   if (role === 'maintenance') {
-    return <MaintenanceDashboard />;
+    return <Suspense fallback={null}><MaintenanceDashboard /></Suspense>;
   }
   // fallback — show manager dashboard
-  return <ManagerDashboard />;
+  return <Suspense fallback={null}><ManagerDashboard /></Suspense>;
 }

@@ -62,7 +62,7 @@ function PredictiveCareInner() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🎯 Risk Indicators</h1>
+          <h1 className="page-title">Risk Indicators</h1>
           <p className="page-subtitle">
             Residents whose recorded history points to a raised risk of falls or deterioration,
             with the reasons shown so you can check them.

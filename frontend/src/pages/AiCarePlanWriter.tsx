@@ -76,7 +76,7 @@ function AiCarePlanWriterInner() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🤖 AI Care Plan Writer</h1>
+          <h1 className="page-title">AI Care Plan Writer</h1>
           <p className="page-subtitle">Drafts a starting point for a care plan from what is already recorded. It is not the care plan.</p>
         </div>
       </div>

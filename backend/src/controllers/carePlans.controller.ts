@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { query } from '../models/db';
 import { auditLog } from '../services/audit.service';
+import { cleanDetails, mergeDetails, safetyFacts } from '../services/careDetails';
+import { TOOLS, type ToolKey } from '../services/assessmentTools';
+import { sectionTypes, customDetailFields, publishedCustomTools } from './customisation.controller';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The person-centred care plan (CQC Regulation 9).
@@ -35,6 +38,22 @@ export const CARE_PLAN_DOMAINS = [
 ];
 
 const DOMAIN_KEYS = CARE_PLAN_DOMAINS.map(d => d.key);
+
+/** Which assessment tools inform which area of care (v88). */
+export const ASSESSMENT_FOR: Record<string, string[]> = {
+  skin_integrity: ['waterlow'],
+  nutrition_hydration: ['must', 'eating_drinking', 'hydration'],
+  mobility_transfers: ['moving_handling', 'wheelchair_belt'],
+  safety_risk: ['falls', 'peep', 'personal_fire', 'leaving_building', 'seizure'],
+  pain: ['abbey_pain'],
+  personal_care: ['oral_health'],
+  night_care: ['bed_rails'],
+  // v89
+  cognition_mental_health: ['delirium_4at', 'mood_gds15', 'emotional_safety'],
+  behaviour_support: ['behaviour_support'],
+  medication: ['self_medication'],
+  continence: ['bowel', 'catheter'],
+};
 
 function addDays(date: Date, days: number) {
   const d = new Date(date.getTime());
@@ -197,12 +216,75 @@ async function loadPlan(planId: string, chId: string) {
      LEFT JOIN users u ON u.id = s.updated_by
      WHERE s.care_plan_id = $1 ORDER BY s.sort_order`, [planId]);
 
+  // The care day: timed items from each section (v87).
+  const { rows: schedule } = await query(
+    `SELECT id, section_id, to_char(due_time, 'HH24:MI') AS time, day_of_week, what, template_id
+       FROM care_plan_schedule WHERE care_plan_id = $1 AND active ORDER BY due_time`, [planId]).catch(() => ({ rows: [] as any[] }));
+  // The current assessment(s) for each section (v88: nine tools, current only).
+  const { rows: assessments } = await query(
+    `SELECT id, assessment_type, custom_family_id, total_score, risk_level, created_at, next_review_date, tool_version,
+            result->>'headline' AS headline
+       FROM risk_assessments WHERE resident_id = $1 AND care_home_id = $2 AND status = 'current'
+      ORDER BY created_at DESC`, [plan.resident_id, chId]).catch(() => ({ rows: [] as any[] }));
+  // The home's own sections, fields and assessments (v90).
+  const types = await sectionTypes(chId, false);
+  const typeOf = new Map(types.map((t: any) => [t.domain_key, t]));
+  const custom = await customDetailFields(chId);
+  const customs = await publishedCustomTools(chId);
+  const customDomain = new Map(customs.map(c => [c.familyId, c.def.domain]));
+  const customName = new Map(customs.map(c => [c.familyId, c.def.shortName]));
+  const belongs = (a: any, domain: string) => a.assessment_type === 'custom'
+    ? customDomain.get(a.custom_family_id) === domain
+    : (ASSESSMENT_FOR[domain] || []).includes(a.assessment_type);
+  // Records kept on other screens that belong with an area of the plan.
+  const one = async (sql: string) => (await query(sql, [plan.resident_id, chId]).catch(() => ({ rows: [] as any[] }))).rows[0];
+  const news2 = await one(`SELECT total_score, created_at FROM news2_assessments WHERE resident_id = $1 AND care_home_id = $2 ORDER BY created_at DESC LIMIT 1`);
+  const wounds = await one(`SELECT COUNT(*)::int AS n FROM wound_assessments WHERE resident_id = $1 AND care_home_id = $2 AND status IN ('active','worsening')`);
+  const mcaRow = await one(`SELECT COUNT(*)::int AS n, MIN(review_date) AS next_review FROM mca_assessments WHERE resident_id = $1 AND care_home_id = $2 AND status = 'completed'`);
+  const dolsRow = await one(`SELECT dols_status, granted_until FROM liberty_protections WHERE resident_id = $1 AND care_home_id = $2 AND record_type = 'dols' AND active = TRUE ORDER BY created_at DESC LIMIT 1`);
+  const contRow = await one(`SELECT created_at FROM continence_assessments WHERE resident_id = $1 AND care_home_id = $2 ORDER BY created_at DESC LIMIT 1`);
+  const LINKED: Record<string, any[]> = {
+    skin_integrity: wounds?.n ? [{ kind: 'wounds', n: wounds?.n, text: `${wounds.n} open wound${wounds.n === 1 ? '' : 's'}`, to: '/wounds', tone: 'amber' }] : [],
+    breathing_circulation: news2 ? [{ kind: 'news2', n: news2?.total_score, text: `NEWS2 ${news2.total_score}`, at: news2.created_at, to: '/news2', tone: news2.total_score >= 5 ? 'red' : 'grey' }] : [],
+    cognition_mental_health: mcaRow?.n ? [{ kind: 'mca', n: mcaRow?.n, text: `${mcaRow.n} capacity assessment${mcaRow.n === 1 ? '' : 's'}`, at: mcaRow.next_review, to: '/mca', tone: 'grey' }] : [],
+    safety_risk: dolsRow ? [{ kind: 'dols', status: dolsRow?.dols_status, text: `DoLS: ${String(dolsRow.dols_status).replace(/_/g, ' ')}`, at: dolsRow.granted_until, to: '/dols', tone: ['expired', 'refused'].includes(dolsRow.dols_status) ? 'red' : 'grey' }] : [],
+    continence: contRow ? [{ kind: 'continence', text: 'Continence assessment', at: contRow.created_at, to: '/continence', tone: 'grey' }] : [],
+  };
+  // Each need's evaluations, newest first (v88).
+  const { rows: evaluations } = await query(
+    `SELECT id, section_id, progress, note, still_right, evaluator_name, created_at
+       FROM care_plan_evaluations WHERE care_plan_id = $1 ORDER BY created_at DESC`, [planId]).catch(() => ({ rows: [] as any[] }));
+  const today0 = new Date().toISOString().slice(0, 10);
+  const shapeAssessment = (a: any) => ({
+    id: a.id, assessment_type: a.assessment_type,
+    type: a.assessment_type === 'custom' ? `custom:${a.custom_family_id}` : a.assessment_type,
+    custom: a.assessment_type === 'custom',
+    name: a.assessment_type === 'custom' ? (customName.get(a.custom_family_id) || 'Home assessment') : TOOLS[a.assessment_type as ToolKey]?.shortName || a.assessment_type,
+    total_score: a.total_score, risk_level: a.risk_level, headline: a.headline, created_at: a.created_at,
+    next_review_date: a.next_review_date, legacy: !a.tool_version,
+    overdue: !!a.next_review_date && new Date(a.next_review_date).toISOString().slice(0, 10) < today0,
+  });
+
   const meta = new Map(CARE_PLAN_DOMAINS.map(d => [d.key, d]));
   const shaped = sections.map(s => ({
     id: s.id,
     domain: s.domain,
-    domainLabel: meta.get(s.domain)?.label || s.domain,
-    hint: meta.get(s.domain)?.hint || '',
+    // Labels without their leading emoji: the screens draw their own icons.
+    domainLabel: typeOf.get(s.domain)?.label || (meta.get(s.domain)?.label || s.domain).replace(/^[^A-Za-z]+/, ''),
+    custom: typeOf.has(s.domain),
+    icon: typeOf.get(s.domain)?.icon || null,
+    customFields: custom.defs[s.domain] || [],
+    linked: LINKED[s.domain] || [],
+    schedule: schedule.filter((x: any) => x.section_id === s.id),
+    // Every current assessment whose tool belongs to this area of care.
+    assessments: assessments.filter((a: any) => belongs(a, s.domain)).map(shapeAssessment),
+    assessment: (() => { const a = assessments.find((x: any) => belongs(x, s.domain)); return a ? shapeAssessment(a) : null; })(),
+    suggestedTools: [...(ASSESSMENT_FOR[s.domain] || []), ...customs.filter(c => c.def.domain === s.domain).map(c => c.key)],
+    details: s.details || {},
+    evaluations: evaluations.filter((e: any) => e.section_id === s.id).slice(0, 6).map((e: any) => ({
+      id: e.id, progress: e.progress, note: e.note, stillRight: e.still_right, by: e.evaluator_name, at: e.created_at,
+    })),
+    hint: typeOf.get(s.domain)?.hint || meta.get(s.domain)?.hint || '',
     applicable: s.applicable,
     notApplicableReason: s.not_applicable_reason,
     assessedNeed: s.assessed_need,
@@ -274,6 +356,16 @@ async function loadPlan(planId: string, chId: string) {
     createdAt: plan.created_at,
     updatedAt: plan.updated_at,
     sections: shaped,
+    // What a carer must know before helping, from this plan's details (v88).
+    facts: safetyFacts({ allergies: plan.allergies, dnacpr: plan.dnacpr, sections: shaped, extraFields: custom.byDomain }),
+    // An area marked "not applicable" while a current assessment for it shows
+    // risk: the risk would be hidden from carers, so say so (v90).
+    warnings: shaped.filter(s => !s.applicable).flatMap(s => s.assessments
+      .filter((a: any) => ['high', 'very_high', 'severe'].includes(a.risk_level))
+      .map((a: any) => ({ sectionId: s.id, domainLabel: s.domainLabel, assessment: a.name, headline: a.headline || String(a.risk_level).replace(/_/g, ' '), at: a.created_at }))),
+    // The home's own assessments and sections, so the screens can run and add them.
+    customTools: customs.map(c => ({ key: c.key, version: c.version, definition: c.def })),
+    availableSections: types.filter((t: any) => t.active && !shaped.some(s => s.domain === t.domain_key)).map((t: any) => ({ key: t.domain_key, label: t.label, hint: t.hint })),
     completeCount,
     completenessPercent: shaped.length > 0 ? Math.round((completeCount / shaped.length) * 100) : 0,
     reviewOverdue: !!(due && due < today),
@@ -341,6 +433,14 @@ export async function createPlan(req: Request, res: Response, next: NextFunction
         `INSERT INTO care_plan_sections (care_plan_id, care_home_id, domain, sort_order)
          VALUES ($1,$2,$3,$4) ON CONFLICT (care_plan_id, domain) DO NOTHING`,
         [plan.id, chId, d.key, d.order]);
+    }
+    // And the home's own sections marked "add to every new plan" (v90).
+    let extraOrder = 100;
+    for (const t of (await sectionTypes(chId)).filter((x: any) => x.add_to_new_plans)) {
+      await query(
+        `INSERT INTO care_plan_sections (care_plan_id, care_home_id, domain, sort_order)
+         VALUES ($1,$2,$3,$4) ON CONFLICT (care_plan_id, domain) DO NOTHING`,
+        [plan.id, chId, t.domain_key, extraOrder++]);
     }
 
     await auditLog({
@@ -463,6 +563,13 @@ export async function updateSection(req: Request, res: Response, next: NextFunct
 
     const sets: string[] = [];
     const params: any[] = [];
+    // Structured details (v88): validated against the area of care, merged.
+    if (b.details !== undefined && b.details !== null) {
+      const { details, errors } = cleanDetails(section.domain, b.details, (await customDetailFields(chId)).byDomain[section.domain] || []);
+      if (errors.length) return res.status(400).json({ error: errors[0], errors });
+      params.push(JSON.stringify(mergeDetails(section.details, details)));
+      sets.push(`details = $${params.length}`);
+    }
     for (const [camel, col] of Object.entries(SECTION_FIELDS)) {
       const val = b[camel] !== undefined ? b[camel] : b[col];
       if (val === undefined) continue;
@@ -769,6 +876,94 @@ export async function importAiDraft(req: Request, res: Response, next: NextFunct
         : `${filled} section${filled === 1 ? '' : 's'} pre-filled from the AI draft. Every one still needs a nurse to check and sign it.`,
       plan: await loadPlan(req.params.id, chId),
     });
+  } catch (err) { next(err); }
+}
+
+// ── Evaluations: is this part of the plan working? (v88) ───────────────────
+const PROGRESS = ['better', 'same', 'worse', 'met'];
+export async function addEvaluation(req: Request, res: Response, next: NextFunction) {
+  try {
+    const chId = req.user!.care_home_id;
+    const b = req.body || {};
+    if (!PROGRESS.includes(b.progress)) return res.status(400).json({ error: 'Choose how things are going' });
+    const note = typeof b.note === 'string' ? b.note.trim() : '';
+    if (note.length < 10) return res.status(400).json({ error: 'Write what you saw — at least a sentence' });
+    if (typeof b.stillRight !== 'boolean') return res.status(400).json({ error: 'Say whether the plan is still right' });
+    const { rows: [sec] } = await query(
+      `SELECT s.id, s.domain, p.id AS plan_id, p.resident_id, p.status FROM care_plan_sections s JOIN care_plans p ON p.id = s.care_plan_id
+        WHERE s.id = $1 AND p.id = $2 AND p.care_home_id = $3`, [req.params.sectionId, req.params.id, chId]);
+    if (!sec) return res.status(404).json({ error: 'Care plan section not found' });
+    if (sec.status === 'archived') return res.status(409).json({ error: 'This plan is archived' });
+    const name = `${req.user!.first_name} ${req.user!.last_name}`;
+    const { rows: [row] } = await query(
+      `INSERT INTO care_plan_evaluations (care_home_id, care_plan_id, section_id, resident_id, progress, note, still_right, evaluated_by, evaluator_name)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [chId, sec.plan_id, sec.id, sec.resident_id, b.progress, note.slice(0, 4000), b.stillRight, req.user!.id, name]);
+    // "The plan is not right any more" flags the need for change.
+    if (!b.stillRight) {
+      await query(`UPDATE care_plan_sections SET status = 'needs_change', updated_by = $1, updated_at = NOW() WHERE id = $2`, [req.user!.id, sec.id]);
+    }
+    await auditLog({
+      careHomeId: chId, actorId: req.user!.id, actorName: name,
+      action: 'CARE_PLAN_EVALUATED', entityType: 'care_plan', entityId: sec.plan_id,
+      afterData: { domain: sec.domain, progress: b.progress, stillRight: b.stillRight }, ip: req.ip,
+    });
+    res.status(201).json(row);
+  } catch (err) { next(err); }
+}
+
+/**
+ * "Know before you help" for one resident: from their care plan's details,
+ * plus allergies and DNACPR. If they have no plan yet, from their current
+ * assessments, marked as such.
+ */
+export async function getResidentFacts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const chId = req.user!.care_home_id;
+    const { rows: [r] } = await query(
+      `SELECT id, allergies, dnacpr FROM residents WHERE id = $1 AND care_home_id = $2`, [req.params.residentId, chId]);
+    if (!r) return res.status(404).json({ error: 'Resident not found' });
+    const { rows: [plan] } = await query(
+      `SELECT id, status FROM care_plans WHERE resident_id = $1 AND care_home_id = $2 AND status IN ('draft','active','under_review')
+        ORDER BY (status = 'active') DESC, updated_at DESC LIMIT 1`, [r.id, chId]);
+    if (plan) {
+      const { rows: sections } = await query(
+        `SELECT domain, applicable, details FROM care_plan_sections WHERE care_plan_id = $1 ORDER BY sort_order`, [plan.id]);
+      return res.json({ source: 'plan', planId: plan.id, planStatus: plan.status,
+        facts: safetyFacts({ allergies: r.allergies, dnacpr: r.dnacpr, sections, extraFields: (await customDetailFields(chId)).byDomain }) });
+    }
+    const { rows: current } = await query(
+      `SELECT result FROM risk_assessments WHERE resident_id = $1 AND care_home_id = $2 AND status = 'current' AND tool_version IS NOT NULL`, [r.id, chId]);
+    const base = safetyFacts({ allergies: r.allergies, dnacpr: r.dnacpr, sections: [] });
+    const seen = new Set(base.map(f => f.text));
+    for (const a of current) for (const f of (a.result?.facts || [])) if (!seen.has(f)) { seen.add(f); base.push({ text: f, tone: 'info', domain: a.result?.plan?.domain || '' }); }
+    res.json({ source: 'assessments', facts: base });
+  } catch (err) { next(err); }
+}
+
+// ── Add one of the home's own sections to a plan (v90) ─────────────────────
+export async function addSection(req: Request, res: Response, next: NextFunction) {
+  try {
+    const chId = req.user!.care_home_id;
+    const domain = String(req.body?.domain || '');
+    const { rows: [plan] } = await query(`SELECT id, status FROM care_plans WHERE id = $1 AND care_home_id = $2`, [req.params.id, chId]);
+    if (!plan) return res.status(404).json({ error: 'Care plan not found' });
+    if (plan.status === 'archived') return res.status(409).json({ error: 'This plan is archived' });
+    const type = (await sectionTypes(chId)).find((t: any) => t.domain_key === domain);
+    if (!type) return res.status(400).json({ error: 'Choose one of the home\'s own sections.' });
+    const { rows: [{ n }] } = await query(`SELECT COALESCE(MAX(sort_order), 99)::int + 1 AS n FROM care_plan_sections WHERE care_plan_id = $1`, [plan.id]);
+    const { rowCount } = await query(
+      `INSERT INTO care_plan_sections (care_plan_id, care_home_id, domain, sort_order) VALUES ($1,$2,$3,$4)
+       ON CONFLICT (care_plan_id, domain) DO NOTHING`, [plan.id, chId, domain, Math.max(100, n)]);
+    if (!rowCount) return res.status(409).json({ error: 'This plan already has that section.' });
+    if (plan.status === 'active') {
+      await query(`UPDATE care_plans SET status = 'under_review', updated_by = $1, updated_at = NOW() WHERE id = $2`, [req.user!.id, plan.id]);
+    }
+    await auditLog({
+      careHomeId: chId, actorId: req.user!.id, actorName: `${req.user!.first_name} ${req.user!.last_name}`,
+      action: 'CARE_PLAN_SECTION_ADDED', entityType: 'care_plan', entityId: plan.id, afterData: { domain, label: type.label },
+    });
+    res.status(201).json(await loadPlan(plan.id, chId));
   } catch (err) { next(err); }
 }
 

@@ -41,7 +41,7 @@ export default function CDRegister() {
   return (
     <div>
       <div className="page-header">
-        <div><h1 className="page-title">💊 Controlled Drug Register</h1><p className="page-subtitle">All CD administrations require two-person verification</p></div>
+        <div><h1 className="page-title">Controlled Drug Register</h1><p className="page-subtitle">All CD administrations require two-person verification</p></div>
         <button className="btn btn-primary" onClick={()=>setShowRecord(true)}>+ Record Administration</button>
       </div>
 

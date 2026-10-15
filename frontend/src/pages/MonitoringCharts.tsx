@@ -3,6 +3,7 @@ import { useLang } from '../i18n';
 import { useMonitoringAlerts, useMonitoringTargets, useMonitoringChart, useSetMonitoringTarget, useResidents } from '../hooks';
 import { PrintHeader, PrintButton } from '../components/PrintHeader';
 import { exportCsv } from '../utils/exportCsv';
+import { localDate } from '../utils/roundWindow';
 
 // Fluid, food and repositioning charts.
 // Built from the care notes staff already write — no second place to record
@@ -34,9 +35,14 @@ function Bar({ value, target, colour }: { value: number; target?: number | null;
 
 export default function MonitoringCharts() {
   const { t: tr } = useLang();
-  const [tab, setTab] = useState<'alerts' | 'chart' | 'setup'>('alerts');
-  const [residentId, setResidentId] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  // Opened from the intake board with ?resident=… — go straight to that chart.
+  const linked = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('resident') || '' : '';
+  const [tab, setTab] = useState<'alerts' | 'chart' | 'setup'>(linked ? 'chart' : 'alerts');
+  const [residentId, setResidentId] = useState(linked);
+  // Local date, not UTC: toISOString() showed yesterday's chart between
+  // midnight and 1am all summer.
+  const [date, setDate] = useState(localDate(new Date()));
   const [setupOpen, setSetupOpen] = useState(false);
   const [setup, setSetup] = useState<any>({
     residentId: '', monitorFluids: false, fluidTargetMl: 1500, fluidMinimumMl: 1000,

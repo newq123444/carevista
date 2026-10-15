@@ -58,7 +58,7 @@ function ResidentDigitalTwinInner() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🧬 Resident Digital Twin</h1>
+          <h1 className="page-title">Resident Digital Twin</h1>
           <p className="page-subtitle">Complete digital representation - medical, social, emotional, preferences, all in one view</p>
         </div>
       </div>

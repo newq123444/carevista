@@ -40,7 +40,7 @@ const OPTION_ICONS: Record<string, string> = {
   'Washed & dried': '💇',
   'Washed & styled': '💈',
   'Dry shampoo used': '🧴',
-  'Combed / brushed only': '🪮',
+  'Combed / brushed only': '💆',
   'Not required today': '➖',
 
   // 🪒 Shaving / Facial Care
@@ -57,7 +57,7 @@ const OPTION_ICONS: Record<string, string> = {
   'Referred to podiatrist': '🦶➡️',
 
   // 🦷 Oral Hygiene
-  'Own teeth brushed': '🪥',
+  'Own teeth brushed': '🧼',
   'Upper dentures cleaned': '⬆️🦷',
   'Lower dentures cleaned': '⬇️🦷',
   'Both dentures cleaned / soaked': '🥛🦷',
@@ -107,11 +107,11 @@ const OPTION_ICONS: Record<string, string> = {
 
   // 🟤 Bowels
   'Bowels opened (normal)': '✅',
-  'Bowels opened (Bristol type 1–2 hard)': '🪨',
+  'Bowels opened (Bristol type 1–2 hard)': '🧱',
   'Bowels opened (Bristol type 3–4 normal)': '🟢',
   'Bowels opened (Bristol type 5–7 loose)': '💦',
   'Bowels not opened today': '⭕',
-  'Constipated — reported to nurse': '🪨📢',
+  'Constipated — reported to nurse': '🧱📢',
   'Diarrhoea — reported to nurse': '💦📢',
   'Bowels not opened 3+ days — escalated': '⏳🚨',
   'PR bleed noted — reported urgently': '🩸🚑',
@@ -138,7 +138,7 @@ const OPTION_ICONS: Record<string, string> = {
   'Slide sheet used': '📄',
   'Full hoist used': '🏗',
   'Stand aid used': '🧍🤝',
-  'Transfer board used': '🪧',
+  'Transfer board used': '📏',
   'Manual handling (2 carers)': '👥',
   'Turning wedge / pillow': '🔺',
 
@@ -290,7 +290,7 @@ const OPTION_ICONS: Record<string, string> = {
   'Lounge / sitting room': '🛋',
   'Dining room': '🍽',
   'Garden / outside': '🌳',
-  'Stairs': '🪜',
+  'Stairs': '⬆️',
 
   // 🤕 Injuries
   'No visible injuries': '✅',
@@ -298,7 +298,7 @@ const OPTION_ICONS: Record<string, string> = {
   'Bruising noted': '🟣',
   'Head injury — neuro obs started': '🤕',
   'Suspected fracture — 999 called': '🦴🚑',
-  'Hip injury — X-ray needed': '🩻',
+  'Hip injury — X-ray needed': '🦴',
   'Laceration — wound care given': '✂️',
   'Loss of consciousness momentarily': '😵',
 
@@ -310,7 +310,7 @@ const OPTION_ICONS: Record<string, string> = {
   '999 / paramedic called': '🚑',
   'Family notified': '👨‍👩‍👧',
   'DATIX / Ulysses logged': '💻',
-  'X-ray arranged': '🩻',
+  'X-ray arranged': '🦴',
   'Physio referral made': '🏃➡️',
 
   // 🎯 Activity Type
@@ -320,7 +320,7 @@ const OPTION_ICONS: Record<string, string> = {
   'Music session': '🎵',
   'Singing / choir': '🎤',
   'Arts & crafts': '🎨',
-  'Gardening': '🪴',
+  'Gardening': '🌱',
   'Baking / cooking': '🧁',
   'Reading / book club': '📖',
   'Board games / puzzles': '🧩',
@@ -373,7 +373,7 @@ const OPTION_ICONS: Record<string, string> = {
   'Medication stopped — see MAR': '💊🚫',
   'Medication dose changed — see MAR': '💊🔄',
   'Blood test arranged': '🩸',
-  'X-ray / scan arranged': '🩻',
+  'X-ray / scan arranged': '🦴',
   'Referral made': '➡️',
   'Follow-up appointment booked': '📅',
   'No action required': '➖',
@@ -426,7 +426,7 @@ const OPTION_ICONS: Record<string, string> = {
   'Eye care given': '👁',
   'Catheter care given': '🔌',
   'Bowel management — suppository / enema': '🟤',
-  'Oxygen in use': '🫁',
+  'Oxygen in use': '💨',
   'CPAP / BiPAP in use': '😷',
   'Nil by mouth — comfort sips only': '🚱',
 
@@ -448,7 +448,7 @@ const OPTION_ICONS: Record<string, string> = {
   'Pain assessed — comfortable': '😌',
   'Pain assessed — PRN given': '💢',
   'Agitation noted — PRN given': '😣',
-  'Breathing changes noted': '🫁',
+  'Breathing changes noted': '💨',
   'Mottling observed — family informed': '🟣',
   'Cheyne-Stokes breathing noted': '🌊',
 

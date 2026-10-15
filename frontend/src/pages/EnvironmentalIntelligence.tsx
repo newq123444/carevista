@@ -44,7 +44,7 @@ export default function EnvironmentalIntelligence() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🌍 Environmental Intelligence</h1>
+          <h1 className="page-title">Environmental Intelligence</h1>
           <p className="page-subtitle">Track and optimize noise, lighting, temperature, air quality - correlate with wellbeing</p>
         </div>
       </div>

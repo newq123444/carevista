@@ -1,277 +1,153 @@
-import React, { useState } from 'react';
-import { useLang } from '../i18n';
-import { RecordView } from '../components/ui';
-import { useRiskOverview, useOverdueRiskReviews, useCalculateWaterlow, useCalculateMUST, useCalculateFallsRisk2, useResidentRiskAssessments, useResidents } from '../hooks';
-import type { RiskOverviewItem, RiskAssessment } from '../types';
+// ────────────────────────────────────────────────────────────────────────────
+// Assessments — the home-wide register (v88).
+//
+// Every resident against every tool: what each found, and what is overdue,
+// due this week, never done, or still an older automatic score that a person
+// needs to redo. Tap a cell to open it, or to start it.
+// ────────────────────────────────────────────────────────────────────────────
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Icon } from '../components/Icon';
+import { Avatar, Empty, PageHead, SearchBox, Stat } from '../components/ds';
+import { useAssessmentRegister, useAssessment } from '../hooks';
+import { useAuthStore } from '../store/auth.store';
+import { TOOLS, LEVEL_LABEL, type ToolKey } from '../shared/assessmentTools';
+import { AssessmentRunner, AssessmentView, levelTone, toolFor } from '../components/AssessmentRunner';
+import { formatDate } from '../utils/formatters';
 
-type TabType = 'overview' | 'overdue' | 'calculate';
+type Filter = 'all' | 'overdue' | 'missing' | 'high' | 'legacy';
+const CLINICAL = ['registered_nurse', 'senior_carer', 'home_manager', 'deputy_manager', 'super_admin', 'group_admin', 'admin'];
 
-const RISK_COLORS: Record<string, string> = {
-  low: '#10b981',
-  medium: '#f59e0b',
-  high: '#ef4444',
-  very_high: '#7f1d1d',
-};
+export default function RiskAssessments() {
+  const { user } = useAuthStore();
+  const canEdit = CLINICAL.includes((user as any)?.role);
+  const { data, isLoading } = useAssessmentRegister();
+  const [filter, setFilter] = useState<Filter>('all');
+  const [search, setSearch] = useState('');
+  const [run, setRun] = useState<{ residentId: string; name: string; type: string; previous?: any } | null>(null);
+  const [view, setView] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const allTools: string[] = data?.tools || [];
+  // Built-in and the home's own (v90).
+  const T = (k: string) => toolFor(k, data?.custom || [])!;
+  const whenNeeded: string[] = data?.whenNeeded || [];
+  // Tools everyone needs by default; the "when needed" ones on request.
+  const tools: string[] = showAll ? allTools : allTools.filter(k => !whenNeeded.includes(k));
+  const counts = data?.counts || { overdue: 0, dueSoon: 0, missing: 0, legacy: 0, high: 0 };
 
-function TrafficLight({ score, level }: { score?: number; level?: string }) {
-  if (score === undefined && !level) {
-    return (
-      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: '#94a3b8', fontWeight: 600, margin: '0 auto' }}>
-        -
-      </div>
-    );
-  }
-  const color = RISK_COLORS[level || 'low'] || '#6b7280';
+  const rows = useMemo(() => {
+    const list: any[] = data?.residents || [];
+    const q = search.trim().toLowerCase();
+    return list.filter(r => {
+      if (q && !`${r.name} ${r.preferredName || ''} ${r.room}`.toLowerCase().includes(q)) return false;
+      const as = Object.values(r.assessments) as any[];
+      if (filter === 'overdue') return as.some(a => a.state === 'overdue');
+      if (filter === 'missing') return tools.some(k => !whenNeeded.includes(k) && !r.assessments[k]);
+      if (filter === 'high') return as.some(a => ['high', 'very_high', 'severe'].includes(a.level) || a.peepCategory === 'red');
+      if (filter === 'legacy') return as.some(a => a.state === 'legacy');
+      return true;
+    });
+  }, [data, filter, search, tools]);
+
   return (
-    <div style={{ width: 32, height: 32, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', color: '#fff', fontWeight: 700, margin: '0 auto' }}>
-      {score ?? '?'}
+    <div className="page" style={{ display: 'grid', gap: 16 }}>
+      <PageHead title="Assessments" sub="Nine tools, answered by a person, reviewed on time. Tap a cell to open it."
+        actions={<>
+          <Link to="/assessments/fire-grab-sheet" className="cv-btn cv-btn-secondary"><Icon name="siren" size={17} />Fire grab sheet</Link>
+          <button className="cv-btn cv-btn-secondary" onClick={() => window.print()}><Icon name="printer" size={17} />Print</button>
+        </>} />
+
+      <div className="cv-stats">
+        <Stat label="Overdue" value={counts.overdue} icon="clock" tone={counts.overdue ? 'red' : 'green'} note="past their review date" />
+        <Stat label="Due this week" value={counts.dueSoon} icon="calendar-days" tone={counts.dueSoon ? 'amber' : undefined} />
+        <Stat label="Never done" value={counts.missing} icon="clipboard-list" tone={counts.missing ? 'amber' : 'green'} note="of the assessments everyone needs" />
+        <Stat label="Older automatic scores" value={counts.legacy} icon="triangle-alert" tone={counts.legacy ? 'amber' : 'green'} note="made before v88 — redo by hand" />
+      </div>
+
+      <div className="cv-card cv-card-pad" style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="cv-seg" role="tablist">
+            {([['all', 'Everyone'], ['overdue', 'Overdue'], ['missing', 'Not done'], ['high', 'High risk'], ['legacy', 'Older scores']] as [Filter, string][]).map(([k, l]) => (
+              <button key={k} className={filter === k ? 'active' : ''} onClick={() => setFilter(k)}>{l}</button>
+            ))}
+          </div>
+          <div style={{ flex: 1, minWidth: 220 }}><SearchBox value={search} onChange={setSearch} placeholder="Find a resident by name or room" /></div>
+          <button className={`cv-btn ${showAll ? 'cv-btn-primary' : 'cv-btn-secondary'}`} style={{ minHeight: 38 }} onClick={() => setShowAll(v => !v)}>
+            <Icon name="list-checks" size={16} />{showAll ? 'All 21 assessments' : `+ ${whenNeeded.length} "when needed"`}
+          </button>
+        </div>
+        {isLoading ? <div>Loading…</div> : rows.length === 0 ? <Empty icon="clipboard-check" title="Nobody here">Try another filter.</Empty> : (
+          <div className="table-container" style={{ maxHeight: '70vh' }}>
+            <table className="cv-matrix">
+              <thead><tr><th>Resident</th>{tools.map(k => <th key={k} title={T(k)?.whenNeeded || 'For everyone'}>{T(k)?.shortName}{k.startsWith('custom:') ? ' *' : ''}</th>)}
+                <th title="Latest NEWS2">NEWS2</th><th title="Open wounds">Wounds</th><th title="Completed capacity assessments">MCA</th><th title="DoLS status">DoLS</th></tr></thead>
+              <tbody>
+                {rows.map(r => (
+                  <tr key={r.residentId}>
+                    <td>
+                      <Link to={`/residents/${r.residentId}?tab=Assessments`} style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'inherit', textDecoration: 'none' }}>
+                        <Avatar name={r.name} photo={r.photoUrl} size={34} />
+                        <span><span style={{ fontWeight: 650 }}>{r.preferredName || r.name.split(' ')[0]} {r.name.split(' ').slice(1).join(' ')}</span>
+                          <span style={{ display: 'block', fontSize: '.78rem', color: 'var(--text-muted)' }}>Room {r.room}</span></span>
+                      </Link>
+                    </td>
+                    {tools.map(k => {
+                      const a = r.assessments[k];
+                      if (!a) return (
+                        <td key={k}>{canEdit
+                          ? <button className="cv-cell cv-cell-missing" onClick={() => setRun({ residentId: r.residentId, name: r.name, type: k })} aria-label={`Start ${T(k)?.shortName} for ${r.name}`}>{whenNeeded.includes(k) ? '+' : 'Start'}</button>
+                          : <span className="cv-cell cv-cell-missing">—</span>}</td>
+                      );
+                      if (a.state === 'legacy') return <td key={k}><button className="cv-cell cv-cell-legacy" onClick={() => setView(a.id)} title="Older automatic score — redo by hand">{a.score}<small>redo</small></button></td>;
+                      const tone = a.peepCategory ? (a.peepCategory === 'red' ? 'red' : a.peepCategory === 'amber' ? 'amber' : 'green') : levelTone(a.level);
+                      const main = a.peepCategory ? a.peepCategory.toUpperCase()
+                        : a.level === 'not_scored' ? (k === 'falls' ? `${a.score} to act on` : 'Done')
+                        : T(k)?.scored ? `${a.score}` : LEVEL_LABEL[a.level as keyof typeof LEVEL_LABEL];
+                      return (
+                        <td key={k}>
+                          <button className={`cv-cell cv-cell-${tone === 'grey' ? 'blue' : tone}${a.state === 'overdue' ? ' cv-cell-overdue' : ''}`} onClick={() => setView(a.id)}
+                            title={`${a.headline || ''} · review by ${a.nextReviewDate ? formatDate(a.nextReviewDate) : '—'}`}>
+                            {main}<small>{a.state === 'overdue' ? 'overdue' : a.state === 'due_soon' ? 'due soon' : a.nextReviewDate ? formatDate(a.nextReviewDate).replace(/\s\d{4}$/, '') : ''}</small>
+                          </button>
+                        </td>
+                      );
+                    })}
+                    <LinkedCells linked={r.linked || {}} />
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="cv-q-hint" style={{ margin: 0 }}>
+          Falls has no score, by design: NICE NG249 (2025) advises against falls risk prediction tools. The number is how many factors have actions.
+          Bed rails, PEEP and the support plans are decisions, not scores. Columns marked * are the home's own assessments, not validated scales. A red border means the review is overdue. "When needed" assessments
+          (catheter, seizures, wheelchair, self-medication and others) are only for the people they apply to. NEWS2, wounds, MCA and DoLS are kept on their own screens — tap to open.
+        </p>
+      </div>
+
+      {run && T(run.type) && <AssessmentRunner residentId={run.residentId} residentName={run.name} type={run.type} tool={T(run.type)} previous={run.previous} onClose={() => setRun(null)} />}
+      {view && <RegisterView id={view} canEdit={canEdit} onClose={() => setView(null)}
+        onReassess={(a: any) => { setView(null); setRun({ residentId: a.residentId, name: a.residentName, type: a.type, previous: a.legacy ? undefined : a }); }} />}
     </div>
   );
 }
 
-export default function RiskAssessments() {
-  const { t: tr } = useLang();
-  const [tab, setTab] = useState<TabType>('overview');
-  const [selectedResidentId, setSelectedResidentId] = useState('');
-  const [detailAssessment, setDetailAssessment] = useState<RiskAssessment | null>(null);
-  const [mustBmi, setMustBmi] = useState('');
-  const [mustWeightLoss, setMustWeightLoss] = useState('');
-  const [mustAcuteDisease, setMustAcuteDisease] = useState(false);
-
-  const { data: overviewData } = useRiskOverview();
-  const { data: overdueData } = useOverdueRiskReviews();
-  const { data: residentAssessments } = useResidentRiskAssessments(selectedResidentId);
-  const { data: residents } = useResidents();
-  const calcWaterlow = useCalculateWaterlow();
-  const calcMUST = useCalculateMUST();
-  const calcFalls = useCalculateFallsRisk2();
-
-  const overview: RiskOverviewItem[] = Array.isArray(overviewData) ? overviewData : (overviewData as any)?.residents || [];
-  const overdue: RiskAssessment[] = Array.isArray(overdueData) ? overdueData : (overdueData as any)?.assessments || [];
-  const residentList: any[] = Array.isArray(residents) ? residents : [];
-
-  const tabStyle = (t: TabType) => ({
-    padding: '10px 20px',
-    border: 'none',
-    borderBottom: tab === t ? '3px solid #4f46e5' : '3px solid transparent',
-    background: 'none',
-    color: tab === t ? '#4f46e5' : '#64748b',
-    fontWeight: tab === t ? 600 : 400,
-    fontSize: '0.9rem',
-    cursor: 'pointer' as const,
-  });
-
+function LinkedCells({ linked }: { linked: any }) {
+  const n = linked.news2, dols = linked.dols;
+  const newsTone = !n ? '' : n.score >= 7 ? 'red' : n.score >= 5 ? 'amber' : 'green';
   return (
-    <div style={{ padding: '24px', maxWidth: 1400, margin: '0 auto' }}>
-      <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: '0 0 4px', color: '#1e293b' }}>Automated Risk Assessments</h1>
-      <p style={{ color: '#64748b', marginBottom: 20 }}>Waterlow, MUST, and Falls risk scoring with traffic-light indicators</p>
-
-      {/* Tabs */}
-      <div style={{ borderBottom: '1px solid #e2e8f0', marginBottom: 24 }}>
-        <button onClick={() => setTab('overview')} style={tabStyle('overview')}>{tr('Overview')}</button>
-        <button onClick={() => setTab('overdue')} style={tabStyle('overdue')}>Overdue Reviews</button>
-        <button onClick={() => setTab('calculate')} style={tabStyle('calculate')}>{tr('Calculate')}</button>
-      </div>
-
-      {/* Overview Tab */}
-      {tab === 'overview' && (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,.1)', border: '1px solid #e2e8f0', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
-            <thead>
-              <tr>
-                <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>{tr('Resident')}</th>
-                <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>{tr('Room')}</th>
-                <th style={{ padding: '10px 12px', textAlign: 'center', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Waterlow</th>
-                <th style={{ padding: '10px 12px', textAlign: 'center', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>MUST</th>
-                <th style={{ padding: '10px 12px', textAlign: 'center', borderBottom: '2px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Falls</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overview.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#94a3b8' }}>No assessment data available</td></tr>
-              ) : (
-                overview.map((r: any) => (
-                  <tr key={r.residentId} style={{ cursor: 'pointer' }} onClick={() => { setSelectedResidentId(r.residentId); setTab('calculate'); }}>
-                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 500, fontSize: '0.85rem', color: '#1e293b' }}>{r.residentName}</td>
-                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontSize: '0.85rem', color: '#64748b' }}>{r.roomNumber}</td>
-                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                      <TrafficLight score={r.waterlow?.score} level={r.waterlow?.riskLevel} />
-                    </td>
-                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                      <TrafficLight score={r.must?.score} level={r.must?.riskLevel} />
-                    </td>
-                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                      <TrafficLight score={r.falls?.score} level={r.falls?.riskLevel} />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Overdue Tab */}
-      {tab === 'overdue' && (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,.1)', border: '1px solid #e2e8f0' }}>
-          {overdue.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#10b981', padding: 20 }}>No overdue reviews. All assessments are up to date.</p>
-          ) : (
-            <div style={{ display: 'grid', gap: 8 }}>
-              {overdue.map(a => {
-                const daysOverdue = a.next_review_date ? Math.max(0, Math.floor((Date.now() - new Date(a.next_review_date).getTime()) / 86400000)) : 0;
-                return (
-                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 8, border: '1px solid #fecaca', background: '#fef2f2' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b' }}>{a.resident_name || a.resident_id}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                        <span style={{ textTransform: 'capitalize' }}>{a.assessment_type}</span> - Last assessed: {new Date(a.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div style={{ padding: '4px 10px', borderRadius: 8, background: '#dc2626', color: '#fff', fontSize: '0.75rem', fontWeight: 700 }}>
-                      {daysOverdue} days overdue
-                    </div>
-                    <button onClick={() => {
-                      if (a.assessment_type === 'waterlow') calcWaterlow.mutate(a.resident_id);
-                      else if (a.assessment_type === 'falls') calcFalls.mutate(a.resident_id);
-                    }} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#4f46e5', color: '#fff', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>
-                      Recalculate
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Calculate Tab */}
-      {tab === 'calculate' && (
-        <div>
-          {/* Resident selector */}
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Select Resident</label>
-            <select value={selectedResidentId} onChange={e => setSelectedResidentId(e.target.value)} style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.9rem', minWidth: 300 }}>
-              <option value="">Choose a resident...</option>
-              {residentList.map((r: any) => (
-                <option key={r.id} value={r.id}>{r.first_name} {r.last_name} - Room {r.room_number}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Three assessment cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-            {/* Waterlow */}
-            <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,.1)' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>Waterlow Score</h3>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: 16 }}>Pressure ulcer risk assessment. Evaluates BMI, skin type, mobility, nutrition, continence, tissue malnutrition, neurological deficit, and surgery/trauma.</p>
-              <button onClick={() => selectedResidentId && calcWaterlow.mutate(selectedResidentId)} disabled={!selectedResidentId || calcWaterlow.isPending} style={{ padding: '8px 16px', borderRadius: 8, background: '#10b981', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', opacity: (!selectedResidentId || calcWaterlow.isPending) ? 0.5 : 1 }}>
-                {calcWaterlow.isPending ? 'Calculating...' : 'Auto-Calculate'}
-              </button>
-              {calcWaterlow.data && (
-                <div style={{ marginTop: 16, padding: 12, borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Score: {(calcWaterlow.data as any).total_score}</div>
-                  <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, background: RISK_COLORS[(calcWaterlow.data as any).risk_level] + '20', color: RISK_COLORS[(calcWaterlow.data as any).risk_level] }}>
-                    {(calcWaterlow.data as any).risk_level}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* MUST */}
-            <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,.1)' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>MUST Score</h3>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: 16 }}>Malnutrition Universal Screening Tool. Requires BMI score, unplanned weight loss percentage, and acute disease effect.</p>
-              <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: 2 }}>BMI Score (0-2)</label>
-                  <input type="number" value={mustBmi} onChange={e => setMustBmi(e.target.value)} placeholder="0, 1, or 2" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: 2 }}>Weight Loss % Score (0-2)</label>
-                  <input type="number" value={mustWeightLoss} onChange={e => setMustWeightLoss(e.target.value)} placeholder="0, 1, or 2" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
-                </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#334155', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={mustAcuteDisease} onChange={e => setMustAcuteDisease(e.target.checked)} />
-                  Acute disease effect (adds 2)
-                </label>
-              </div>
-              <button onClick={() => selectedResidentId && calcMUST.mutate({ residentId: selectedResidentId, bmi_score: Number(mustBmi), weight_loss_score: Number(mustWeightLoss), acute_disease: mustAcuteDisease })} disabled={!selectedResidentId || calcMUST.isPending} style={{ padding: '8px 16px', borderRadius: 8, background: '#f59e0b', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', opacity: (!selectedResidentId || calcMUST.isPending) ? 0.5 : 1 }}>
-                {calcMUST.isPending ? 'Calculating...' : 'Calculate MUST'}
-              </button>
-              {calcMUST.data && (
-                <div style={{ marginTop: 16, padding: 12, borderRadius: 8, background: '#fffbeb', border: '1px solid #fde68a' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Score: {(calcMUST.data as any).total_score}</div>
-                  <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, background: RISK_COLORS[(calcMUST.data as any).risk_level] + '20', color: RISK_COLORS[(calcMUST.data as any).risk_level] }}>
-                    {(calcMUST.data as any).risk_level}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Falls */}
-            <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,.1)' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>Falls Risk</h3>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: 16 }}>Multi-factorial falls risk assessment. Evaluates history of falls, medications, mobility, cognition, continence, and environmental factors.</p>
-              <button onClick={() => selectedResidentId && calcFalls.mutate(selectedResidentId)} disabled={!selectedResidentId || calcFalls.isPending} style={{ padding: '8px 16px', borderRadius: 8, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', opacity: (!selectedResidentId || calcFalls.isPending) ? 0.5 : 1 }}>
-                {calcFalls.isPending ? 'Calculating...' : 'Auto-Calculate'}
-              </button>
-              {calcFalls.data && (
-                <div style={{ marginTop: 16, padding: 12, borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Score: {(calcFalls.data as any).total_score}</div>
-                  <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, background: RISK_COLORS[(calcFalls.data as any).risk_level] + '20', color: RISK_COLORS[(calcFalls.data as any).risk_level] }}>
-                    {(calcFalls.data as any).risk_level}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Resident assessment history */}
-          {selectedResidentId && residentAssessments && (
-            <div style={{ marginTop: 24, background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,.1)' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b', marginBottom: 12 }}>Assessment History</h3>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {(Array.isArray(residentAssessments) ? residentAssessments : []).map((a: RiskAssessment) => (
-                  <div key={a.id} onClick={() => setDetailAssessment(a)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 8, border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 150ms' }}>
-                    <span style={{ textTransform: 'capitalize', fontWeight: 600, fontSize: '0.85rem', color: '#1e293b', width: 80 }}>{a.assessment_type}</span>
-                    <TrafficLight score={a.total_score} level={a.risk_level} />
-                    <span style={{ fontSize: '0.8rem', color: '#64748b', flex: 1 }}>{new Date(a.created_at).toLocaleDateString()}</span>
-                    <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, background: a.status === 'current' ? '#dcfce7' : a.status === 'overdue' ? '#fef2f2' : '#f1f5f9', color: a.status === 'current' ? '#166534' : a.status === 'overdue' ? '#991b1b' : '#64748b' }}>{a.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Detail Modal */}
-      {detailAssessment && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setDetailAssessment(null)}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 24, width: 500, maxWidth: '90%', maxHeight: '80vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, textTransform: 'capitalize' }}>{detailAssessment.assessment_type} Assessment</h3>
-              <button onClick={() => setDetailAssessment(null)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748b' }}>x</button>
-            </div>
-            <div style={{ display: 'grid', gap: 8, fontSize: '0.85rem' }}>
-              <div><strong>Score:</strong> {detailAssessment.total_score}</div>
-              <div><strong>Risk Level:</strong> <span style={{ color: RISK_COLORS[detailAssessment.risk_level] }}>{detailAssessment.risk_level}</span></div>
-              <div><strong>Assessed by:</strong> {detailAssessment.assessed_by_name || detailAssessment.assessed_by}</div>
-              <div><strong>Date:</strong> {new Date(detailAssessment.created_at).toLocaleString()}</div>
-              {detailAssessment.next_review_date && <div><strong>Next Review:</strong> {new Date(detailAssessment.next_review_date).toLocaleDateString()}</div>}
-              {detailAssessment.auto_populated && <div style={{ color: '#059669' }}>Auto-populated from existing data</div>}
-              {detailAssessment.factors && (
-                <div style={{ marginTop: 8 }}>
-                  <strong>Factors:</strong>
-                  <div style={{ marginTop: 6 }}><RecordView data={detailAssessment.factors} empty="No contributing factors recorded." columns={2} /></div>
-                </div>
-              )}
-              {detailAssessment.notes && <div><strong>Notes:</strong> {detailAssessment.notes}</div>}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    <>
+      <td>{n ? <Link className={`cv-cell cv-cell-${newsTone}`} to="/news2">{n.score}<small>{formatDate(n.at).replace(/\s\d{4}$/, '')}</small></Link> : <span className="cv-cell cv-cell-missing">—</span>}</td>
+      <td>{linked.wounds ? <Link className="cv-cell cv-cell-amber" to="/wounds">{linked.wounds}<small>open</small></Link> : <span className="cv-cell cv-cell-missing">—</span>}</td>
+      <td>{linked.mca ? <Link className="cv-cell cv-cell-blue" to="/mca">{linked.mca.count}<small>{linked.mca.nextReview ? `review ${formatDate(linked.mca.nextReview).replace(/\s\d{4}$/, '')}` : 'done'}</small></Link> : <span className="cv-cell cv-cell-missing">—</span>}</td>
+      <td>{dols ? <Link className={`cv-cell cv-cell-${dols.status === 'granted' ? 'green' : ['expired', 'refused'].includes(dols.status) ? 'red' : 'amber'}`} to="/dols">{String(dols.status).replace(/_/g, ' ')}<small>{dols.grantedUntil ? `to ${formatDate(dols.grantedUntil).replace(/\s\d{4}$/, '')}` : ''}</small></Link> : <span className="cv-cell cv-cell-missing">—</span>}</td>
+    </>
   );
+}
+
+function RegisterView({ id, canEdit, onClose, onReassess }: { id: string; canEdit: boolean; onClose: () => void; onReassess: (a: any) => void }) {
+  const { data } = useAssessment(id);
+  if (!data) return null;
+  return <AssessmentView a={data} canEdit={canEdit} onClose={onClose} onReassess={() => onReassess(data)} />;
 }

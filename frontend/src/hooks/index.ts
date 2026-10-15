@@ -1,12 +1,12 @@
 // src/hooks/index.ts — All hooks for CareVista
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  api, residentsApi, notesApi, emarApi, incidentsApi,
+  api, deteriorationApi, residentsApi, notesApi, emarApi, incidentsApi,
   scheduleApi, staffApi, complianceApi, familyApi,
   billingApi, aiApi, dashboardApi, auditApi, policiesApi,
   activitiesApi, wellbeingApi, predictiveApi, voiceApi, sbarApi,
   news2Api, woundsApi, infectionsApi, continenceApi,
-  smartRotaApi, nlSearchApi, riskAssessmentsApi, medInteractionsApi,
+  smartRotaApi, nlSearchApi, assessmentsApi, homeSafetyApi, presenceApi, customApi, medInteractionsApi,
   invoicingApi, occupancyApi, staffCostsApi, recruitmentApi,
   competencyApi, absenceApi, fireLogApi, visitorsApi,
   roomTurnoverApi, reportBuilderApi,
@@ -23,6 +23,12 @@ import {
   monitoringApi, residentFinanceApi,
 } from '../services/api';
 import { toast } from '../utils/toast';
+import { sendOrQueue } from '../services/offlineSync';
+
+// Said whenever a record is kept on the phone rather than sent.
+export const SAVED_OFFLINE = 'No signal — saved on this phone. It will send by itself when the signal is back.';
+import { integrityApi } from '../services/api';
+import { mcaApi } from '../services/api';
 
 export function useResidents(params?: object) {
   return useQuery({ queryKey: ['residents', params], queryFn: () => residentsApi.list(params).then(r => Array.isArray(r.data) ? r.data : (r.data?.residents ?? r.data)) });
@@ -53,9 +59,23 @@ export function useUpdateMobility() {
 export function useCareNotes(params?: object) {
   return useQuery({ queryKey: ['care-notes', params], queryFn: () => notesApi.list(params).then(r => Array.isArray(r.data) ? r.data : (r.data?.notes ?? r.data)) });
 }
+// Notes work without a signal: if the request cannot reach the server the
+// note is kept on the phone and sent later, in order (services/offlineSync).
+// Pass __label ("Personal care — Mary Smith") so the waiting list is readable.
 export function useCreateNote() {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (data: object) => notesApi.create(data).then(r => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['care-notes'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); toast.success('Care note saved'); }, onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to save note') });
+  return useMutation({
+    mutationFn: (data: any) => {
+      const { __label, ...body } = data || {};
+      return sendOrQueue({ method: 'post', url: '/care-notes', body, label: __label || 'Care note' })
+        .then(o => (o.queued ? { queued: true, queueId: o.id } : o.data));
+    },
+    onSuccess: (d: any) => {
+      if (d?.queued) { toast.info(SAVED_OFFLINE); return; }
+      qc.invalidateQueries({ queryKey: ['care-notes'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); toast.success('Care note saved');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to save note'),
+  });
 }
 export function useDeleteNote() {
   const qc = useQueryClient();
@@ -85,6 +105,20 @@ export function useDiscontinueMedication() {
 export function useRecordAdministration() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (data: object) => emarApi.administer(data).then(r => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['emar'], exact: false }); qc.invalidateQueries({ queryKey: ['dashboard'], exact: false }); toast.success('Administration recorded ✅'); }, onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to record') });
+}
+// PRN doses still waiting for "did it work?". Refreshed each minute so a
+// follow-up turns due on screen without anyone reloading.
+export function usePrnFollowups(enabled = true) {
+  return useQuery({ queryKey: ['prn-followups'], queryFn: () => emarApi.prnFollowups().then(r => r.data),
+    refetchInterval: 60_000, staleTime: 30_000, enabled });
+}
+export function useRecordPrnEffect() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; outcome: string; note?: string }) => emarApi.recordPrnEffect(id, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['prn-followups'] }); qc.invalidateQueries({ queryKey: ['emar'], exact: false }); toast.success('Effect recorded'); },
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to record'),
+  });
 }
 export function useMissedMedReport(params?: object) {
   return useQuery({ queryKey: ['emar-missed', params], queryFn: () => emarApi.missedReport(params).then(r => r.data) });
@@ -215,9 +249,12 @@ function restoreTaskCache(qc: any, previous: any) {
 export function useCompleteTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, notes }: { id: string; notes?: string }) =>
-      api.post(`/tasks/${id}/complete`, { notes }).then(r => r.data),
-    onMutate: async ({ id }: { id: string; notes?: string }) => {
+    // `note`: write the care note and complete the task as one thing, so a
+    // task someone else already finished never leaves a second note (v89b).
+    mutationFn: ({ id, notes, dependsOn, label, note, confirmDuplicate }: { id: string; notes?: string; dependsOn?: string; label?: string; note?: Record<string, unknown>; confirmDuplicate?: boolean }) =>
+      sendOrQueue({ method: 'post', url: `/tasks/${id}/complete`, body: { notes, ...(note ? { note } : {}), ...(confirmDuplicate ? { confirmDuplicate: true } : {}) }, label: label || 'Task done', dependsOn })
+        .then(o => (o.queued ? { queued: true, queueId: o.id } : o.data)),
+    onMutate: async ({ id }: { id: string; notes?: string; dependsOn?: string; label?: string; note?: Record<string, unknown>; confirmDuplicate?: boolean }) => {
       await qc.cancelQueries({ queryKey: ['tasks'] });
       return { previous: patchTaskCache(qc, id, {
         status: 'done', completed_at: new Date().toISOString(),
@@ -232,9 +269,10 @@ export function useCompleteTask() {
 export function useDeferTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      api.post(`/tasks/${id}/defer`, { reason }).then(r => r.data),
-    onMutate: async ({ id, reason }: { id: string; reason: string }) => {
+    mutationFn: ({ id, reason, label }: { id: string; reason: string; label?: string }) =>
+      sendOrQueue({ method: 'post', url: `/tasks/${id}/defer`, body: { reason }, label: label || `Not done — ${reason}` })
+        .then(o => (o.queued ? { queued: true, queueId: o.id } : o.data)),
+    onMutate: async ({ id, reason }: { id: string; reason: string; label?: string }) => {
       await qc.cancelQueries({ queryKey: ['tasks'] });
       return { previous: patchTaskCache(qc, id, {
         status: 'deferred', deferred_reason: reason,
@@ -260,6 +298,21 @@ export function useStartTask() {
 export function useReleaseTask() {
   return useMutation({
     mutationFn: (id: string) => api.post(`/tasks/${id}/release`).then(r => r.data),
+  });
+}
+
+// Undo a mis-tap: reopens the task and withdraws the note written with it.
+// Server-enforced: the same person, within ten minutes.
+export function useReopenTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, noteId }: { id: string; noteId?: string }) =>
+      api.post(`/tasks/${id}/reopen`, noteId ? { noteId } : {}).then(r => r.data),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not undo that'),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['tasks'], exact: false });
+      qc.invalidateQueries({ queryKey: ['care-notes'] });
+    },
   });
 }
 
@@ -575,27 +628,68 @@ export function useSearchHistory() {
   return useQuery({ queryKey: ['search-history'], queryFn: () => nlSearchApi.getHistory().then(r => r.data) });
 }
 
-// -- Risk Assessments --
-export function useCalculateWaterlow() {
+// -- Clinical assessments (v88) --
+export function useAssessmentRegister() {
+  return useQuery({ queryKey: ['assessments', 'register'], queryFn: () => assessmentsApi.register().then(r => r.data) });
+}
+export function usePeepRegister() {
+  return useQuery({ queryKey: ['assessments', 'peep'], queryFn: () => assessmentsApi.peepRegister().then(r => r.data) });
+}
+export function useAssessmentContext(residentId: string | undefined) {
+  return useQuery({ queryKey: ['assessments', 'context', residentId], queryFn: () => assessmentsApi.context(residentId!).then(r => r.data), enabled: !!residentId });
+}
+export function useResidentAssessments(residentId: string | undefined) {
+  return useQuery({ queryKey: ['assessments', 'resident', residentId], queryFn: () => assessmentsApi.forResident(residentId!).then(r => r.data), enabled: !!residentId });
+}
+export function useAssessment(id: string | undefined) {
+  return useQuery({ queryKey: ['assessments', 'one', id], queryFn: () => assessmentsApi.get(id!).then(r => r.data), enabled: !!id });
+}
+export function useCreateAssessment() {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (residentId: string) => riskAssessmentsApi.calculateWaterlow(residentId).then(r => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['risk-assessments'] }); toast.success('Waterlow score calculated'); }, onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to calculate Waterlow') });
+  return useMutation({
+    mutationFn: (d: { residentId: string; type: string; answers: object; reason: string; involvement: string; notes?: string }) => assessmentsApi.create(d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['assessments'], exact: false }); qc.invalidateQueries({ queryKey: ['care-plans'], exact: false }); qc.invalidateQueries({ queryKey: ['safety-facts'], exact: false }); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save the assessment'),
+  });
 }
-export function useCalculateMUST() {
+export function useApplyAssessment() {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (data: object) => riskAssessmentsApi.calculateMUST(data).then(r => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['risk-assessments'] }); toast.success('MUST score calculated'); }, onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to calculate MUST') });
+  return useMutation({
+    mutationFn: ({ id, ...d }: { id: string; [k: string]: unknown }) => assessmentsApi.apply(id, d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['assessments'], exact: false }); qc.invalidateQueries({ queryKey: ['care-plans'], exact: false }); qc.invalidateQueries({ queryKey: ['tasks'], exact: false }); qc.invalidateQueries({ queryKey: ['safety-facts'], exact: false }); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not add it to the care plan'),
+  });
 }
-export function useCalculateFallsRisk2() {
+/** Who is with which resident right now. Refreshes every 20 seconds. */
+export function usePresence() {
+  return useQuery({ queryKey: ['presence'], queryFn: () => presenceApi.list().then(r => r.data), refetchInterval: 20_000, staleTime: 10_000 });
+}
+/** Say "I'm with this resident" / "I've finished". Best effort: never blocks recording, never queued offline. */
+export function usePresenceActions() {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (residentId: string) => riskAssessmentsApi.calculateFalls(residentId).then(r => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['risk-assessments'] }); toast.success('Falls risk calculated'); }, onError: (err: any) => toast.error(err.response?.data?.error || 'Failed to calculate falls risk') });
+  return {
+    start: (residentId: string, careType: string) =>
+      presenceApi.start(residentId, careType).then(r => { qc.invalidateQueries({ queryKey: ['presence'] }); return r.data; }).catch(() => null),
+    end: (residentId: string) =>
+      presenceApi.end(residentId).then(() => qc.invalidateQueries({ queryKey: ['presence'] })).catch(() => undefined),
+  };
 }
-export function useResidentRiskAssessments(residentId: string) {
-  return useQuery({ queryKey: ['risk-assessments', residentId], queryFn: () => riskAssessmentsApi.getResidentAssessments(residentId).then(r => r.data), enabled: !!residentId });
+export function useHomeSafety() {
+  return useQuery({ queryKey: ['home-safety'], queryFn: () => homeSafetyApi.overview().then(r => r.data) });
 }
-export function useOverdueRiskReviews() {
-  return useQuery({ queryKey: ['risk-assessments', 'overdue'], queryFn: () => riskAssessmentsApi.getOverdue().then(r => r.data) });
+export function useHomeCheckHistory(type: string | undefined) {
+  return useQuery({ queryKey: ['home-safety', 'history', type], queryFn: () => homeSafetyApi.history(type!).then(r => r.data), enabled: !!type });
 }
-export function useRiskOverview() {
-  return useQuery({ queryKey: ['risk-assessments', 'overview'], queryFn: () => riskAssessmentsApi.getOverview().then(r => r.data) });
+export function useCreateHomeCheck() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { type: string; answers: object; area?: string; notes?: string }) => homeSafetyApi.create(d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['home-safety'], exact: false }); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save the check'),
+  });
+}
+export function useResidentFacts(residentId: string | undefined) {
+  return useQuery({ queryKey: ['safety-facts', residentId], queryFn: () => assessmentsApi.residentFacts(residentId!).then(r => r.data), enabled: !!residentId, staleTime: 60_000 });
 }
 
 // -- Medication Interactions --
@@ -1944,3 +2038,234 @@ export function useRotaConflicts(from?: string, to?: string) {
   return useQuery({ queryKey: ['rota-conflicts', from, to], queryFn: () => staffAdminApi.rotaConflicts(from, to).then(r => r.data) });
 }
 
+
+
+// ── Record integrity ───────────────────────────────────────────────────────
+export function useIntegritySummary() {
+  return useQuery({ queryKey: ['integrity', 'summary'], queryFn: () => integrityApi.summary().then(r => r.data) });
+}
+export function useIntegrityFindings(status = 'open') {
+  return useQuery({ queryKey: ['integrity', 'findings', status], queryFn: () => integrityApi.findings(status).then(r => r.data) });
+}
+export function useChainAnchors() {
+  return useQuery({ queryKey: ['integrity', 'anchors'], queryFn: () => integrityApi.anchors().then(r => r.data) });
+}
+export function useIntegritySettings() {
+  return useQuery({ queryKey: ['integrity', 'settings'], queryFn: () => integrityApi.getSettings().then(r => r.data) });
+}
+export function useVerifyChain() {
+  return useMutation({
+    mutationFn: () => integrityApi.verify().then(r => r.data),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not check the records'),
+  });
+}
+// An RFC 3161 timestamp for one seal, from the service chosen in Settings.
+export function useTimestampAnchor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string | number) => integrityApi.timestamp(id).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['integrity'] }); toast.success('Timestamped by the independent service'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Timestamping failed'),
+  });
+}
+export function useSealDay() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (day: string) => integrityApi.seal(day).then(r => r.data),
+    onSuccess: (d: any) => {
+      qc.invalidateQueries({ queryKey: ['integrity'] });
+      toast.success(d?.anchored ? `Sealed ${d.entryCount} records` : (d?.reason || 'Nothing to seal'));
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not seal the day'),
+  });
+}
+export function useRunDetection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (days: number) => integrityApi.detect(days).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['integrity'] }),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not run the check'),
+  });
+}
+export function useResolveFinding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: object }) => integrityApi.resolve(id, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['integrity'] }); toast.success('Thank you — recorded'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save that'),
+  });
+}
+export function useSetIntegritySettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: object) => integrityApi.setSettings(data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['integrity'] }); toast.success('Settings saved'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save settings'),
+  });
+}
+
+
+// ── Mental Capacity Act assessments ─────────────────────────────────────────
+export function useMcaList(params?: object) {
+  return useQuery({ queryKey: ['mca', 'list', params], queryFn: () => mcaApi.list(params).then(r => r.data) });
+}
+export function useMcaRegister() {
+  return useQuery({ queryKey: ['mca', 'register'], queryFn: () => mcaApi.register().then(r => r.data) });
+}
+export function useMca(id: string) {
+  return useQuery({ queryKey: ['mca', 'one', id], queryFn: () => mcaApi.get(id).then(r => r.data), enabled: !!id });
+}
+export function useCreateMca() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: object) => mcaApi.create(data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mca'] }),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not start the assessment'),
+  });
+}
+export function useUpdateMca() {
+  return useMutation({
+    mutationFn: ({ id, record }: { id: string; record: object }) => mcaApi.update(id, record).then(r => r.data),
+  });
+}
+export function useCompleteMca() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mcaApi.complete(id).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['mca'] }); toast.success('Assessment completed and sealed'); },
+  });
+}
+export function useStartMcaReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mcaApi.review(id).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mca'] }),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not start a review'),
+  });
+}
+export function useDeleteMca() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mcaApi.remove(id).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['mca'] }); toast.success('Draft deleted'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not delete the draft'),
+  });
+}
+
+// ── Soft signs of deterioration ─────────────────────────────────────────────
+export function useDeteriorationAlerts(status: 'open' | 'closed' | 'all' = 'open', residentId?: string) {
+  return useQuery({
+    queryKey: ['deterioration', status, residentId || ''],
+    queryFn: () => deteriorationApi.list({ status, residentId }).then(r => r.data),
+    refetchInterval: status === 'open' ? 30_000 : false,
+  });
+}
+export function useRaiseDeterioration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { residentId: string; signs: string[]; otherText?: string; note?: string; toldInPerson: boolean }) =>
+      deteriorationApi.raise(d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['deterioration'], exact: false }); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not send — tell the nurse in person now'),
+  });
+}
+export function useAcknowledgeDeterioration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deteriorationApi.acknowledge(id).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['deterioration'], exact: false }),
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed'),
+  });
+}
+export function useCloseDeterioration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...d }: { id: string; outcome: string; outcomeNote: string; news2Score?: number | null }) =>
+      deteriorationApi.close(id, d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['deterioration'], exact: false }); toast.success('Closed'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed'),
+  });
+}
+
+// ── Care plan: the care day and pain scoring (v87) ─────────────────────────
+export function useAddPlanSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ planId, sectionId, ...d }: { planId: string; sectionId: string; time: string; what: string; dayOfWeek?: number | null }) =>
+      carePlansApi.addSchedule(planId, sectionId, d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['care-plans'] }); qc.invalidateQueries({ queryKey: ['tasks'], exact: false }); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not add that'),
+  });
+}
+export function useRemovePlanSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (itemId: string) => carePlansApi.removeSchedule(itemId).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['care-plans'] }); qc.invalidateQueries({ queryKey: ['tasks'], exact: false }); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not remove that'),
+  });
+}
+export function useUpdatePlanSection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ planId, sectionId, ...d }: { planId: string; sectionId: string; [k: string]: unknown }) => carePlansApi.updateSection(planId, sectionId, d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['care-plans'], exact: false }); qc.invalidateQueries({ queryKey: ['safety-facts'], exact: false }); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save that'),
+  });
+}
+export function useAddPlanSection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ planId, domain }: { planId: string; domain: string }) => carePlansApi.addSection(planId, domain).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['care-plans'], exact: false }); toast.success('Section added'); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not add the section'),
+  });
+}
+
+// -- The home's own sections, fields and assessments (v90) --
+const invalidateCustom = (qc: any) => {
+  for (const k of ['custom-setup', 'custom-tools', 'care-plans', 'assessments', 'safety-facts']) qc.invalidateQueries({ queryKey: [k], exact: false });
+};
+export function useCustomSetup() {
+  const sections = useQuery({ queryKey: ['custom-setup', 'sections'], queryFn: () => customApi.sections().then(r => r.data) });
+  const fields = useQuery({ queryKey: ['custom-setup', 'fields'], queryFn: () => customApi.fields().then(r => r.data) });
+  return { sections, fields };
+}
+export function useCustomSetupMutations() {
+  const qc = useQueryClient();
+  const opts = (msg: string) => ({
+    onSuccess: () => { invalidateCustom(qc); toast.success(msg); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save that'),
+  });
+  return {
+    createSection: useMutation({ mutationFn: (d: object) => customApi.createSection(d).then(r => r.data), ...opts('Section saved') }),
+    updateSection: useMutation({ mutationFn: ({ id, ...d }: { id: string; [k: string]: unknown }) => customApi.updateSection(id, d).then(r => r.data), ...opts('Section saved') }),
+    createField: useMutation({ mutationFn: (d: object) => customApi.createField(d).then(r => r.data), ...opts('Field saved') }),
+    updateField: useMutation({ mutationFn: ({ id, ...d }: { id: string; [k: string]: unknown }) => customApi.updateField(id, d).then(r => r.data), ...opts('Field saved') }),
+  };
+}
+export function useCustomTools() {
+  return useQuery({ queryKey: ['custom-tools'], queryFn: () => customApi.tools().then(r => r.data) });
+}
+export function useCustomToolMutations() {
+  const qc = useQueryClient();
+  const err = (e: any) => toast.error(e.response?.data?.error || 'Could not save that');
+  const done = () => invalidateCustom(qc);
+  return {
+    create: useMutation({ mutationFn: (definition: object) => customApi.createTool({ definition }).then(r => r.data), onSuccess: done, onError: err }),
+    update: useMutation({ mutationFn: ({ id, definition }: { id: string; definition: object }) => customApi.updateTool(id, { definition }).then(r => r.data), onSuccess: done, onError: err }),
+    publish: useMutation({ mutationFn: (id: string) => customApi.publishTool(id).then(r => r.data), onSuccess: () => { done(); toast.success('Published — it can now be used'); }, onError: err }),
+    newVersion: useMutation({ mutationFn: (id: string) => customApi.newVersion(id).then(r => r.data), onSuccess: done, onError: err }),
+    retire: useMutation({ mutationFn: (id: string) => customApi.retireTool(id).then(r => r.data), onSuccess: () => { done(); toast.success('Retired'); }, onError: err }),
+    remove: useMutation({ mutationFn: (id: string) => customApi.deleteDraft(id).then(r => r.data), onSuccess: done, onError: err }),
+  };
+}
+
+export function useAddEvaluation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ planId, sectionId, ...d }: { planId: string; sectionId: string; progress: string; note: string; stillRight: boolean }) => carePlansApi.addEvaluation(planId, sectionId, d).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['care-plans'], exact: false }); },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Could not save the evaluation'),
+  });
+}

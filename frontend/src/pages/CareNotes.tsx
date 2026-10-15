@@ -34,7 +34,7 @@ const MOOD_OPTIONS = ['Happy','Calm','Anxious','Confused','Agitated','Sad','Tire
 const POSITION_OPTIONS = ['Left side','Right side','Back','Semi-recumbent','Sitting up','Chair','Standing'];
 const MEAL_LABELS: Record<string, string> = {
   breakfast: '🌅 Breakfast', morning_snack: '☕ Morning Snack',
-  lunch: '🍽 Lunch', afternoon_tea: '🫖 Afternoon Tea',
+  lunch: '🍽 Lunch', afternoon_tea: '🍰 Afternoon Tea',
   supper: '🌙 Supper', evening_snack: '🌛 Evening Snack',
 };
 const APPETITE_OPTIONS = ['Excellent – ate everything','Good – ate most of meal','Fair – ate about half','Poor – ate very little','Refused – did not eat','NBM – nil by mouth'];
@@ -91,6 +91,7 @@ function NoteCard({ note: n, staff, duplicateOf }: { note: any; staff: any[]; du
               )}
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }} title={formatDateTime(n.created_at)}>
                 {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                {n.client_recorded_at && <span title="Made with no signal and sent later"> · 📵 sent later</span>}
               </div>
             </div>
             <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{expanded ? '▲' : '▼'}</span>
@@ -154,6 +155,11 @@ function NoteCard({ note: n, staff, duplicateOf }: { note: any; staff: any[]; du
               </strong></span>
               {coAuthors.length > 0 && <span>· Co-authored: <strong style={{ color: 'var(--text-primary)' }}>{coAuthors.join(', ')}</strong></span>}
               <span style={{ marginLeft: 6 }}>· {formatDateTime(n.created_at)}</span>
+              {n.client_recorded_at && (
+                <span title="Recorded on a phone with no signal and sent later. The first time is the phone's clock when it was saved; it is not verified. The server received it at the time shown before it.">
+                  · 📵 made offline at {formatDateTime(n.client_recorded_at)} (device time, not verified)
+                </span>
+              )}
               {n.author_role && <span>· <em>{n.author_role?.replace(/_/g, ' ')}</em></span>}
             </div>
           </div>
@@ -169,8 +175,9 @@ export default function CareNotes() {
   const [residentFilter, setResidentFilter] = useState(searchParams.get('resident_id') || '');
   const [typeFilter, setTypeFilter] = useState('');
   const [flaggedOnly, setFlaggedOnly] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
-  const [quickResident, setQuickResident] = useState('');
+  // Opened from a resident's page ("Write a note"): go straight to the form for them.
+  const [showCreate, setShowCreate] = useState(searchParams.get('new') === '1');
+  const [quickResident, setQuickResident] = useState(searchParams.get('new') === '1' ? (searchParams.get('resident_id') || '') : '');
   const [showVoice, setShowVoice] = useState(false);
 
   const { data: rawNotes, isLoading } = useCareNotes({

@@ -16,11 +16,29 @@ const pool = new Pool({
       : false,
 });
 
+/** Where we are connected, without the password — so nobody has to guess which database got migrated. */
+function describeTarget(url: string | undefined): string {
+  if (!url) return '(DATABASE_URL is not set)';
+  try {
+    const u = new URL(url);
+    return `${u.hostname}${u.port ? ':' + u.port : ''}${u.pathname}`;
+  } catch { return '(DATABASE_URL could not be read)'; }
+}
+
+/** Turn Postgres's character offset into a line number in the file. */
+function lineOf(sql: string, position: unknown): number | null {
+  const p = Number(position);
+  if (!Number.isFinite(p) || p <= 0) return null;
+  return sql.slice(0, p).split('\n').length;
+}
+
+const STATUS_ONLY = process.argv.includes('--status');
+
 async function migrate() {
   const client = await pool.connect();
 
   try {
-    console.log('🔌 Connected to database.');
+    console.log(`🔌 Connected to database: ${describeTarget(process.env.DATABASE_URL)}`);
 
     // ── Create migrations tracking table if it doesn't exist ──────────────
     await client.query(`
@@ -54,6 +72,17 @@ async function migrate() {
       'SELECT filename FROM _migrations ORDER BY id'
     );
     const appliedSet = new Set(applied.map((r) => r.filename));
+    const pending = files.filter(f => !appliedSet.has(f));
+
+    console.log(`   ${files.length - pending.length} of ${files.length} migrations already applied.`);
+    if (pending.length) {
+      console.log(`   To apply (${pending.length}):`);
+      for (const f of pending) console.log(`     • ${f}`);
+    }
+    if (STATUS_ONLY) {
+      console.log(pending.length ? '\nRun "npm run migrate" to apply them.' : '\n✅  Up to date.');
+      return;
+    }
 
     let ranCount = 0;
 
@@ -80,7 +109,22 @@ async function migrate() {
         ranCount++;
       } catch (err: any) {
         await client.query('ROLLBACK');
-        console.error(`  ❌  Failed on ${file}:`, err.message);
+        const line = lineOf(sql, err.position);
+        console.error(`\n  ❌  Failed on ${file}${line ? ` at line ${line}` : ''}:`);
+        console.error(`      ${err.message}`);
+        if (err.detail) console.error(`      Detail: ${err.detail}`);
+        if (err.hint)   console.error(`      Hint:   ${err.hint}`);
+        if (err.where)  console.error(`      Where:  ${err.where}`);
+        if (line) {
+          const lines = sql.split('\n');
+          console.error(`      > ${lines[line - 1]?.trim()}`);
+        }
+        // Nothing in this file was applied (it ran in a transaction), and the
+        // files after it were not attempted. Say so, so nobody assumes the
+        // later tables exist.
+        const notApplied = pending.slice(pending.indexOf(file));
+        console.error(`\n      Not applied: ${notApplied.join(', ')}`);
+        console.error('      Fix the error above and run "npm run migrate" again — applied files are skipped.\n');
         throw err;
       }
     }

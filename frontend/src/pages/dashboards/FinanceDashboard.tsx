@@ -35,7 +35,7 @@ export default function FinanceDashboard() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">{greeting}, {user?.firstName} 💷</h1>
+          <h1 className="page-title">{greeting}, {user?.firstName}</h1>
           <p className="page-subtitle">Finance · {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
         <Link to="/billing" className="btn btn-primary">+ Create Invoice</Link>

@@ -44,7 +44,7 @@ export default function AdmissionMatching() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🎯 Predictive Admission Matching</h1>
+          <h1 className="page-title">Predictive Admission Matching</h1>
           <p className="page-subtitle">AI-powered referral analysis against home capabilities, staff skills, and resident mix</p>
         </div>
       </div>

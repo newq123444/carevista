@@ -10,7 +10,10 @@ import * as kitchenCtrl from '../controllers/kitchen.controller';
 import * as absencesCtrl from '../controllers/absences.controller';
 import * as sensingCtrl from '../controllers/sensing.controller';
 import * as staffAdminCtrl from '../controllers/staffAdmin.controller';
+import * as integrityCtrl from '../controllers/integrity.controller';
+import * as mcaCtrl from '../controllers/mca.controller';
 import * as carePlansCtrl from '../controllers/carePlans.controller';
+import * as carePlanScheduleCtrl from '../controllers/carePlanSchedule.controller';
 import * as appointmentsCtrl from '../controllers/appointments.controller';
 import * as feedbackCtrl from '../controllers/feedback.controller';
 import * as libertyCtrl from '../controllers/libertyProtections.controller';
@@ -31,6 +34,8 @@ import * as notificationsCtrl from '../controllers/notifications.controller';
 import * as aiHandoverCtrl from '../controllers/aiHandover.controller';
 import * as aiInsightsCtrl from '../controllers/aiInsights.controller';
 import * as weightCtrl from '../controllers/weight.controller';
+import * as deteriorationCtrl from '../controllers/deterioration.controller';
+import * as pilotReportCtrl from '../controllers/pilotReport.controller';
 import * as photosCtrl from '../controllers/photos.controller';
 import * as activitiesCtrl from '../controllers/activities.controller';
 import * as wellbeingCtrl from '../controllers/wellbeing.controller';
@@ -44,7 +49,10 @@ import * as infectionsCtrl from '../controllers/infections.controller';
 import * as continenceCtrl from '../controllers/continence.controller';
 import * as smartRotaCtrl from '../controllers/smartRota.controller';
 import * as nlSearchCtrl from '../controllers/nlSearch.controller';
-import * as riskAssessmentsCtrl from '../controllers/riskAssessments.controller';
+import * as assessmentsCtrl from '../controllers/assessments.controller';
+import * as homeSafetyCtrl from '../controllers/homeSafety.controller';
+import * as presenceCtrl from '../controllers/presence.controller';
+import * as customCtrl from '../controllers/customisation.controller';
 import * as medInteractionsCtrl from '../controllers/medInteractions.controller';
 import * as invoicingCtrl from '../controllers/invoicing.controller';
 import * as occupancyCtrl from '../controllers/occupancy.controller';
@@ -103,6 +111,11 @@ router.use(normalizeBody);
 // ── Auth (public) ─────────────────────────────────────────────────────────
 router.post('/auth/login', authCtrl.login);
 router.post('/auth/refresh', authCtrl.refreshToken);
+// Whether the sign-in page should offer demo accounts. Public, and tells
+// nothing an attacker could use: only whether demo sign-in is switched on.
+router.get('/auth/demo', (_req, res) => res.json({
+  enabled: process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_ACCOUNTS === 'true',
+}));
 router.post('/auth/family-register', authCtrl.familyRegister);
 router.post('/auth/logout', authenticate, authCtrl.logout);
 router.post('/auth/change-password', authenticate, authCtrl.changePassword);
@@ -171,6 +184,8 @@ router.delete('/care-notes/:id',    isManager, notesCtrl.deleteNote);
 router.get('/emar',                 isStaff, emarCtrl.getEmar);
 router.post('/emar/administer',     isClinical, validateBody(schemas.recordAdministrationSchema), emarCtrl.recordAdministration);
 router.get('/emar/missed-report',   isManager, emarCtrl.getMissedDosesReport);
+router.get('/emar/prn-followups',   isStaff, emarCtrl.listPrnFollowups);
+router.post('/emar/administrations/:id/prn-effect', isStaff, emarCtrl.recordPrnEffect);
 router.get('/medications',          isStaff, emarCtrl.listMedications);
 router.post('/medications',         isClinical, emarCtrl.createMedication);
 router.delete('/medications/:id',   isClinical, emarCtrl.discontinueMedication);
@@ -295,6 +310,40 @@ router.post('/staff', isManager, validateBody(schemas.createStaffSchema), async 
   } catch (err) { next(err); }
 });
 
+// ── Mental Capacity Act assessments ────────────────────────────────────────
+// Read by care staff — they act on the outcomes. Written by nurses, senior
+// carers and managers, who carry out the assessments. Literal paths before
+// :id so "register" and "validate" are never mistaken for an id.
+router.get   ('/mca',                 isStaff,    mcaCtrl.listAssessments);
+router.get   ('/mca/register',        isStaff,    mcaCtrl.register);
+router.post  ('/mca/validate',        isClinical, mcaCtrl.validateOnly);
+router.post  ('/mca',                 isClinical, mcaCtrl.createAssessment);
+router.get   ('/mca/:id',             isStaff,    mcaCtrl.getAssessment);
+router.put   ('/mca/:id',             isClinical, mcaCtrl.updateAssessment);
+router.post  ('/mca/:id/complete',    isClinical, mcaCtrl.completeAssessment);
+router.post  ('/mca/:id/review',      isClinical, mcaCtrl.startReview);
+router.delete('/mca/:id',             isClinical, mcaCtrl.deleteDraft);
+
+// ── Record integrity ───────────────────────────────────────────────────────
+// Manager-only throughout. Findings name individual members of staff, and a
+// list of "records that look odd, by person" visible to the whole team would
+// be corrosive.
+router.get   ('/integrity/summary',            isManager, integrityCtrl.summary);
+router.get   ('/integrity/verify',             isManager, integrityCtrl.verify);
+router.post  ('/integrity/seal',               isManager, integrityCtrl.sealDay);
+router.get   ('/integrity/anchors',            isManager, integrityCtrl.listAnchors);
+router.post  ('/integrity/anchors/:id/timestamp', isManager, integrityCtrl.timestampAnchor);
+router.get   ('/integrity/anchors/:id/receipt',   isManager, integrityCtrl.anchorReceipt);
+router.get   ('/integrity/anchors/:id/statement', isManager, integrityCtrl.anchorStatement);
+// Pilot evidence: the same measures for a baseline and a pilot period.
+router.get   ('/reports/pilot',                  isManager, pilotReportCtrl.pilotReport);
+router.get   ('/integrity/certificate/:entityId', isManager, integrityCtrl.certificate);
+router.post  ('/integrity/detect',             isManager, integrityCtrl.runDetection);
+router.get   ('/integrity/findings',           isManager, integrityCtrl.listFindings);
+router.patch ('/integrity/findings/:id',       isManager, integrityCtrl.resolveFinding);
+router.get   ('/integrity/settings',           isManager, integrityCtrl.getSettings);
+router.put   ('/integrity/settings',           isManager, integrityCtrl.updateSettings);
+
 // ── Training ──────────────────────────────────────────────────────────────
 router.get('/training', isManager, async (req, res, next) => {
   try {
@@ -365,6 +414,12 @@ router.get('/ai/care-plan/:residentId',   isManager,  aiHandoverCtrl.generateCar
 
 // ── Weight Tracking ───────────────────────────────────────────────────────
 router.get('/weights',                                isStaff,   weightCtrl.getAllWeights);
+router.get('/weights/trends',                         isStaff,   weightCtrl.getWeightTrends);
+// Soft signs of deterioration — anyone can raise; nurses and seniors respond.
+router.get('/deterioration',                  isAllStaff, deteriorationCtrl.listAlerts);
+router.post('/deterioration',                 isAllStaff, deteriorationCtrl.raiseAlert);
+router.post('/deterioration/:id/acknowledge', isClinical, deteriorationCtrl.acknowledgeAlert);
+router.post('/deterioration/:id/close',       isClinical, deteriorationCtrl.closeAlert);
 router.get('/residents/:residentId/weights',          isStaff,   weightCtrl.getWeightHistory);
 router.post('/residents/:residentId/weights',         isClinical, weightCtrl.recordWeight);
 
@@ -470,6 +525,7 @@ router.post('/tasks/:id/complete',    isStaff,   tasksCtrl.completeTask);
 router.post('/tasks/:id/defer',       isStaff,   tasksCtrl.deferTask);
 router.post('/tasks/:id/start',       isStaff,   tasksCtrl.startTask);
 router.post('/tasks/:id/release',     isStaff,   tasksCtrl.releaseTask);
+router.post('/tasks/:id/reopen',      isStaff,   tasksCtrl.reopenTask);
 router.get('/tasks/stream',           isStaff,   tasksCtrl.sseStream);
 
 router.get('/compliance/actions', isManager, async (req, res, next) => {
@@ -679,12 +735,11 @@ router.post('/search/nl', isStaff, nlSearchCtrl.search);
 router.get('/search/nl/history', isStaff, nlSearchCtrl.getSearchHistory);
 
 // -- Automated Risk Assessments
-router.post('/risk-assessments/waterlow', isClinical, riskAssessmentsCtrl.calculateWaterlow);
-router.post('/risk-assessments/must', isClinical, riskAssessmentsCtrl.calculateMUST);
-router.post('/risk-assessments/falls', isClinical, riskAssessmentsCtrl.calculateFallsRisk);
-router.get('/risk-assessments/overdue', isClinical, riskAssessmentsCtrl.getOverdueReviews);
-router.get('/risk-assessments/overview', isClinical, riskAssessmentsCtrl.getHomeRiskOverview);
-router.get('/risk-assessments/:residentId', isClinical, riskAssessmentsCtrl.getResidentAssessments);
+// v88: the old automatic Waterlow/MUST/falls scores are gone — they guessed
+// from old data, and falls gave a risk score NICE NG249 advises against.
+// Assessments are now completed by a person: see /assessments. The old
+// /risk-assessments reads are replaced by /assessments/register and
+// /assessments/resident/:id, which also show rows written before v88.
 
 // -- Medication Interaction Checker
 router.post('/med-interactions/check', isClinical, medInteractionsCtrl.checkInteractions);
@@ -1188,6 +1243,46 @@ router.get('/care-plans/:id',                 isAllStaff, carePlansCtrl.getPlan)
 router.post('/care-plans',                    isClinical, carePlansCtrl.createPlan);
 router.patch('/care-plans/:id',               isClinical, carePlansCtrl.updatePlan);
 router.patch('/care-plans/:id/sections/:sectionId', isClinical, carePlansCtrl.updateSection);
+router.post('/care-plans/:id/sections/:sectionId/schedule', isClinical, carePlanScheduleCtrl.addScheduleItem);
+router.delete('/care-plans/schedule/:itemId', isClinical, carePlanScheduleCtrl.removeScheduleItem);
+router.post('/care-plans/:id/sections/:sectionId/evaluations', isClinical, carePlansCtrl.addEvaluation);
+router.get('/residents/:residentId/safety-facts', isAllStaff, carePlansCtrl.getResidentFacts);
+
+// ── Clinical assessments (v88) ──
+router.get('/assessments/register',             isStaff,    assessmentsCtrl.getRegister);
+router.get('/assessments/peep-register',        isStaff,    assessmentsCtrl.getPeepRegister);
+router.get('/assessments/context/:residentId',  isClinical, assessmentsCtrl.getContext);
+router.get('/assessments/resident/:residentId', isAllStaff, assessmentsCtrl.getResidentAssessments);
+router.get('/assessments/:id',                  isAllStaff, assessmentsCtrl.getAssessment);
+router.post('/assessments',                     isClinical, assessmentsCtrl.createAssessment);
+router.post('/assessments/:id/apply',           isClinical, assessmentsCtrl.applyToPlan);
+
+// ── The home's own sections, fields and assessments (v90) ──
+router.get('/care-plan-setup/sections',            isStaff,   customCtrl.listSectionTypes);
+router.post('/care-plan-setup/sections',           isManager, customCtrl.createSectionType);
+router.patch('/care-plan-setup/sections/:id',      isManager, customCtrl.updateSectionType);
+router.get('/care-plan-setup/fields',              isStaff,   customCtrl.listFields);
+router.post('/care-plan-setup/fields',             isManager, customCtrl.createField);
+router.patch('/care-plan-setup/fields/:id',        isManager, customCtrl.updateField);
+router.get('/custom-assessments',                  isStaff,   customCtrl.listCustomTools);
+router.post('/custom-assessments',                 isManager, customCtrl.createCustomTool);
+router.patch('/custom-assessments/:id',            isManager, customCtrl.updateCustomTool);
+router.post('/custom-assessments/:id/publish',     isManager, customCtrl.publishCustomTool);
+router.post('/custom-assessments/:id/new-version', isManager, customCtrl.newCustomToolVersion);
+router.post('/custom-assessments/:id/retire',      isManager, customCtrl.retireCustomTool);
+router.delete('/custom-assessments/:id',           isManager, customCtrl.deleteCustomDraft);
+router.post('/care-plans/:id/sections',            isClinical, carePlansCtrl.addSection);
+
+// ── Who is with which resident right now (v89b) ──
+router.get('/presence',                          isAllStaff, presenceCtrl.listPresence);
+router.post('/residents/:residentId/presence',   isAllStaff, presenceCtrl.startPresence);
+router.delete('/residents/:residentId/presence', isAllStaff, presenceCtrl.endPresence);
+
+// ── Home safety checks (v89) ──
+router.get('/home-safety',                  isStaff,   homeSafetyCtrl.getHomeSafety);
+router.get('/home-safety/context',          isStaff,   homeSafetyCtrl.getHomeContext);
+router.get('/home-safety/:type/history',    isStaff,   homeSafetyCtrl.getHomeCheckHistory);
+router.post('/home-safety',                 isClinical, homeSafetyCtrl.createHomeCheck);
 router.post('/care-plans/:id/approve',        isClinical, carePlansCtrl.approvePlan);
 router.get('/care-plans/:id/reviews',         isAllStaff, carePlansCtrl.listReviews);
 router.post('/care-plans/:id/reviews',        isClinical, carePlansCtrl.createReview);
@@ -1231,6 +1326,7 @@ router.patch('/supervisions/:id',  isAllStaff, supervisionsCtrl.updateSupervisio
 
 // ── Fluid, food & repositioning charts ─────────────────────────────────────
 router.get('/monitoring/alerts',            isAllStaff, monitoringCtrl.getAlerts);
+router.get('/monitoring/today',          isStaff,   monitoringCtrl.getToday);
 router.get('/monitoring/targets',           isAllStaff, monitoringCtrl.listTargets);
 router.post('/monitoring/targets',          isClinical, monitoringCtrl.setTarget);
 router.get('/monitoring/chart/:residentId', isAllStaff, monitoringCtrl.getChart);

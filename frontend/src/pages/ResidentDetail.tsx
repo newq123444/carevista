@@ -1,7 +1,16 @@
 // src/pages/ResidentDetail.tsx — Full resident profile with timeline
 import React, { useState } from 'react';
 import { useLang } from '../i18n';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { Icon, type IconName } from '../components/Icon';
+import { Badge, Empty, avatarColour, initials } from '../components/ds';
+import { CarePlanView } from '../components/CarePlanView';
+import { ResidentAssessments } from '../components/ResidentAssessments';
+import { SafetyFacts } from '../components/SafetyFacts';
+import { useAuthStore } from '../store/auth.store';
+import { RecordPanel } from '../components/RecordPanel';
+import { ResidentToday } from '../components/ResidentToday';
+import { useResidentStatus } from '../hooks/useResidentStatus';
 import { useResident, useCareNotes, useResidentMedications, useIncidents, useResidentActivityHistory, useResidentWellbeing, useUpdateMobility, useResidentCarePlanFull } from '../hooks';
 import { WeightChart } from '../components/WeightChart';
 import { BodyMap, type BodyMapMark } from '../components/BodyMap';
@@ -12,7 +21,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { formatDate, formatAge, formatDateTime, NOTE_TYPE_LABELS } from '../utils/formatters';
 import { PrintHeader, PrintButton } from '../components/PrintHeader';
 
-const TABS = ['Overview', 'Care Plan', 'Timeline', 'Medications', 'Incidents', 'Notes', 'Activities', 'Life Story', 'Wellbeing', 'Belongings', 'Weight', 'Body Map'] as const;
+const TAB_ICON: Record<string, IconName> = {
+  Record: 'hand-heart', Today: 'clock', Overview: 'user-round', 'Care Plan': 'clipboard-list', Assessments: 'clipboard-check', Timeline: 'history', Medications: 'pill',
+  Incidents: 'triangle-alert', Notes: 'notebook-pen', Activities: 'smile', 'Life Story': 'book-open', Wellbeing: 'heart-pulse',
+  Belongings: 'wallet', Weight: 'scale', 'Body Map': 'target',
+};
+const TABS = ['Record', 'Today', 'Overview', 'Care Plan', 'Assessments', 'Timeline', 'Medications', 'Incidents', 'Notes', 'Activities', 'Life Story', 'Wellbeing', 'Belongings', 'Weight', 'Body Map'] as const;
 type Tab = typeof TABS[number];
 
 const BELONGING_CATEGORIES = ['general','clothing','jewellery','electronics','documents','valuables','toiletries','other'];
@@ -50,22 +64,15 @@ function ResidentPhoto({ residentId, photoUrl, name }: { residentId: string; pho
     qc.invalidateQueries({ queryKey: ['residents', residentId] });
   };
 
-  const initials = name.split(' ').map(n => n[0]).join('').slice(0,2);
-
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
-      {photoUrl ? (
-        <img src={photoSrc(photoUrl)} alt={name} style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} />
-      ) : (
-        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 900, color: 'white', border: '3px solid var(--border)' }}>
-          {initials}
-        </div>
-      )}
-      {/* Camera button */}
-      <button onClick={() => fileRef.current?.click()} disabled={uploading}
-        style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: '#0d9488', border: '2px solid white', color: 'white', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        title="Upload photo">
-        {uploading ? '⏳' : '📷'}
+      <span className="cv-avatar" style={{ width: 84, height: 84, background: avatarColour(name), fontSize: 30, boxShadow: '0 0 0 3px var(--surface), 0 0 0 4px var(--border)' }}>
+        {photoUrl ? <img src={photoSrc(photoUrl)} alt={name} /> : initials(name)}
+      </span>
+      <button onClick={() => fileRef.current?.click()} disabled={uploading} className="no-print"
+        style={{ position: 'absolute', bottom: -2, right: -2, width: 32, height: 32, borderRadius: '50%', background: 'var(--brand)', border: '3px solid var(--surface)', color: '#fff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+        title={tr('Upload photo')} aria-label={tr('Upload photo')}>
+        <Icon name={uploading ? 'clock' : 'pencil'} size={14} />
       </button>
       <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
         onChange={e => { if (e.target.files?.[0]) upload(e.target.files[0]); e.target.value = ''; }} />
@@ -413,83 +420,35 @@ function EditResidentModal({ resident: r, onClose, onSaved }: { resident: any; o
 // /care-plans — this is the "is there one, and is it current" answer that a
 // carer opening a resident actually needs.
 function CarePlanTab({ residentId }: { residentId: string }) {
+  const { t: tr } = useLang();
   const { data: plan, isLoading } = useResidentCarePlanFull(residentId);
+  const role = useAuthStore(st => st.user?.role || '');
+  const canEdit = ['registered_nurse', 'senior_carer', 'home_manager', 'deputy_manager', 'super_admin', 'group_admin', 'admin'].includes(role);
 
-  if (isLoading) return <div className="card"><div className="card-body">Loading care plan…</div></div>;
-
+  if (isLoading) return <div className="cv-card cv-card-pad">{tr('Loading care plan…')}</div>;
   if (!plan) {
     return (
-      <div className="card" style={{ borderLeft: '4px solid #ef4444' }}>
-        <div className="card-body">
-          <div style={{ fontWeight: 600, color: '#b91c1c', marginBottom: 6 }}>No care plan</div>
-          <p style={{ color: 'var(--text-secondary)', marginTop: 0 }}>
-            This resident has no person-centred care plan. Regulation 9 requires one, and staff are
-            currently working from memory and handover alone.
-          </p>
-          <Link to="/care-plans" className="btn btn-primary btn-sm">Start a care plan</Link>
-        </div>
+      <div className="cv-card">
+        <Empty icon="clipboard-list" title={tr('No care plan yet')}
+          action={canEdit ? <Link to="/care-plans" className="cv-btn cv-btn-primary"><Icon name="plus" size={18} />{tr('Start a care plan')}</Link> : undefined}>
+          {tr('Every resident needs a person-centred care plan (CQC Regulation 9). Until there is one, staff are working from memory and handover alone.')}
+        </Empty>
       </div>
     );
   }
-
-  const overdue = plan.reviewOverdue;
-  return (
-    <div>
-      <div className="card" style={{ marginBottom: 16, borderLeft: `4px solid ${overdue ? '#ef4444' : plan.status === 'active' ? '#10b981' : '#f59e0b'}` }}>
-        <div className="card-body" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: 220 }}>
-            <div style={{ fontWeight: 600 }}>
-              {plan.status === 'active' ? 'Active care plan' : plan.status === 'draft' ? 'Draft — not yet signed off' : 'Changed — needs re-signing'}
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-              Version {plan.version} · {plan.completenessPercent}% complete ·{' '}
-              {overdue ? <span style={{ color: '#b91c1c', fontWeight: 600 }}>review overdue</span>
-                       : `next review ${plan.nextReviewDate || '—'}`}
-              {plan.approvedByName ? ` · signed off by ${plan.approvedByName}` : ''}
-            </div>
-          </div>
-          <Link to="/care-plans" className="btn btn-primary btn-sm">Open the full plan</Link>
-        </div>
-      </div>
-
-      {plan.whatMattersToMe && (
-        <div className="card" style={{ marginBottom: 16 }}>
-          <div className="card-header"><span className="card-title">What matters to me</span></div>
-          <div className="card-body" style={{ whiteSpace: 'pre-wrap' }}>{plan.whatMattersToMe}</div>
-        </div>
-      )}
-
-      <div className="card">
-        <div className="card-header"><span className="card-title">What staff do</span></div>
-        <div className="card-body">
-          {(plan.sections || []).filter((sec: any) => sec.applicable && sec.interventions).length === 0 ? (
-            <div style={{ color: 'var(--text-secondary)' }}>
-              No interventions written yet. Open the full plan to complete it.
-            </div>
-          ) : (plan.sections || []).filter((sec: any) => sec.applicable && sec.interventions).map((sec: any) => (
-            <div key={sec.id} style={{ marginBottom: 16 }}>
-              <div style={{ fontWeight: 600, marginBottom: 3 }}>
-                {sec.domainLabel}
-                {sec.riskLevel === 'high' && <span style={{ marginLeft: 8, fontSize: 11, background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: 10, fontWeight: 700 }}>High risk</span>}
-              </div>
-              <div style={{ whiteSpace: 'pre-wrap', fontSize: 14 }}>{sec.interventions}</div>
-              {(sec.equipment || sec.staffRequired || sec.frequency) && (
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
-                  {[sec.staffRequired, sec.equipment, sec.frequency].filter(Boolean).join(' · ')}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <CarePlanView plan={plan} canEdit={canEdit} />;
 }
 
 export default function ResidentDetail() {
-  const { t: tr } = useLang();
+  const { t: tr, tf } = useLang();
   const { id } = useParams<{ id: string }>();
-  const [tab, setTab]       = useState<Tab>('Overview');
+  const [params] = useSearchParams();
+  // Opening a resident starts on "Record": the commonest reason anyone opens one.
+  const [tab, setTab]       = useState<Tab>(() => {
+    const want = (params.get('tab') || '').toLowerCase();
+    return (TABS.find(t => t.toLowerCase().replace(/\s/g, '') === want.replace(/[\s_-]/g, '')) as Tab) || 'Record';
+  });
+  const status = useResidentStatus();
   const [showEdit, setShowEdit]     = useState(false);
   const [bodyMarks, setBodyMarks]   = useState<BodyMapMark[]>([]);
 
@@ -506,8 +465,6 @@ export default function ResidentDetail() {
   if (!resident)  return <div style={{ padding: 60, textAlign: 'center', color: 'var(--danger)' }}>Resident not found</div>;
 
   const r   = resident as any;
-  const rc  = r.risk_level === 'high' ? '#dc2626' : r.risk_level === 'medium' ? '#d97706' : '#16a34a';
-  const rb  = r.risk_level === 'high' ? '#fef2f2' : r.risk_level === 'medium' ? '#fffbeb' : '#f0fdf4';
 
   // Build timeline — merge notes + incidents sorted by date desc
   const timeline = [
@@ -518,51 +475,60 @@ export default function ResidentDetail() {
   return (
     <div>
       {/* ── Header ───────────────────────────────────────────── */}
-      <div style={{ marginBottom: 20 }}>
-        <PrintHeader title="Resident record" subject={`${r.first_name} ${r.last_name}, Room ${r.room_number}`} note={tab} />
-        <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <Link to="/residents" style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}>← Residents</Link>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, flex: '1 1 260px' }}>
-            {/* Avatar */}
-            <ResidentPhoto residentId={r.id} photoUrl={r.photo_url} name={`${r.first_name} ${r.last_name}`} />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <h1 style={{ fontSize: 'clamp(19px, 5.5vw, 26px)', fontWeight: 900, margin: 0, overflowWrap: 'anywhere' }}>{r.first_name} {r.last_name}</h1>
-                {r.dnacpr && <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontWeight: 700 }}>🔴 DNACPR</span>}
-                <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: rb, color: rc, border: `1px solid ${rc}40`, fontWeight: 700 }}>{r.risk_level?.toUpperCase() ?? ''} RISK</span>
-              </div>
-              <div style={{ display: 'flex', gap: 16, marginTop: 4, fontSize: 13, color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-                <span>🛏 Room {r.room_number}</span>
-                <span>🎂 {formatAge(r.date_of_birth)}</span>
-                <span>📅 Admitted {formatDate(r.admission_date)}</span>
-                <span>💷 {r.funding_type?.replace(/_/g, ' ')}</span>
-              </div>
+      <PrintHeader title="Resident record" subject={`${r.first_name} ${r.last_name}, Room ${r.room_number}`} note={tab} />
+      <div className="no-print" style={{ marginBottom: 10 }}>
+        <Link to="/residents" className="cv-btn cv-btn-quiet" style={{ paddingLeft: 6 }}><Icon name="arrow-left" size={18} />{tr('Residents')}</Link>
+      </div>
+      <div className="cv-card cv-card-pad" style={{ marginBottom: 16 }}>
+        <div className="cv-resident-head">
+          <ResidentPhoto residentId={r.id} photoUrl={r.photo_url} name={`${r.first_name} ${r.last_name}`} />
+          <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+            <div className="cv-eyebrow">{tr('Room')} {r.room_number || '—'}{r.date_of_birth ? ` · ${formatAge(r.date_of_birth)}` : ''}{r.admission_date ? ` · ${tr('Admitted')} ${formatDate(r.admission_date)}` : ''}</div>
+            <h1 className="cv-h1" style={{ overflowWrap: 'anywhere' }}>{r.first_name} {r.last_name}</h1>
+            {(r.preferred_name || r.allergies || r.dietary_requirements) && (
+              <p className="cv-sub">
+                {[r.preferred_name && tf('Likes to be called {name}', { name: r.preferred_name }),
+                  r.allergies && `${tr('Allergies')}: ${r.allergies}`,
+                  r.dietary_requirements && `${tr('Diet')}: ${r.dietary_requirements}`].filter(Boolean).join(' · ')}
+              </p>
+            )}
+            <div className="cv-facts">
+              {r.dnacpr && <Badge tone="red">DNACPR</Badge>}
+              {r.risk_level && <Badge tone={r.risk_level === 'high' ? 'red' : r.risk_level === 'medium' ? 'amber' : 'green'}>{tr(`${String(r.risk_level).replace(/^./, (c: string) => c.toUpperCase())} risk`)}</Badge>}
+              {(status.get(r.id)?.flags || []).slice(0, 3).map((f, i) => <Badge key={i} tone={f.tone} icon={f.icon}>{f.vars ? tf(f.label, f.vars) : f.count != null ? tf(f.label, { n: f.count }) : tr(f.label)}</Badge>)}
             </div>
+            <div style={{ marginTop: 10 }}><SafetyFacts residentId={r.id} /></div>
           </div>
-          <div className="resident-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <PrintButton label="Print record" />
-            <Link to={`/care-notes?resident_id=${r.id}`} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#0d9488', color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>📝 Add Note</Link>
-            <Link to={`/emar?resident_id=${r.id}`} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>💊 eMAR</Link>
-            <Link to={`/incidents?resident_id=${r.id}`} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>⚠️ Incident</Link>
+          <div className="resident-actions no-print" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link to={`/emar?resident_id=${r.id}`} className="cv-btn cv-btn-secondary"><Icon name="pill" size={18} />{tr('Medicines')}</Link>
+            <Link to={`/charts?resident=${r.id}`} className="cv-btn cv-btn-secondary"><Icon name="chart-column" size={18} />{tr('Charts')}</Link>
+            <Link to={`/incidents?resident_id=${r.id}`} className="cv-btn cv-btn-secondary"><Icon name="triangle-alert" size={18} />{tr('Incident')}</Link>
+            <PrintButton label={tr('Print record')} />
           </div>
         </div>
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────── */}
-      {/* 12 tabs cannot fit a phone. Rather than wrapping into an unreadable
-          block, the strip scrolls sideways — the standard phone pattern. */}
-      <div className="tab-strip" style={{ gap: 2, borderBottom: '2px solid var(--border)', marginBottom: 20 }}>
+      <div className="cv-tabs no-print" role="tablist">
         {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: '10px 20px', border: 'none', background: 'none', borderBottom: `2px solid ${tab === t ? '#0d9488' : 'transparent'}`, color: tab === t ? '#0d9488' : 'var(--text-secondary)', fontWeight: tab === t ? 700 : 500, cursor: 'pointer', fontSize: 14, transition: 'all 150ms', marginBottom: -2 }}>
-            {t}
-            {t === 'Incidents' && incidents.length > 0 && <span style={{ marginLeft: 5, fontSize: 10, background: '#fef2f2', color: '#dc2626', padding: '1px 5px', borderRadius: 10, fontWeight: 700 }}>{incidents.length}</span>}
-            {t === 'Notes' && notes.length > 0 && <span style={{ marginLeft: 5, fontSize: 10, background: '#eff6ff', color: '#0d9488', padding: '1px 5px', borderRadius: 10, fontWeight: 700 }}>{notes.length}</span>}
-            {t === 'Medications' && meds.length > 0 && <span style={{ marginLeft: 5, fontSize: 10, background: '#dcfce7', color: '#16a34a', padding: '1px 5px', borderRadius: 10, fontWeight: 700 }}>{meds.length}</span>}
+          <button key={t} role="tab" aria-selected={tab === t} className={`cv-tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
+            <Icon name={TAB_ICON[t]} size={17} />{tr(t)}
+            {t === 'Incidents' && incidents.length > 0 && <span className="cv-badge cv-badge-red" style={{ height: 20 }}>{incidents.length}</span>}
           </button>
         ))}
       </div>
+
+      {tab === 'Record' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14, alignItems: 'start' }}>
+          <div className="cv-card cv-card-pad"><RecordPanel resident={r} /></div>
+          <div className="cv-card cv-card-pad">
+            <h2 className="cv-section-title"><Icon name="clock" size={18} />{tr('Today so far')}</h2>
+            <ResidentToday residentId={r.id} compact />
+          </div>
+        </div>
+      )}
+      {tab === 'Today' && <div className="cv-card cv-card-pad"><ResidentToday residentId={r.id} /></div>}
+      {tab === 'Assessments' && <ResidentAssessments residentId={r.id} residentName={`${r.first_name} ${r.last_name}`} />}
 
       {/* ── OVERVIEW ─────────────────────────────────────────── */}
       {tab === 'Overview' && (
@@ -832,7 +798,7 @@ export default function ResidentDetail() {
 
       {/* ── WEIGHT & NUTRITION ───────────────────────────────────── */}
       {tab === 'Weight' && resident && (
-        <WeightChart residentId={id!} residentName={`${(resident as any).first_name} ${(resident as any).last_name}`} />
+        <WeightChart residentId={id!} residentName={`${(resident as any).first_name} ${(resident as any).last_name}`} heightCm={(resident as any).height_cm} />
       )}
 
       {/* ── BODY MAP ─────────────────────────────────────────────── */}

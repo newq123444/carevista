@@ -13,6 +13,9 @@ import rateLimit from 'express-rate-limit';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import { testConnection } from './models/db';
+import { migrationStatus } from './utils/migrationStatus';
+import { checkConfig } from './utils/preflight';
+import { startSealingSchedule } from './services/sealing';
 import { isAiConfigured, aiModel } from './services/ai.service';
 import { testRedis } from './models/redis';
 import { logger } from './utils/logger';
@@ -80,8 +83,13 @@ app.use(morgan('combined', {
 // ── Health checks ──────────────────────────────────────────────────────────
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 app.get('/health/db', async (_, res) => {
-  try { await testConnection(); res.json({ db: 'ok' }); }
+  try { await testConnection(1); res.json({ db: 'ok' }); }
   catch (e: any) { res.status(503).json({ db: 'error', error: e.message }); }
+});
+// Pending migrations, so a deploy that skipped them is visible immediately.
+app.get('/health/migrations', async (_, res) => {
+  const m = await migrationStatus();
+  res.status(m.pending.length || m.unknown ? 503 : 200).json(m);
 });
 app.get('/health/ai', (_, res) => res.json({ ai: isAiConfigured() ? 'configured' : 'not_configured', model: aiModel() }));
 
@@ -143,9 +151,52 @@ function assertSecureConfig() {
   }
 }
 
+// ── Pre-pilot check ────────────────────────────────────────────────────────
+// With PILOT_MODE=true (a server holding real records) any blocker stops the
+// server. Without it (the demo) the same blockers are only shouted about, so
+// the demo keeps running but nobody can say they weren't told.
+function pilotPreflight() {
+  const r = checkConfig(process.env);
+  const pilot = String(process.env.PILOT_MODE).toLowerCase() === 'true';
+  if (r.blockers.length === 0) {
+    if (pilot) logger.info('Pre-pilot check: no configuration blockers.');
+    return;
+  }
+  const list = r.blockers.map(b => `   • ${b.message}`).join('\n');
+  if (pilot) {
+    logger.error(`Refusing to start: PILOT_MODE is on and this server is not safe for real records:\n${list}\n   Run: npm run preflight`);
+    process.exit(1);
+  }
+  if (process.env.NODE_ENV === 'production') {
+    logger.warn(`\n  ⚠  NOT SAFE FOR REAL RESIDENT RECORDS (fine for a demo):\n${list}\n     Before a pilot: fix these, set PILOT_MODE=true, run npm run preflight -- --db\n`);
+  }
+}
+
 async function start() {
   assertSecureConfig();
+  pilotPreflight();
   await testConnection();
+
+  // Say so loudly if the database is behind the code. Not fatal — the rest of
+  // the app may work — but every screen that needs a missing table will fail,
+  // and this is the line that tells you why.
+  try {
+    const m = await migrationStatus();
+    if (m.unknown) {
+      logger.warn(`Could not check migrations: ${m.unknown}`);
+    } else if (m.pending.length) {
+      logger.warn(
+        `\n  ⚠  DATABASE IS BEHIND THE CODE — ${m.pending.length} migration(s) not applied:\n` +
+        m.pending.map(f => `       • ${f}`).join('\n') +
+        `\n     Run:  cd backend && npm run migrate\n`);
+    } else {
+      logger.info(`Database schema up to date (${m.applied} migrations).`);
+    }
+  } catch (err: any) {
+    logger.warn(`Could not check migrations: ${err?.message}`);
+  }
+  // Seal finished days (and publish them, where a home has chosen to) hourly.
+  startSealingSchedule();
   await testRedis();
   const port = parseInt(process.env.PORT || '3001');
   const server = app.listen(port, () => logger.info(`🚀 CareVista API running on port ${port}`));

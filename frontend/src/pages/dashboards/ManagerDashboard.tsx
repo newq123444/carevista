@@ -7,50 +7,26 @@ import { useDashboard, useIncidents, useComplianceActions, useInvoices, useResid
 import { formatDate, formatPence } from '../../utils/formatters';
 import type { Incident, ComplianceAction, Invoice, Resident } from '../../types';
 import WeatherWidget from '../../components/WeatherWidget';
+import { Icon } from '../../components/Icon';
+import { PageHead } from '../../components/ds';
 import LiveActivityFeed from '../../components/LiveActivityFeed';
 import ActivitiesWidget from '../../components/ActivitiesWidget';
 
-// Animated counter hook
-function useCountUp(target: number, duration = 900) {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    if (!target) { setVal(0); return; }
-    let start = 0;
-    const step = Math.ceil(target / (duration / 16));
-    const t = setInterval(() => {
-      start = Math.min(start + step, target);
-      setVal(start);
-      if (start >= target) clearInterval(t);
-    }, 16);
-    return () => clearInterval(t);
-  }, [target, duration]);
-  return val;
-}
-
-function KpiCard({ label, value, sub, icon, color, link, trend }: any) {
-  const animated = useCountUp(typeof value === 'number' ? value : 0);
-  const display  = typeof value === 'number' ? animated : value;
+// A number that matters, what it means, and where to act on it. Colour only
+// when something needs doing — a dashboard that is always red gets ignored.
+function KpiCard({ label, value, sub, icon, color, link }: any) {
+  const alert = color === '#dc2626' || color === '#d97706';
+  const tone = color === '#dc2626' ? 'var(--red-700)' : color === '#d97706' ? 'var(--amber-700)' : 'var(--text-primary)';
+  const bg = color === '#dc2626' ? 'var(--red-50)' : color === '#d97706' ? 'var(--amber-50)' : 'var(--brand-50)';
+  const fg = color === '#dc2626' ? 'var(--red-700)' : color === '#d97706' ? 'var(--amber-700)' : 'var(--brand-700)';
   return (
-    <Link to={link} style={{ textDecoration: 'none' }}>
-      <div style={{ padding: '18px 16px', borderRadius: 14, background: 'white', border: `1px solid ${color}30`, borderLeft: `5px solid ${color}`, boxShadow: `0 2px 12px ${color}15`, cursor: 'pointer', transition: 'transform 150ms, box-shadow 150ms', height: '100%' }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 6px 20px ${color}25`; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ''; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 2px 12px ${color}15`; }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 32, fontWeight: 900, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-              {display === '—' || value === undefined ? '—' : display}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginTop: 7 }}>{label}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{sub}</div>
-          </div>
-          <span style={{ fontSize: 26, opacity: 0.85 }}>{icon}</span>
-        </div>
-        {trend !== undefined && (
-          <div style={{ marginTop: 10, fontSize: 11, color: trend >= 0 ? '#dc2626' : '#16a34a', fontWeight: 600 }}>
-            {trend >= 0 ? `↑ ${trend}` : `↓ ${Math.abs(trend)}`} vs last week
-          </div>
-        )}
-      </div>
+    <Link to={link} className="cv-stat" style={{ textDecoration: 'none', display: 'flex', gap: 12, alignItems: 'flex-start', height: '100%', borderColor: alert ? (color === '#dc2626' ? 'var(--red-200)' : 'var(--amber-200)') : undefined }}>
+      <span style={{ width: 38, height: 38, borderRadius: 11, background: bg, color: fg, display: 'grid', placeItems: 'center', flexShrink: 0 }}><Icon name={icon} size={19} /></span>
+      <span style={{ minWidth: 0 }}>
+        <span className="cv-stat-label" style={{ display: 'block' }}>{label}</span>
+        <span className="cv-stat-value" style={{ display: 'block', color: tone, marginTop: 2 }}>{value === undefined ? '—' : value}</span>
+        <span className="cv-stat-note" style={{ display: 'block' }}>{sub}</span>
+      </span>
     </Link>
   );
 }
@@ -100,40 +76,33 @@ export default function ManagerDashboard() {
   const dolsProblems = (libertySummary?.dolsExpired ?? 0) + (libertySummary?.restrictionsWithoutLawfulBasis ?? 0);
 
   const KPI_CARDS = [
-    { label: 'Active Residents',   value: dash?.residents?.active ?? 0, sub: occupancyRate ? `${occupancyRate}% occupancy` : 'Loading…', icon: '👥', color: '#0d9488', link: '/residents' },
-    { label: 'Open Incidents',     value: incidents.length,              sub: `${incidents.filter(i => i.severity === 'high' || i.severity === 'critical').length} high/critical`, icon: '⚠️', color: incidents.length > 0 ? '#dc2626' : '#16a34a', link: '/incidents' },
-    { label: 'Missed Meds Today',  value: dash?.missedMedsToday ?? 0,   sub: 'Requires follow-up', icon: '💊', color: (dash?.missedMedsToday ?? 0) > 0 ? '#dc2626' : '#16a34a', link: '/emar' },
-    { label: 'Overdue Invoices',   value: overdueInvoices.length,        sub: formatPence(overdueTotal) + ' outstanding', icon: '💷', color: overdueInvoices.length > 0 ? '#dc2626' : '#16a34a', link: '/billing' },
-    { label: 'Compliance Actions', value: overdueActions.length,         sub: `${compActions.filter(a => a.status !== 'closed').length} total open`, icon: '✅', color: overdueActions.length > 0 ? '#d97706' : '#16a34a', link: '/compliance' },
-    { label: 'Training Issues',    value: trainingExpiring,              sub: 'Expired or expiring soon', icon: '🎓', color: trainingExpiring > 0 ? '#d97706' : '#16a34a', link: '/training' },
-    { label: 'DBS Expiring',       value: dbsExpiring,                   sub: 'Within 30 days', icon: '🪪', color: dbsExpiring > 0 ? '#d97706' : '#16a34a', link: '/staff' },
-    { label: 'Unread Messages',    value: dash?.unreadMessages ?? 0,     sub: 'Family portal', icon: '💬', color: (dash?.unreadMessages ?? 0) > 0 ? '#6366f1' : '#6b7280', link: '/family' },
-    { label: 'Care Plan Gaps',     value: carePlanGaps,                  sub: planOverview?.coveragePercent != null ? `${planOverview.coveragePercent}% of residents have a plan` : 'No plans yet', icon: '📖', color: carePlanGaps > 0 ? '#dc2626' : '#16a34a', link: '/care-plans' },
-    { label: 'Complaints Overdue', value: feedbackOverdue,               sub: `${feedbackSummary?.openComplaints ?? 0} open`, icon: '💬', color: feedbackOverdue > 0 ? '#dc2626' : '#16a34a', link: '/feedback' },
-    { label: 'DoLS Problems',      value: dolsProblems,                  sub: `${libertySummary?.dolsExpiring ?? 0} expiring within 28 days`, icon: '⚖️', color: dolsProblems > 0 ? '#dc2626' : '#16a34a', link: '/dols' },
+    { label: 'Active Residents',   value: dash?.residents?.active ?? 0, sub: occupancyRate ? `${occupancyRate}% occupancy` : 'Loading…', icon: 'users', color: '#0d9488', link: '/residents' },
+    { label: 'Open Incidents',     value: incidents.length,              sub: `${incidents.filter(i => i.severity === 'high' || i.severity === 'critical').length} high/critical`, icon: 'triangle-alert', color: incidents.length > 0 ? '#dc2626' : '#16a34a', link: '/incidents' },
+    { label: 'Missed Meds Today',  value: dash?.missedMedsToday ?? 0,   sub: 'Requires follow-up', icon: 'pill', color: (dash?.missedMedsToday ?? 0) > 0 ? '#dc2626' : '#16a34a', link: '/emar' },
+    { label: 'Overdue Invoices',   value: overdueInvoices.length,        sub: formatPence(overdueTotal) + ' outstanding', icon: 'wallet', color: overdueInvoices.length > 0 ? '#dc2626' : '#16a34a', link: '/billing' },
+    { label: 'Compliance Actions', value: overdueActions.length,         sub: `${compActions.filter(a => a.status !== 'closed').length} total open`, icon: 'shield-check', color: overdueActions.length > 0 ? '#d97706' : '#16a34a', link: '/compliance' },
+    { label: 'Training Issues',    value: trainingExpiring,              sub: 'Expired or expiring soon', icon: 'graduation-cap', color: trainingExpiring > 0 ? '#d97706' : '#16a34a', link: '/training' },
+    { label: 'DBS Expiring',       value: dbsExpiring,                   sub: 'Within 30 days', icon: 'user-round', color: dbsExpiring > 0 ? '#d97706' : '#16a34a', link: '/staff' },
+    { label: 'Unread Messages',    value: dash?.unreadMessages ?? 0,     sub: 'Family portal', icon: 'message-square', color: (dash?.unreadMessages ?? 0) > 0 ? '#6366f1' : '#6b7280', link: '/family' },
+    { label: 'Care Plan Gaps',     value: carePlanGaps,                  sub: planOverview?.coveragePercent != null ? `${planOverview.coveragePercent}% of residents have a plan` : 'No plans yet', icon: 'clipboard-list', color: carePlanGaps > 0 ? '#dc2626' : '#16a34a', link: '/care-plans' },
+    { label: 'Complaints Overdue', value: feedbackOverdue,               sub: `${feedbackSummary?.openComplaints ?? 0} open`, icon: 'message-square', color: feedbackOverdue > 0 ? '#dc2626' : '#16a34a', link: '/feedback' },
+    { label: 'DoLS Problems',      value: dolsProblems,                  sub: `${libertySummary?.dolsExpiring ?? 0} expiring within 28 days`, icon: 'lock', color: dolsProblems > 0 ? '#dc2626' : '#16a34a', link: '/dols' },
   ];
 
   return (
     <div>
-      {/* ── Header ────────────────────────────────────────────── */}
-      <div className="page-header" style={{ marginBottom: 24 }}>
-        <div>
-          <h1 className="page-title">{greeting}, {user?.firstName} 🏠</h1>
-          <p className="page-subtitle">{user?.careHomeName} · {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link to="/care-notes" className="btn btn-secondary btn-sm">📝 Care Notes</Link>
-          <Link to="/incidents?action=new" className="btn btn-danger btn-sm">🚨 Report Incident</Link>
-        </div>
-      </div>
+      <PageHead
+        eyebrow={`${user?.careHomeName || ''} · ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}`}
+        title={`${tr(greeting)}, ${user?.firstName || ''}`}
+        sub={tr('What needs you today, across the home.')}
+        actions={<>
+          <Link to="/care-notes" className="cv-btn cv-btn-secondary"><Icon name="notebook-pen" size={18} />{tr('Care notes')}</Link>
+          <Link to="/incidents?action=new" className="cv-btn cv-btn-danger"><Icon name="triangle-alert" size={18} />{tr('Report incident')}</Link>
+        </>}
+      />
 
-      {/* ── Weather Widget (prominent position) ─────────────── */}
-      <div style={{ marginBottom: 24 }}>
-        <WeatherWidget />
-      </div>
-
-      {/* ── KPI Grid (animated) ────────────────────────────────── */}
-      <div className="grid-4" style={{ marginBottom: 28 }}>
+      {/* ── KPI grid ─────────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12, marginBottom: 24 }}>
         {KPI_CARDS.map(k => <KpiCard key={k.label} {...k} />)}
       </div>
 

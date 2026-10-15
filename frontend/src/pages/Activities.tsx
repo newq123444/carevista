@@ -86,7 +86,7 @@ export default function Activities() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>🎯 Activities & Wellbeing</h1>
+          <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>Activities & Wellbeing</h1>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Intelligent activity scheduling with mobility-based safety filtering</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>

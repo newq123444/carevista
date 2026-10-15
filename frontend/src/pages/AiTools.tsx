@@ -10,7 +10,7 @@ export default function AiTools() {
   return (
     <div>
       <div className="page-header">
-        <div><h1 className="page-title">🤖 AI Tools</h1><p className="page-subtitle">AI-powered reports — powered by Claude</p></div>
+        <div><h1 className="page-title">AI Tools</h1><p className="page-subtitle">AI-powered reports — powered by Claude</p></div>
       </div>
       <div className="tab-strip" style={{ gap:2, borderBottom:'2px solid var(--border)', marginBottom:20 }}>
         {[['handover','🔁 Handover'],['careplan','📋 Care Plan'],['flags','💊 Med Flags']] .map(([k,l])=>(

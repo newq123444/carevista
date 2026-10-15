@@ -33,7 +33,7 @@ export default function AiInsights() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🧠 AI Care Intelligence</h1>
+          <h1 className="page-title">AI Care Intelligence</h1>
           <p className="page-subtitle">
             Summarises what your own records already show. Everything here is a suggestion for
             a qualified person to check — nothing is a clinical decision.

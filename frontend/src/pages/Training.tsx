@@ -32,7 +32,7 @@ export default function Training() {
   return (
     <div>
       <div className="page-header">
-        <div><h1 className="page-title">🎓 Training Records</h1><p className="page-subtitle">{records.length} records</p></div>
+        <div><h1 className="page-title">Training Records</h1><p className="page-subtitle">{records.length} records</p></div>
         <button className="btn btn-primary" onClick={() => setShowForm(true)}>+ Add Training</button>
       </div>
 

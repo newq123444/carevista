@@ -1,9 +1,10 @@
 // src/components/NotificationCentre.tsx
 import React, { useState, useEffect } from 'react';
+import { Icon } from './Icon';
 import { api } from '../services/api';
 
 const TYPE_CONFIG: Record<string,{icon:string;color:string}> = {
-  dbs_expiring:       { icon:'🪪', color:'#d97706' },
+  dbs_expiring:       { icon:'🆔', color:'#d97706' },
   training_expired:   { icon:'🎓', color:'#d97706' },
   missed_medication:  { icon:'💊', color:'#dc2626' },
   weight_drop:        { icon:'⚖️', color:'#dc2626' },
@@ -49,10 +50,10 @@ export default function NotificationCentre() {
 
   return (
     <div style={{ position:'relative' }}>
-      <button onClick={() => setOpen(o=>!o)} style={{ position:'relative', width:38, height:38, borderRadius:10, background:open?'rgba(255,255,255,.12)':'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.1)', color:'#c8d0db', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
-        🔔
+      <button onClick={() => setOpen(o=>!o)} aria-label="Notifications" style={{ position:'relative', width:40, height:40, borderRadius:10, background:open?'var(--surface-3)':'transparent', border:'1px solid var(--border)', color:'var(--text-secondary)', cursor:'pointer', display:'grid', placeItems:'center' }}>
+        <Icon name="bell" size={19} />
         {unread > 0 && (
-          <span style={{ position:'absolute', top:3, right:3, minWidth:16, height:16, borderRadius:8, background:'#dc2626', color:'white', fontSize:9, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 3px', border:'1px solid #0f1623' }}>
+          <span style={{ position:'absolute', top:3, right:3, minWidth:16, height:16, borderRadius:8, background:'#dc2626', color:'white', fontSize:9, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 3px', border:'2px solid var(--surface)' }}>
             {unread > 99 ? '99+' : unread}
           </span>
         )}

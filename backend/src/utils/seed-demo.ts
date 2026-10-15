@@ -6,6 +6,7 @@
 
 import 'dotenv/config';
 import { Pool } from 'pg';
+import { TOOLS, cleanAnswers, evaluate as evaluateTool, type Answers, type ToolKey } from '../services/assessmentTools';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -375,24 +376,75 @@ async function seedDemo() {
     // MIGRATION 010: RISK ASSESSMENTS
     // =========================================================================
     console.log('  >  Risk assessments...');
-    const riskTypes: Array<'waterlow' | 'must' | 'falls'> = ['waterlow', 'must', 'falls'];
+    // v88: real assessments, answered question by question and scored by the
+    // same engine the app uses — not random numbers. Higher-need rooms get the
+    // answers a nurse would give for someone frailer.
+    const assessorName = 'Demo Nurse';
+    const fallsNo = Object.fromEntries(['history', 'fear', 'mobility', 'medicines', 'postural', 'cognition', 'continence', 'vision', 'feet', 'conditions', 'environment', 'injury'].map(k => [k, 'no']));
     for (let room = 1; room <= 24; room++) {
       const resId = residentIds[String(room)];
       if (!resId) continue;
-      const isHighRisk = highRiskRooms.includes(String(room));
-      for (const assessType of riskTypes) {
-        const score = isHighRisk ? randInt(12, 20) : randInt(2, 10);
-        const level = score >= 15 ? 'very_high' : score >= 10 ? 'high' : score >= 5 ? 'medium' : 'low';
+      const r = String(room);
+      const frail = highRiskRooms.includes(r);
+      const dementia = dementiaRooms.includes(r);
+      const incont = incontinenceRooms.includes(r);
+      const answers: Partial<Record<ToolKey, Answers>> = {
+        waterlow: {
+          build: frail ? 'below' : 'average', sex: room % 3 === 0 ? 'male' : 'female', age: room % 4 === 0 ? '75-80' : '81+',
+          skin: frail ? ['tissue_paper', 'dry'] : ['healthy'], continence: incont ? 'both' : 'complete',
+          mobility: frail ? 'chairbound' : dementia ? 'restless' : 'fully', lost_weight: frail ? 'yes' : 'no',
+          ...(frail ? { weight_lost: '0.5-5' } : {}), eating_poorly: frail ? 'yes' : 'no', tissue: ['none'],
+          neuro: diabeticRooms.includes(r) ? '4' : 'none', surgery: 'none', medication: 'no',
+        },
+        must: { bmi_band: frail ? '18.5-20' : 'over20', loss_band: frail ? '5-10' : 'under5', acute: 'no' },
+        falls: frail || dementia ? {
+          ...fallsNo, history: 'yes', falls_count: frail ? 2 : 1, history_actions: ['pattern', 'postfall'],
+          mobility: 'yes', mobility_actions: ['aid', 'supervise'], feet: 'yes', feet_actions: ['footwear'],
+          ...(dementia ? { cognition: 'yes', cognition_actions: ['rounding'] } : {}),
+          environment: 'yes', environment_actions: ['bell', 'clutter'],
+        } : { ...fallsNo },
+        moving_handling: frail ? {
+          weight_kg: 52, weight_bearing: 'none', sitting_balance: 'no', grip: 'no', cooperation: dementia ? 'variable' : 'yes', factors: ['fragile_skin'],
+          reposition_staff: '2', reposition_equip: ['slide_sheet'], bed_chair_staff: '2', bed_chair_equip: ['full_hoist'],
+          sit_stand_staff: 'na', walking_staff: 'na', toilet_staff: '2', toilet_equip: ['full_hoist'], bathing_staff: '2', bathing_equip: ['bath_hoist'],
+          floor_staff: '2', floor_equip: ['full_hoist'], sling_type: 'general', sling_size: room % 2 ? 'M' : 'L', sling_loops: 'Shoulder: green, legs: blue, crossed',
+        } : {
+          weight_kg: 68, weight_bearing: 'full', sitting_balance: 'yes', grip: 'yes', cooperation: 'yes', factors: ['none'],
+          reposition_staff: 'independent', reposition_equip: ['none'], bed_chair_staff: 'independent', bed_chair_equip: ['none'],
+          sit_stand_staff: 'independent', sit_stand_equip: ['none'], walking_staff: dementia ? 'supervision' : 'independent', walking_equip: ['frame'],
+          toilet_staff: 'independent', toilet_equip: ['grab_rails'], bathing_staff: '1', bathing_equip: ['grab_rails'], floor_staff: '2', floor_equip: ['lift_cushion'],
+        },
+        peep: {
+          floor: room <= 12 ? 'ground' : 'first', room: r, hears: dementia ? 'alert' : 'yes', ...(dementia ? { alert_how: 'Wake in person, calm voice' } : {}),
+          understands: dementia ? 'may_refuse' : 'yes', day: frail ? 'two' : 'unaided', night: frail ? 'bed' : dementia ? 'one' : 'unaided',
+          equipment: frail ? ['evac_mattress'] : ['none'], route: room <= 12 ? 'Through the fire doors to the dining room compartment, then out by the garden exit' : 'Along the corridor to the protected stair, down to the front door',
+        },
+        eating_drinking: frail ? { signs: ['cough'], salt: 'current', food_level: '5', drink_level: '2', level_source: 'salt', choking: ['none'], support: 'full' }
+          : { signs: ['none'], salt: 'no', food_level: '7', drink_level: '0', choking: ['none'], support: 'independent' },
+        oral_health: { lips: '0', tongue: '0', gums: frail ? '1' : '0', saliva: frail ? '1' : '0', teeth: frail ? 'na' : '0', dentures: frail ? '0' : 'na',
+          cleanliness: '0', pain: '0', brushing: frail ? 'full' : 'prompt', denture_type: frail ? 'both' : 'none', ...(frail ? { denture_marked: 'yes' } : {}), dentist: 'yes', refuses: 'no' },
+        // v89
+        delirium_4at: { alertness: '0', amt4: dementia ? '2' : '0', months: dementia ? '1' : '0', acute: '0' },
+        mood_gds15: dementia ? { able: 'no' } : { able: 'yes', ...Object.fromEntries(Array.from({ length: 15 }, (_, i) => [`g${i + 1}`, [1, 5, 7, 11, 13].includes(i + 1) ? 'yes' : (frail && i + 1 === 2 ? 'yes' : 'no')])) },
+        hydration: frail ? { factors: ['help', 'thirst'], restriction: 'no', target_ml: 1500, support: ['reach', 'every_visit'] } : { factors: ['none'], restriction: 'no', target_ml: 1600 },
+        bowel: { usual: frail ? '2days' : 'daily', usual_type: '4', days_since: 1, factors: frail ? ['immobile', 'toilet'] : ['none'], signs: ['none'], laxatives: frail ? 'regular' : 'none' },
+        personal_fire: { smokes: 'no', emollients: frail ? 'large' : 'none', oxygen: 'no', airflow: frail ? 'yes' : 'no', items: ['none'], react: frail ? 'no' : 'yes', detector: 'yes',
+          ...(frail ? { controls: ['linen', 'family'] } : {}) },
+      };
+      for (const type of ['waterlow', 'must', 'falls', 'moving_handling', 'peep', 'eating_drinking', 'oral_health', 'delirium_4at', 'mood_gds15', 'hydration', 'bowel', 'personal_fire'] as ToolKey[]) {
+        const a = cleanAnswers(type, answers[type] || {});
+        const result = evaluateTool(type, a);
+        if (!result.complete || result.errors.length) throw new Error(`Demo ${type} for room ${r} does not complete: ${[...result.missing, ...result.errors].join(', ')}`);
+        const done = daysAgo(randInt(3, 20));
         await client.query(
-          `INSERT INTO risk_assessments (care_home_id, resident_id, assessed_by,
-            assessment_type, total_score, risk_level, factors, next_review_date, status, created_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-          [homeId, resId, rand(clinicalStaff),
-           assessType, score, level,
-           JSON.stringify({ mobility: randInt(1, 4), nutrition: randInt(1, 3), skin: randInt(1, 4) }),
-           dateStr(daysFromNow(randInt(14, 60))), 'current',
-           timeStr(daysAgo(randInt(5, 25)))]
-        );
+          `INSERT INTO risk_assessments (care_home_id, resident_id, assessed_by, assessment_type, total_score, risk_level, factors,
+             auto_populated, next_review_date, status, answers, result, tool_version, reason, involvement, assessor_name, assessor_role, completed_at, created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,'{}',FALSE,$7,'current',$8,$9,$10,'scheduled',$11,$12,'registered_nurse',$13,$13)`,
+          [homeId, resId, nurseId, type, result.storedScore, result.level,
+           dateStr(new Date(done.getTime() + result.reviewDays * 86400_000)),
+           JSON.stringify(a), JSON.stringify(result), TOOLS[type].version,
+           dementia ? 'Talked with them and their daughter, who knows their routines well' : 'Talked it through with them; they agreed the plan',
+           assessorName, timeStr(done)]);
         track('risk_assessments');
       }
     }

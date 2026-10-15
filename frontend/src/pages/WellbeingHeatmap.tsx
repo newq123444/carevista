@@ -29,7 +29,7 @@ export default function WellbeingHeatmap() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🗺️ Real-time Wellbeing Heatmap</h1>
+          <h1 className="page-title">Real-time Wellbeing Heatmap</h1>
           <p className="page-subtitle">Live visual overview of resident wellbeing by room - auto-refreshes every 30 seconds</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-muted)' }}>

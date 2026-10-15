@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { formatDate } from '../utils/formatters';
+import { weightTrend } from '../utils/weightTrend';
 
 const MUST_LABELS: Record<number,{label:string;color:string;action:string}> = {
   0: { label:'Low Risk',    color:'#16a34a', action:'Routine re-screening: monthly in care home' },
@@ -10,7 +11,7 @@ const MUST_LABELS: Record<number,{label:string;color:string;action:string}> = {
   2: { label:'High Risk',   color:'#dc2626', action:'Refer to dietitian. Improve and increase overall nutritional intake immediately.' },
 };
 
-export function WeightChart({ residentId, residentName }: { residentId: string; residentName: string }) {
+export function WeightChart({ residentId, residentName, heightCm }: { residentId: string; residentName: string; heightCm?: number | string | null }) {
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm]       = useState({ weightKg:'', mustScore:'', notes:'' });
@@ -23,15 +24,18 @@ export function WeightChart({ residentId, residentName }: { residentId: string; 
   const weights: any[] = Array.isArray(rawWeights) ? rawWeights : [];
   const latest = weights[0];
   const prev   = weights[1];
-  const weightChange = latest && prev ? (latest.weight_kg - prev.weight_kg).toFixed(1) : null;
-  const pctChange    = latest && prev ? (((latest.weight_kg - prev.weight_kg)/prev.weight_kg)*100).toFixed(1) : null;
+  const weightChange = latest && prev ? (Number(latest.weight_kg) - Number(prev.weight_kg)).toFixed(1) : null;
+  const pctChange    = latest && prev ? (((Number(latest.weight_kg) - Number(prev.weight_kg))/Number(prev.weight_kg))*100).toFixed(1) : null;
+  // The change since last time hides a slow loss. MUST asks about the past
+  // 3–6 months, so that is what the trend below shows.
+  const trend = weightTrend(weights, heightCm);
   const mustInfo     = latest?.must_score != null ? MUST_LABELS[Math.min(latest.must_score,2)] : null;
 
   // SVG chart
   const chartW = [...weights].reverse().slice(-12);
   const W=400, H=120, P=20;
-  const minW = Math.min(...chartW.map((w:any)=>w.weight_kg))-2;
-  const maxW = Math.max(...chartW.map((w:any)=>w.weight_kg))+2;
+  const minW = Math.min(...chartW.map((w:any)=>Number(w.weight_kg)))-2;
+  const maxW = Math.max(...chartW.map((w:any)=>Number(w.weight_kg)))+2;
   const tx = (i:number) => P+(i/Math.max(chartW.length-1,1))*(W-P*2);
   const ty = (w:number) => H-P-((w-minW)/(maxW-minW||1))*(H-P*2);
 
@@ -40,6 +44,7 @@ export function WeightChart({ residentId, residentName }: { residentId: string; 
     try {
       await api.post(`/residents/${residentId}/weights`, { weightKg:parseFloat(form.weightKg), mustScore:form.mustScore?parseInt(form.mustScore):null, notes:form.notes||null });
       qc.invalidateQueries({ queryKey:['weights', residentId] });
+      qc.invalidateQueries({ queryKey:['weight-trends'] });
       setShowAdd(false); setForm({ weightKg:'', mustScore:'', notes:'' });
     } catch (err:any) { alert(err?.response?.data?.error||'Failed to save'); }
     finally { setSaving(false); }
@@ -76,6 +81,24 @@ export function WeightChart({ residentId, residentName }: { residentId: string; 
         </div>
       </div>
 
+      {trend.latest && (trend.concerns.length > 0 || trend.notes.length > 0 || trend.changePct != null) && (
+        <div style={{ padding:'12px 14px', borderRadius:10, marginBottom:16, fontSize:14, lineHeight:1.5,
+          background: trend.level==='act' ? '#fef2f2' : trend.level==='watch' ? '#fffbeb' : 'var(--surface-2, #f8fafc)',
+          border: `1px solid ${trend.level==='act' ? '#fecaca' : trend.level==='watch' ? '#fde68a' : 'var(--border)'}` }}>
+          <div style={{ fontWeight:700, marginBottom:6 }}>
+            Six-month trend{trend.changePct != null ? `: ${trend.changePct > 0 ? `down ${trend.changePct}%` : trend.changePct < 0 ? `up ${Math.abs(trend.changePct)}%` : 'no change'} against ${trend.reference!.kg.toFixed(1)} kg (${formatDate(trend.reference!.at.toISOString())})` : ''}
+          </div>
+          {(trend.bmiScore != null || trend.lossScore != null) && (
+            <div style={{ marginBottom:6 }}>
+              MUST step 1 (BMI): <strong>{trend.bmiScore ?? '—'}</strong> · step 2 (weight loss): <strong>{trend.lossScore ?? '—'}</strong>
+              {trend.mustFloor != null && <> · at least <strong>{trend.mustFloor}</strong> before step 3</>}
+            </div>
+          )}
+          {trend.concerns.map((c,i)=><div key={i} style={{ color: trend.level==='act' ? '#b91c1c' : '#92400e' }}>• {c}</div>)}
+          {trend.notes.map((n,i)=><div key={`n${i}`} style={{ color:'var(--text-secondary)', fontSize:13 }}>{n}</div>)}
+        </div>
+      )}
+
       {mustInfo&&latest?.must_score>=1&&(
         <div style={{ padding:'10px 14px', borderRadius:8, background:mustInfo.color+'10', border:`1px solid ${mustInfo.color}30`, marginBottom:16, fontSize:13 }}>
           <strong style={{ color:mustInfo.color }}>MUST Action ({mustInfo.label}):</strong> {mustInfo.action}
@@ -110,12 +133,12 @@ export function WeightChart({ residentId, residentName }: { residentId: string; 
                 <input className="form-input" type="number" step="0.1" required value={form.weightKg} onChange={e=>setForm(f=>({...f,weightKg:e.target.value}))} placeholder="e.g. 65.4"/>
               </div>
               <div className="form-group">
-                <label className="form-label">MUST Score</label>
+                <label className="form-label">Full MUST score (all 3 steps, if screened)</label>
                 <select className="form-input" value={form.mustScore} onChange={e=>setForm(f=>({...f,mustScore:e.target.value}))}>
                   <option value="">Not assessed</option>
                   <option value="0">0 — Low Risk</option>
                   <option value="1">1 — Medium Risk</option>
-                  <option value="2">2 — High Risk</option>
+                  <option value="2">2 or more — High Risk</option>
                 </select>
               </div>
             </div>

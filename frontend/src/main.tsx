@@ -10,6 +10,7 @@ import FamilyMemberDashboard from './pages/FamilyMemberDashboard';
 import FirstSignIn from './pages/FirstSignIn';
 import { useAuthStore } from './store/auth.store';
 import './index.css';
+import './design-system.css';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient({
@@ -67,6 +68,17 @@ function Root() {
       </BrowserRouter>
     </LanguageProvider>
   );
+}
+
+// Offline support: the app opens and the round works with no signal. Only in
+// a production build — in development a stored copy would hide your changes.
+if ('serviceWorker' in navigator && (import.meta as any).env?.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      // A new deploy has new file names: store them while online.
+      (reg.active || reg.waiting || reg.installing)?.postMessage({ type: 'cv-precache' });
+    }).catch(() => { /* unsupported or blocked: the app still works online */ });
+  });
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

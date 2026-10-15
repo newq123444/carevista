@@ -87,8 +87,9 @@ export function PageHeading({ greeting, subtitle, emoji, action }: {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
       <div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{emoji ? `${emoji} ` : ''}{greeting}</h1>
-        {subtitle && <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '2px 0 0' }}>{subtitle}</p>}
+        {/* No emoji in page titles: they render differently on every device. */}
+        <h1 className="cv-h1">{greeting}</h1>
+        {subtitle && <p className="cv-sub">{subtitle}</p>}
       </div>
       {action}
     </div>

@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { query, withTransaction } from '../models/db';
 import { AppError } from '../utils/errors';
 import { auditLog } from '../services/audit.service';
+import { appendQuietly } from '../services/recordChain';
+import { createNotification } from './notifications.controller';
+import { homeToday } from '../utils/homeTime';
 
 
 // Routes carers are permitted to administer (delegated tasks)
@@ -37,7 +40,8 @@ export async function listMedications(req: Request, res: Response, next: NextFun
 export async function getEmar(req: Request, res: Response, next: NextFunction) {
   try {
     const careHomeId = req.user!.care_home_id;
-    const { date = new Date().toISOString().slice(0, 10), round } = req.query;
+    // Today in the home, not UTC (which is yesterday from midnight to 1am in summer).
+    const { date = homeToday(), round } = req.query;
 
     const { rows: medications } = await query(
       `SELECT m.*, r.first_name || ' ' || r.last_name AS resident_name, r.room_number
@@ -69,6 +73,13 @@ export async function getEmar(req: Request, res: Response, next: NextFunction) {
 
     const emarData = medications.map(med => ({
       ...med,
+      // PRN doses are not tied to a round; list every one given that day.
+      prn_doses: med.is_prn
+        ? administrations.filter(a => a.medication_id === med.id && a.status === 'given')
+            .map(a => ({ id: a.id, time: String(a.actual_time || a.scheduled_time || '').slice(0, 5),
+                         reason: a.prn_reason, effect: a.prn_effect, by: a.administered_by_name }))
+            .sort((x, y) => x.time.localeCompare(y.time))
+        : undefined,
       rounds: (med.administration_times as string[]).map(rawTime => {
         const time = String(rawTime || '').slice(0, 5); // normalise HH:MM:SS → HH:MM
         return {
@@ -100,7 +111,7 @@ export async function recordAdministration(req: Request, res: Response, next: Ne
     const {
       medicationId, residentId, administrationDate, scheduledTime,
       status, actualTime, doseGiven, notes, refusalReason,
-      omissionReason, witnessedById, isPrn, prnReason, prnEffect
+      omissionReason, witnessedById, prnReason, prnEffect
     } = req.body;
 
     if (!medicationId || !residentId || !administrationDate || !scheduledTime || !status) {
@@ -125,6 +136,33 @@ export async function recordAdministration(req: Request, res: Response, next: Ne
       throw new AppError(403, `This medication (${med.route}) must be administered by a senior carer or nurse. Please ask a senior member of staff.`);
     }
 
+    // PRN is a property of the prescription, not something the screen decides.
+    // NICE SC1: record why an "as required" dose was given, then whether it worked.
+    const prn = !!med.is_prn;
+    if (prn && status === 'given' && !String(prnReason || '').trim()) {
+      throw new AppError(400, 'Say why this "as required" dose is needed');
+    }
+
+    // A second PRN dose on the same day must not overwrite the first. If the
+    // round slot already holds a given dose, file this one under its own time.
+    let slot = scheduledTime;
+    if (prn && status === 'given') {
+      const { rows: [taken] } = await query(
+        `SELECT actual_time FROM med_administrations
+          WHERE medication_id = $1 AND administration_date = $2 AND scheduled_time = $3 AND status = 'given'`,
+        [medicationId, administrationDate, scheduledTime]);
+      if (taken) {
+        slot = actualTime || scheduledTime;
+        if (String(slot).slice(0, 5) === String(scheduledTime).slice(0, 5)) {
+          throw new AppError(409, `A dose of ${med.name} is already recorded at ${String(taken.actual_time || scheduledTime).slice(0, 5)}. Enter the actual time of this dose.`);
+        }
+        const { rows: [clash] } = await query(
+          `SELECT 1 FROM med_administrations WHERE medication_id = $1 AND administration_date = $2 AND scheduled_time = $3`,
+          [medicationId, administrationDate, slot]);
+        if (clash) throw new AppError(409, `A dose of ${med.name} is already recorded at ${String(slot).slice(0, 5)}.`);
+      }
+    }
+
     // Validate: refused/missed must have a reason
     if (status === 'refused' && !refusalReason && !notes) {
       throw new AppError(400, 'Reason required for refused medication');
@@ -133,8 +171,11 @@ export async function recordAdministration(req: Request, res: Response, next: Ne
       throw new AppError(400, 'Reason required for omitted medication');
     }
 
-    // Upsert (handles re-recording)
-    const { rows: [admin] } = await query(
+    // Upsert (handles re-recording). The medication record and its chain entry
+    // are written together — a medication signature that cannot be proved is
+    // exactly the record that matters most in an investigation.
+    const admin = await withTransaction(async (client) => {
+      const { rows: [row] } = await client.query(
       `INSERT INTO med_administrations (
         care_home_id, medication_id, resident_id, administered_by, witnessed_by,
         administration_date, scheduled_time, actual_time, status, dose_given,
@@ -152,9 +193,24 @@ export async function recordAdministration(req: Request, res: Response, next: Ne
         omission_reason = EXCLUDED.omission_reason
       RETURNING *`,
       [careHomeId, medicationId, residentId, req.user!.id, witnessedById,
-       administrationDate, scheduledTime, actualTime || scheduledTime, status, doseGiven || med.dose,
-       notes, refusalReason, omissionReason, isPrn || false, prnReason, prnEffect]
-    );
+       administrationDate, slot, actualTime || scheduledTime, status, doseGiven || med.dose,
+       notes, refusalReason, omissionReason, prn, prn ? (prnReason || null) : null, prn ? (prnEffect || null) : null]
+      );
+
+      // The upsert means a second signature for the same dose amends the first.
+      // Recording that as an amendment keeps both versions in the history.
+      await appendQuietly(client, {
+        careHomeId,
+        entityType: 'med_administration',
+        entityId: row.id,
+        action: 'recorded',
+        row,
+        recordedBy: req.user!.id,
+        eventAt: row.created_at,
+      });
+
+      return row;
+    });
 
     await auditLog({
       careHomeId, actorId: req.user!.id,
@@ -166,6 +222,98 @@ export async function recordAdministration(req: Request, res: Response, next: Ne
     });
 
     res.status(201).json(admin);
+  } catch (err) { next(err); }
+}
+
+// ── PRN follow-up ─────────────────────────────────────────────────────────
+// Doses of "as required" medicines given in the last day with no outcome yet.
+// When each is due (an hour after the dose) is worked out on the device, so
+// the list is the same on every screen.
+export async function listPrnFollowups(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { rows } = await query(
+      `SELECT ma.id, ma.resident_id, ma.medication_id, ma.dose_given, ma.prn_reason, ma.created_at,
+              ma.administration_date, ma.actual_time,
+              m.name AS medication_name,
+              r.first_name || ' ' || r.last_name AS resident_name, r.room_number,
+              u.first_name || ' ' || u.last_name AS given_by_name, ma.administered_by
+         FROM med_administrations ma
+         JOIN medications m ON m.id = ma.medication_id
+         JOIN residents r ON r.id = ma.resident_id
+         JOIN users u ON u.id = ma.administered_by
+        WHERE ma.care_home_id = $1 AND ma.is_prn = TRUE AND ma.status = 'given'
+          AND ma.prn_effect IS NULL
+          AND ma.created_at > NOW() - INTERVAL '24 hours'
+        ORDER BY ma.created_at`,
+      [req.user!.care_home_id]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+const PRN_OUTCOMES: Record<string, string> = {
+  effective: 'Effective',
+  partly_effective: 'Partly effective',
+  not_effective: 'Not effective',
+  unable_to_assess: 'Unable to assess',
+};
+
+export async function recordPrnEffect(req: Request, res: Response, next: NextFunction) {
+  try {
+    const careHomeId = req.user!.care_home_id;
+    const { id } = req.params;
+    const outcome = String(req.body?.outcome || '');
+    const note = String(req.body?.note || '').trim().slice(0, 500);
+    if (!PRN_OUTCOMES[outcome]) throw new AppError(400, 'Choose whether the dose worked');
+    if ((outcome === 'not_effective' || outcome === 'unable_to_assess') && note.length < 3) {
+      throw new AppError(400, outcome === 'not_effective'
+        ? 'Say what you saw, and what you have done about it'
+        : 'Say why it could not be assessed');
+    }
+    const effect = PRN_OUTCOMES[outcome] + (note ? ` — ${note}` : '');
+
+    const row = await withTransaction(async (client) => {
+      const { rows: [updated] } = await client.query(
+        `UPDATE med_administrations
+            SET prn_effect = $1, prn_effect_at = NOW(), prn_effect_by = $2
+          WHERE id = $3 AND care_home_id = $4 AND is_prn = TRUE AND status = 'given' AND prn_effect IS NULL
+          RETURNING *`,
+        [effect, req.user!.id, id, careHomeId]);
+      if (!updated) {
+        const { rows: [existing] } = await client.query(
+          `SELECT prn_effect, is_prn FROM med_administrations WHERE id = $1 AND care_home_id = $2`, [id, careHomeId]);
+        if (!existing) throw new AppError(404, 'Dose not found');
+        if (!existing.is_prn) throw new AppError(400, 'This was not an "as required" dose');
+        throw new AppError(409, `Already recorded: ${existing.prn_effect}`);
+      }
+      // The effect is a hashed field, so the chain gets the amended record.
+      await appendQuietly(client, {
+        careHomeId, entityType: 'med_administration', entityId: updated.id,
+        action: 'prn_effect_recorded', row: updated, recordedBy: req.user!.id, eventAt: new Date(),
+      });
+      return updated;
+    });
+
+    if (outcome === 'not_effective') {
+      const { rows: [ctx] } = await query(
+        `SELECT m.name, r.first_name || ' ' || r.last_name AS resident
+           FROM medications m JOIN residents r ON r.id = m.resident_id WHERE m.id = $1`, [row.medication_id]);
+      await createNotification({
+        careHomeId, type: 'prn_not_effective', priority: 'high',
+        title: `PRN not effective — ${ctx?.resident || 'resident'}`,
+        body: `${ctx?.name || 'An as-required medicine'} given for "${row.prn_reason || 'not stated'}" did not work. ${note} ` +
+              'A nurse should review: look for another cause, and contact the GP or 111 if needed.',
+        entityType: 'resident', entityId: row.resident_id,
+      });
+    }
+
+    await auditLog({
+      careHomeId, actorId: req.user!.id,
+      actorName: `${req.user!.first_name} ${req.user!.last_name}`,
+      action: 'PRN_EFFECT_RECORDED', entityType: 'med_administration', entityId: row.id,
+      afterData: { outcome }, ip: req.ip,
+    });
+    res.json(row);
   } catch (err) { next(err); }
 }
 

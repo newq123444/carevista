@@ -12,7 +12,7 @@ type Category = 'daily_room' | 'weekly_room' | 'quarterly_room' | 'daily_communa
 const CATEGORIES: { key: Category; label: string; icon: string; roomBased: boolean }[] = [
   { key: 'daily_room',     label: 'Daily — Resident Room',     icon: '🧹', roomBased: true },
   { key: 'weekly_room',    label: 'Weekly — Resident Room',    icon: '🧽', roomBased: true },
-  { key: 'quarterly_room', label: '3-Monthly — Resident Room', icon: '🪣', roomBased: true },
+  { key: 'quarterly_room', label: '3-Monthly — Resident Room', icon: '🧽', roomBased: true },
   { key: 'daily_communal', label: 'Daily — Communal Areas',    icon: '🏛️', roomBased: false },
 ];
 
@@ -87,7 +87,7 @@ export default function Housekeeping() {
 
   return (
     <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>🧹 Housekeeping Checklists</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Housekeeping Checklists</h1>
       <p style={{ color: '#6b7280', marginBottom: 20 }}>Record cleaning against rooms and communal areas.</p>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>

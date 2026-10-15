@@ -15,11 +15,12 @@ export default function HomeSettings() {
     brand: home.settings?.brand_color || '#0f766e',
     day_start: home.settings?.day_start || '07:00', evening_start: home.settings?.evening_start || '15:00', night_start: home.settings?.night_start || '22:00',
     isolation_days: home.settings?.isolation_days ?? 7,
+    labs_enabled: !!home.settings?.labs_enabled,
   }); }, [home]);
   const set = (k: string, v: any) => setF((s: any) => ({ ...s, [k]: v }));
   const save = () => update.mutate({
     name: f.name, address: f.address, postcode: f.postcode, phone: f.phone, email: f.email, cqc_location_id: f.cqc_location_id,
-    settings: { brand_color: f.brand, day_start: f.day_start, evening_start: f.evening_start, night_start: f.night_start, isolation_days: Number(f.isolation_days) },
+    settings: { brand_color: f.brand, day_start: f.day_start, evening_start: f.evening_start, night_start: f.night_start, isolation_days: Number(f.isolation_days), labs_enabled: !!f.labs_enabled },
   });
 
   const input: React.CSSProperties = { width: '100%', padding: '9px 11px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--surface)', color: 'var(--text-primary)' };
@@ -51,6 +52,18 @@ export default function HomeSettings() {
           <div><label style={label}>Brand colour</label><input type="color" style={{ ...input, height: 42, padding: 4 }} value={f.brand} onChange={e => set('brand', e.target.value)} /></div>
           <div><label style={label}>Social-isolation alert after (days)</label><input type="number" min={1} max={60} style={input} value={f.isolation_days} onChange={e => set('isolation_days', e.target.value)} /></div>
         </div>
+      </SectionCard>
+      <SectionCard title="Labs">
+        <label style={{ display: 'flex', gap: 14, alignItems: 'flex-start', cursor: 'pointer', minHeight: 48 }}>
+          <input type="checkbox" checked={!!f.labs_enabled} onChange={e => set('labs_enabled', e.target.checked)}
+            style={{ width: 24, height: 24, marginTop: 2, flexShrink: 0 }} />
+          <span>
+            <span style={{ display: 'block', fontWeight: 600, fontSize: 15 }}>{tr('Show Labs features in the menu')}</span>
+            <span style={{ display: 'block', fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: 4 }}>
+              {tr('Experimental and analytics extras: AI tools, smart rota, wellbeing and environment views, benchmarking, board packs and similar. They are off by default so the menu shows only what a home needs every day. Turning this on changes the menu for everyone in this home. It does not change any records.')}
+            </span>
+          </span>
+        </label>
       </SectionCard>
       <button onClick={save} disabled={update.isPending} style={{ padding: '11px 24px', borderRadius: 9, background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{update.isPending ? 'Saving…' : 'Save settings'}</button>
     </div>

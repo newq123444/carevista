@@ -6,6 +6,7 @@ import { useEmar, useRecordAdministration, useCreateMedication, useResidents } f
 import { useAuthStore } from '../store/auth.store';
 import { formatDate, todayISO } from '../utils/formatters';
 import type { Resident } from '../types';
+import { PrnFollowups } from '../components/PrnFollowups';
 
 const ROUNDS = [
   { key: '08:00', label: 'Morning',   icon: '🌅', color: '#f59e0b' },
@@ -29,7 +30,7 @@ const ROUTE_ICON: Record<string, string> = {
   patch: '🩹', transdermal: '🩹',
   eye_drops: '👁️', ear_drops: '👂', nasal: '👃', inhaled: '💨', nebuliser: '💨',
   injection: '💉', subcutaneous: '💉', intramuscular: '💉', intravenous: '💉',
-  sublingual: '🫦', buccal: '🫦', rectal: '🔴', suppository: '🔴',
+  sublingual: '👄', buccal: '👄', rectal: '🔴', suppository: '🔴',
   peg: '🔌', enteral: '🔌',
 };
 
@@ -42,7 +43,7 @@ const ROUTE_OPTIONS = [
   { value: 'nasal',         label: '👃 Nasal spray / drops' },
   { value: 'inhaled',       label: '💨 Inhaler / nebuliser' },
   { value: 'injection',     label: '💉 Injection (SC / IM / IV)' },
-  { value: 'sublingual',    label: '🫦 Sublingual / buccal' },
+  { value: 'sublingual',    label: '👄 Sublingual / buccal' },
   { value: 'rectal',        label: '🔴 Rectal / suppository' },
   { value: 'peg',           label: '🔌 PEG / enteral feed' },
 ];
@@ -125,6 +126,8 @@ export default function Emar() {
           <button className="btn btn-secondary btn-sm" onClick={() => setShowAddMed(true)}>+ Add Medication</button>
         </div>
       </div>
+
+      <PrnFollowups />
 
       {/* ── Summary KPIs ────────────────────────────────────────── */}
       <div className="grid-4" style={{ marginBottom: 20 }}>
@@ -236,7 +239,7 @@ export default function Emar() {
                                 <div style={{ flexShrink: 0, marginLeft: 8 }}>
                                   {status === 'pending' ? (
                                     canRecord(userRole, med.route) ? (
-                                      <button onClick={() => setEntry({ medicationId: med.id, residentId: med.resident_id, residentName: med.resident_name, medName: med.name, dose: med.dose, route: med.route, scheduledTime: activeRound, date })}
+                                      <button onClick={() => setEntry({ medicationId: med.id, residentId: med.resident_id, residentName: med.resident_name, medName: med.name, dose: med.dose, route: med.route, isPrn: !!med.is_prn, scheduledTime: activeRound, date })}
                                         style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#0d9488', color: 'white', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
                                         {tr('Record')}
                                       </button>
@@ -300,6 +303,11 @@ export default function Emar() {
                                 {med.is_prn && <span style={{ marginLeft: 6, fontSize: 10, background: '#eff6ff', color: '#0d9488', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>PRN</span>}
                                 {ROUTE_ICON[med.route?.toLowerCase()] && <span style={{ marginLeft: 5, fontSize: 11 }} title={med.route}>{ROUTE_ICON[med.route?.toLowerCase()]}</span>}
                                 <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>{med.indication}</div>
+                                {med.is_prn && Array.isArray(med.prn_doses) && med.prn_doses.length > 0 && (
+                                  <div style={{ fontSize: 11.5, color: '#0f766e', fontWeight: 500, marginTop: 2 }}>
+                                    Given today: {med.prn_doses.map((d: any) => `${d.time}${d.effect ? ` (${String(d.effect).split(' — ')[0].toLowerCase()})` : ''}`).join(', ')}
+                                  </div>
+                                )}
                               </td>
                               <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>{med.dose} · {med.route}</td>
                               {ROUNDS.map(r => {
@@ -312,7 +320,7 @@ export default function Emar() {
                                   <td key={r.key} style={{ padding: '8px 14px', textAlign: 'center' }}>
                                     {status === 'pending' ? (
                                       canRecord(userRole, med.route) ? (
-                                        <button onClick={() => setEntry({ medicationId: med.id, residentId: med.resident_id, residentName: med.resident_name, medName: med.name, dose: med.dose, route: med.route, scheduledTime: r.key, date })}
+                                        <button onClick={() => setEntry({ medicationId: med.id, residentId: med.resident_id, residentName: med.resident_name, medName: med.name, dose: med.dose, route: med.route, isPrn: !!med.is_prn, scheduledTime: r.key, date })}
                                           style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: '#0d9488', color: 'white', fontWeight: 700, fontSize: 11, cursor: 'pointer' }}>
                                           {tr('Record')}
                                         </button>
@@ -372,7 +380,7 @@ export default function Emar() {
                             <td key={r.key} style={{ padding: '8px 14px', textAlign: 'center' }}>
                               {status === 'pending' ? (
                                 canRecord(userRole, med.route) ? (
-                                  <button onClick={() => setEntry({ medicationId: med.id, residentId: med.resident_id, residentName: med.resident_name, medName: med.name, dose: med.dose, route: med.route, scheduledTime: r.key, date })}
+                                  <button onClick={() => setEntry({ medicationId: med.id, residentId: med.resident_id, residentName: med.resident_name, medName: med.name, dose: med.dose, route: med.route, isPrn: !!med.is_prn, scheduledTime: r.key, date })}
                                     style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#0d9488', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{tr('Record')}</button>
                                 ) : (
                                   <span style={{ fontSize: 10, color: '#9ca3af' }}>🔒</span>
@@ -400,10 +408,16 @@ export default function Emar() {
 }
 
 // ── Record Administration Modal ────────────────────────────────────────────
+// Common reasons for an "as required" dose; the person giving it can add detail.
+const PRN_REASONS = ['Pain', 'Agitation or distress', 'Anxiety', 'Constipation', 'Nausea', 'Breathlessness', 'Unable to sleep'];
+
 function AdminModal({ entry, onClose }: { entry: any; onClose: () => void }) {
   const { t: tr } = useLang();
   const record = useRecordAdministration();
-  const [form, setForm] = useState({ status: 'given', actualTime: entry.scheduledTime, doseGiven: entry.dose || '', notes: '', refusalReason: '', omissionReason: '', siteApplied: '' });
+  const nowHHMM = (() => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; })();
+  // An "as required" dose is given when it is needed, not at the round time.
+  const [form, setForm] = useState({ status: 'given', actualTime: entry.isPrn ? nowHHMM : entry.scheduledTime, doseGiven: entry.dose || '', notes: '', refusalReason: '', omissionReason: '', siteApplied: '', prnReason: '' });
+  const prnNeedsReason = !!entry.isPrn && form.status === 'given';
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
 
   const STATUS_OPTIONS = [
@@ -428,6 +442,7 @@ function AdminModal({ entry, onClose }: { entry: any; onClose: () => void }) {
         notes:              form.notes,
         refusalReason:      form.refusalReason || null,
         omissionReason:     form.omissionReason || null,
+        prnReason:          entry.isPrn ? (form.prnReason.trim() || null) : null,
       },
       { onSuccess: onClose }
     );
@@ -474,6 +489,27 @@ function AdminModal({ entry, onClose }: { entry: any; onClose: () => void }) {
               </div>
             </div>
 
+            {prnNeedsReason && (
+              <div className="form-group">
+                <label className="form-label" style={{ color: '#0f766e' }}>Why is this "as required" dose needed? *</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                  {PRN_REASONS.map(r => (
+                    <button type="button" key={r} onClick={() => set('prnReason', r)} style={{
+                      minHeight: 44, padding: '0 12px', borderRadius: 999, cursor: 'pointer', fontSize: 13.5,
+                      border: `1.5px solid ${form.prnReason === r ? '#0f766e' : 'var(--border)'}`,
+                      background: form.prnReason === r ? '#f0fdfa' : '#fff', color: form.prnReason === r ? '#0f766e' : 'var(--text-secondary)',
+                      fontWeight: form.prnReason === r ? 700 : 400,
+                    }}>{r}</button>
+                  ))}
+                </div>
+                <input className="form-input" value={form.prnReason} onChange={e => set('prnReason', e.target.value)} required
+                  placeholder="e.g. Pain in left hip, says 6 out of 10" />
+                <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 4 }}>
+                  Check in about an hour whether it worked — it will appear under "Did it work?".
+                </div>
+              </div>
+            )}
+
             {/* Conditional reasons */}
             {form.status === 'refused' && (
               <div className="form-group">
@@ -507,7 +543,7 @@ function AdminModal({ entry, onClose }: { entry: any; onClose: () => void }) {
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>{tr('Cancel')}</button>
-            <button type="submit" className="btn btn-primary" disabled={record.isPending}>
+            <button type="submit" className="btn btn-primary" disabled={record.isPending || (prnNeedsReason && form.prnReason.trim().length < 3)}>
               {record.isPending ? 'Saving…' : '✅ Confirm & Sign'}
             </button>
           </div>

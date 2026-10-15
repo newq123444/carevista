@@ -1,8 +1,12 @@
 // src/controllers/tasks.controller.ts
 import { Request, Response, NextFunction } from 'express';
-import { query } from '../models/db';
+import { lockResidentNotes, findDuplicate, insertCareNote } from '../services/careNoteWriter';
+import { query, withTransaction } from '../models/db';
 import { AppError } from '../utils/errors';
 import { auditLog } from '../services/audit.service';
+import { appendQuietly } from '../services/recordChain';
+import { homeToday, homeInstant, HOME_TODAY_SQL } from '../utils/homeTime';
+import { clientRecordedAt, clientRef } from '../utils/clientTime';
 // SSE is optional - graceful fallback if not deployed
 let sseManager: any = { broadcast: () => {}, addClient: () => {}, removeClient: () => {} };
 try { sseManager = require('../utils/sse').sseManager; } catch { /* SSE not available */ }
@@ -43,10 +47,8 @@ export async function generateDailyTasks(req: Request, res: Response, next: Next
   try {
     const careHomeId = req.user!.care_home_id;
     // Use provided date or today in local time (not UTC which can be off by 1 day)
-    const date = (req.query.date as string) || (() => {
-      const d = new Date();
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    })();
+    // Today in the home (UK time), not the server's UTC date.
+    const date = (req.query.date as string) || homeToday();
 
     // Auto-seed default templates if none exist for this home
     const { rows: existingTmpl } = await query(
@@ -99,7 +101,7 @@ export async function generateDailyTasks(req: Request, res: Response, next: Next
            WHERE ab.resident_id = r.id
              AND ab.start_date <= $1::date
              AND (ab.actual_return IS NULL OR ab.actual_return > $1::date))
-         AND (ctt.frequency = 'daily' OR (ctt.frequency = 'weekly' AND EXTRACT(DOW FROM $1::date) = (abs(hashtext(r.id::text)) % 7)))
+         AND (ctt.frequency = 'daily' OR (ctt.frequency = 'weekly' AND EXTRACT(DOW FROM $1::date) = (CASE WHEN ctt.resident_id IS NOT NULL AND ctt.day_of_week IS NOT NULL THEN ctt.day_of_week ELSE abs(hashtext(r.id::text)) % 7 END)))
          AND (
            ctt.resident_id = r.id
            OR (ctt.resident_id IS NULL
@@ -131,7 +133,7 @@ export async function seedTemplates(req: Request, res: Response, next: NextFunct
     const careHomeId = req.user!.care_home_id;
     // Idempotent refresh: clear existing templates and today's/future un-actioned tasks, then reinsert the current set
     await query(
-      `DELETE FROM care_tasks WHERE care_home_id = $1 AND task_date >= CURRENT_DATE
+      `DELETE FROM care_tasks WHERE care_home_id = $1 AND task_date >= ${HOME_TODAY_SQL}
          AND status NOT IN ('done','deferred','in_progress')`,
       [careHomeId]
     );
@@ -152,10 +154,8 @@ export async function listTasks(req: Request, res: Response, next: NextFunction)
   try {
     const careHomeId = req.user!.care_home_id;
     // Use provided date or today in local time (not UTC which can be off by 1 day)
-    const date = (req.query.date as string) || (() => {
-      const d = new Date();
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    })();
+    // Today in the home (UK time), not the server's UTC date.
+    const date = (req.query.date as string) || homeToday();
     const residentId = req.query.residentId as string | undefined;
 
     // Accept the date as-is but also check adjacent dates for timezone tolerance
@@ -236,7 +236,7 @@ export async function listTasks(req: Request, res: Response, next: NextFunction)
         if (p.given >= p.scheduled) return { ...base, status: 'done', completed_by_name: 'Signed on MAR chart' };
         // Otherwise fall through to the normal time-based status below.
         const timeStr = String(t.due_time || '00:00').slice(0, 5);
-        const due = new Date(`${date}T${timeStr}:00`);
+        const due = homeInstant(date, timeStr); // UK wall clock → instant
         const windowEnd = new Date(due.getTime() + (t.window_mins || 60) * 60000);
         const missedCutoff = new Date(due.getTime() + (t.window_mins || 60) * 60000 * 2);
         const computed = now < due ? 'upcoming'
@@ -251,7 +251,7 @@ export async function listTasks(req: Request, res: Response, next: NextFunction)
       // Parse due time — handle both HH:MM and HH:MM:SS from postgres
       const timeStr = String(t.due_time || '00:00').slice(0, 5);
       const [h, m] = timeStr.split(':').map(Number);
-      const due = new Date(`${date}T${timeStr}:00`);
+      const due = homeInstant(date, timeStr); // UK wall clock → instant
       const windowEnd = new Date(due.getTime() + (t.window_mins || 60) * 60000);
       const missedCutoff = new Date(due.getTime() + (t.window_mins || 60) * 60000 * 2);
 
@@ -297,19 +297,116 @@ export async function completeTask(req: Request, res: Response, next: NextFuncti
       });
     }
 
+    // ── Complete the task AND write its note, as one thing (v89b) ─────────
+    // The round used to write the note, then complete the task. If another
+    // carer had finished the task a minute earlier, the note went in and only
+    // then did the completion say "already done" — leaving a second record of
+    // care that may not have happened twice. Now both happen in one
+    // transaction, with the task row and the resident's notes locked: either
+    // the note and the completion both go in, or neither does and the carer is
+    // told who did it and when. `confirmDuplicate` saves the note anyway
+    // (the carer has seen the other record and says theirs is different).
+    if (req.body?.note && typeof req.body.note === 'object') {
+      const n = req.body.note as Record<string, any>;
+      if (!n.noteType || !n.content) throw new AppError(400, 'note.noteType and note.content are required');
+      const deviceTimeN = clientRecordedAt(req.body?.clientRecordedAt);
+      const refN = clientRef(req.body?.clientRef);
+      const confirm = req.body?.confirmDuplicate === true;
+      const num = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null);
+      const fields = {
+        noteType: String(n.noteType), content: String(n.content).slice(0, 10000),
+        fluidIntakeMl: num(n.fluidIntakeMl), foodEatenPercent: num(n.foodEatenPercent), mood: n.mood ?? null,
+        bowelsOpened: typeof n.bowelsOpened === 'boolean' ? n.bowelsOpened : null, stoolType: n.stoolType ?? null,
+        isSignificant: n.isSignificant === true, flagged: n.flagged === true, painScore: num(n.painScore),
+        mealContext: typeof n.mealContext === 'string' ? n.mealContext.slice(0, 4000) : null,
+      };
+      const out = await withTransaction(async (client) => {
+        const { rows: [t] } = await client.query(
+          `SELECT t.*, u.first_name || ' ' || u.last_name AS completed_by_name, r.first_name || ' ' || r.last_name AS resident_name
+             FROM care_tasks t LEFT JOIN users u ON u.id = t.completed_by JOIN residents r ON r.id = t.resident_id
+            WHERE t.id = $1 AND t.care_home_id = $2 FOR UPDATE OF t`, [id, careHomeId]);
+        if (!t) return { status: 404, body: { error: 'Task not found' } };
+        await lockResidentNotes(client, t.resident_id);
+        // A resend of something that already arrived.
+        if (refN) {
+          const { rows: [again] } = await client.query('SELECT * FROM care_notes WHERE care_home_id = $1 AND client_ref = $2', [careHomeId, refN]);
+          if (again) return { status: 200, body: { ...t, note: again } };
+        }
+        if (t.status === 'done' && !confirm) {
+          const mins = t.completed_at ? Math.max(0, Math.round((Date.now() - new Date(t.completed_at).getTime()) / 60000)) : null;
+          const mine = t.completed_by === req.user!.id;
+          const when = mins === null ? '' : mins < 1 ? ' just now' : mins === 1 ? ' 1 minute ago' : ` ${mins} minutes ago`;
+          return { status: 409, body: {
+            error: mine ? `You already completed "${t.task_name}" for ${t.resident_name}${when}.`
+              : `${t.completed_by_name || 'Another member of staff'} already completed "${t.task_name}" for ${t.resident_name}${when}. Your note has not been saved — check with them, then save it only if it is different care.`,
+            conflict: 'already_completed', hadNote: true, taskId: t.id, taskName: t.task_name, residentName: t.resident_name,
+            completedByName: t.completed_by_name, completedAt: t.completed_at, minutesAgo: mins, byMe: mine,
+          } };
+        }
+        if (!confirm) {
+          const dup = await findDuplicate(client, { careHomeId, residentId: t.resident_id, userId: req.user!.id, eventAt: deviceTimeN, note: fields });
+          if (dup) return { status: 409, body: dup };
+        }
+        const note = await insertCareNote(client, {
+          careHomeId, residentId: t.resident_id, authorId: req.user!.id, ...fields,
+          clientRecordedAt: deviceTimeN, clientRef: refN,
+        });
+        if (t.status === 'done') {
+          // Confirmed as different care: the note stands; the task was already done.
+          return { status: 200, body: { ...t, note, alreadyCompleted: true } };
+        }
+        const { rows: [row] } = await client.query(
+          `UPDATE care_tasks
+              SET status='done', completed_by=$1, completed_at=NOW(), notes=$2,
+                  in_progress_by=NULL, in_progress_since=NULL, in_progress_name=NULL, client_recorded_at=$5
+            WHERE id=$3 AND care_home_id=$4 RETURNING *`,
+          [req.user!.id, (req.body?.notes || fields.content).slice(0, 200), id, careHomeId, deviceTimeN]);
+        await appendQuietly(client, {
+          careHomeId, entityType: 'care_task', entityId: row.id,
+          action: deviceTimeN ? 'completed_offline' : 'completed', row, recordedBy: req.user!.id,
+          eventAt: row.client_recorded_at ?? row.completed_at,
+        });
+        return { status: 200, body: { ...row, note }, completed: row };
+      });
+      if (out.completed) {
+        sseManager.broadcast(careHomeId, {
+          type: 'TASK_COMPLETED', taskId: id, residentId: out.completed.resident_id,
+          completedBy: `${req.user!.first_name} ${req.user!.last_name}`, completedAt: new Date().toISOString(),
+        });
+      }
+      return res.status(out.status).json(out.body);
+    }
+
     // Only complete a task that is not already done. Without this guard two
     // carers can each finish the same task and each write a care note for it,
     // which means either the resident received the same care twice or the
     // record says something happened twice when it happened once. Both are
     // serious: the first distresses the resident, the second is a false record.
-    const { rows: [task] } = await query(
-      `UPDATE care_tasks
-       SET status='done', completed_by=$1, completed_at=NOW(), notes=$2,
-           in_progress_by=NULL, in_progress_since=NULL, in_progress_name=NULL
-       WHERE id=$3 AND care_home_id=$4 AND status <> 'done'
-       RETURNING *`,
-      [req.user!.id, notes || null, id, careHomeId]
-    );
+    // Recorded offline and sent later: the phone's time, bounded and labelled.
+    const deviceTime = clientRecordedAt(req.body?.clientRecordedAt);
+    const task = await withTransaction(async (client) => {
+      const { rows: [row] } = await client.query(
+        `UPDATE care_tasks
+         SET status='done', completed_by=$1, completed_at=NOW(), notes=$2,
+             in_progress_by=NULL, in_progress_since=NULL, in_progress_name=NULL,
+             client_recorded_at=$5
+         WHERE id=$3 AND care_home_id=$4 AND status <> 'done'
+         RETURNING *`,
+        [req.user!.id, notes || null, id, careHomeId, deviceTime]
+      );
+
+      // Only a real completion is chained. The guard above means `row` is
+      // undefined when someone else got there first, and a refused duplicate is
+      // not a care event.
+      if (row) {
+        await appendQuietly(client, {
+          careHomeId, entityType: 'care_task', entityId: row.id,
+          action: deviceTime ? 'completed_offline' : 'completed', row, recordedBy: req.user!.id,
+          eventAt: row.client_recorded_at ?? row.completed_at,
+        });
+      }
+      return row;
+    });
 
     if (!task) {
       const { rows: [existing] } = await query(
@@ -368,9 +465,10 @@ export async function deferTask(req: Request, res: Response, next: NextFunction)
     const { rows: [task] } = await query(
       `UPDATE care_tasks
        SET status='deferred', deferred_reason=$1, completed_by=$2, completed_at=NOW(),
-           in_progress_by=NULL, in_progress_since=NULL, in_progress_name=NULL
+           in_progress_by=NULL, in_progress_since=NULL, in_progress_name=NULL,
+           client_recorded_at=$5
        WHERE id=$3 AND care_home_id=$4 AND status <> 'done' RETURNING *`,
-      [reason, req.user!.id, id, careHomeId]
+      [reason, req.user!.id, id, careHomeId, clientRecordedAt(req.body?.clientRecordedAt)]
     );
     if (!task) {
       const { rows: [existing] } = await query(
@@ -400,6 +498,87 @@ export async function deferTask(req: Request, res: Response, next: NextFunction)
 }
 
 // ── Mark in-progress (presence indicator) ────────────────────────────────
+// ── Undo a mis-tap ──────────────────────────────────────────────────────────
+// A swipe is fast, so a wrong swipe is easy. Undo has to be real: the screen
+// offered "Undo" for months and it only moved the carer back a card, leaving
+// the false record in place.
+//
+// Deliberately narrow. Only the person who recorded it, only within a short
+// window, only the task and the note written with it. Beyond that it is not a
+// mis-tap, it is a correction, and corrections go through an amendment so the
+// original stays readable.
+//
+// Nothing is erased. The completion stays in the record chain, and the reopen
+// is appended after it, so the history reads "recorded at 10:02, undone by the
+// same carer at 10:03" — which is the truth.
+const REOPEN_WINDOW_MINUTES = 10;
+
+export async function reopenTask(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const careHomeId = req.user!.care_home_id;
+    const noteId = typeof req.body?.noteId === 'string' ? req.body.noteId : null;
+
+    const result = await withTransaction(async (client) => {
+      const { rows: [row] } = await client.query(
+        `UPDATE care_tasks
+            SET status = 'pending', completed_by = NULL, completed_at = NULL,
+                deferred_reason = NULL, notes = NULL, client_recorded_at = NULL
+          WHERE id = $1 AND care_home_id = $2
+            AND status IN ('done', 'deferred')
+            AND completed_by = $3
+            AND completed_at > NOW() - ($4 || ' minutes')::interval
+          RETURNING *`,
+        [id, careHomeId, req.user!.id, String(REOPEN_WINDOW_MINUTES)]
+      );
+      if (!row) return null;
+
+      await appendQuietly(client, {
+        careHomeId, entityType: 'care_task', entityId: id,
+        action: 'reopened', row, recordedBy: req.user!.id, eventAt: new Date(),
+      });
+
+      let withdrawn = false;
+      if (noteId) {
+        const { rows: [note] } = await client.query(
+          `UPDATE care_notes SET deleted_at = NOW(),
+                  flag_reason = COALESCE(flag_reason, 'Recorded in error — undone by the author within ${REOPEN_WINDOW_MINUTES} minutes')
+            WHERE id = $1 AND care_home_id = $2 AND author_id = $3 AND deleted_at IS NULL
+              AND created_at > NOW() - ($4 || ' minutes')::interval
+            RETURNING *`,
+          [noteId, careHomeId, req.user!.id, String(REOPEN_WINDOW_MINUTES)]
+        );
+        if (note) {
+          withdrawn = true;
+          await appendQuietly(client, {
+            careHomeId, entityType: 'care_note', entityId: note.id,
+            action: 'withdrawn', row: note, recordedBy: req.user!.id, eventAt: note.created_at,
+          });
+        }
+      }
+      return { row, withdrawn };
+    });
+
+    if (!result) {
+      return res.status(409).json({
+        error: `This can only be undone by the person who recorded it, within ${REOPEN_WINDOW_MINUTES} minutes. ` +
+               'If it was wrong, add a correction to the note instead — the original stays on the record.',
+        conflict: 'reopen_window_passed',
+      });
+    }
+
+    await auditLog({
+      careHomeId, actorId: req.user!.id,
+      actorName: `${req.user!.first_name} ${req.user!.last_name}`,
+      action: 'CARE_TASK_REOPENED', entityType: 'care_task', entityId: id,
+      afterData: { noteWithdrawn: result.withdrawn }, ip: req.ip,
+    });
+    try { sseManager.broadcast(careHomeId, { type: 'TASKS_CHANGED' }); } catch { /* optional */ }
+
+    res.json({ ok: true, noteWithdrawn: result.withdrawn });
+  } catch (err) { next(err); }
+}
+
 export async function startTask(req: Request, res: Response, next: NextFunction) {
   try {
     const careHomeId = req.user!.care_home_id;
@@ -610,7 +789,7 @@ export async function updateTemplate(req: Request, res: Response, next: NextFunc
                   due_time = $4, window_mins = $5, note_type = $6,
                   handled_in = COALESCE($7, handled_in), updated_at = NOW()
            WHERE care_home_id = $8 AND template_id = $9
-             AND task_date >= CURRENT_DATE
+             AND task_date >= ${HOME_TODAY_SQL}
              AND status NOT IN ('done','deferred') AND in_progress_by IS NULL`,
           [row.name, row.icon, row.category, row.due_time, row.window_mins,
            row.note_type, row.handled_in, careHomeId, row.id]);
@@ -681,7 +860,7 @@ export async function getResidentCarePlan(req: Request, res: Response, next: Nex
 // record of what happened; a settings change must never rewrite it.
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function removeUnactionedTasks(careHomeId: string, templateId: string, residentId?: string) {
+export async function removeUnactionedTasks(careHomeId: string, templateId: string, residentId?: string) {
   const params: any[] = [careHomeId, templateId];
   let residentClause = '';
   if (residentId) { params.push(residentId); residentClause = `AND resident_id = $${params.length}`; }
@@ -689,13 +868,13 @@ async function removeUnactionedTasks(careHomeId: string, templateId: string, res
   const { rows: kept } = await query(
     `SELECT COUNT(*)::int AS n FROM care_tasks
      WHERE care_home_id = $1 AND template_id = $2 ${residentClause}
-       AND task_date >= CURRENT_DATE
+       AND task_date >= ${HOME_TODAY_SQL}
        AND (status IN ('done','deferred') OR in_progress_by IS NOT NULL)`, params);
 
   const { rowCount } = await query(
     `DELETE FROM care_tasks
      WHERE care_home_id = $1 AND template_id = $2 ${residentClause}
-       AND task_date >= CURRENT_DATE
+       AND task_date >= ${HOME_TODAY_SQL}
        AND status NOT IN ('done','deferred')
        AND in_progress_by IS NULL`, params);
 
@@ -705,7 +884,7 @@ async function removeUnactionedTasks(careHomeId: string, templateId: string, res
 // Re-create today's row for a template that has just been switched back on.
 // Mirrors the eligibility rules used by generateDailyTasks so a task switched
 // on at 09:00 appears immediately rather than tomorrow.
-async function restoreTasksForToday(careHomeId: string, templateId: string, residentId?: string) {
+export async function restoreTasksForToday(careHomeId: string, templateId: string, residentId?: string) {
   const params: any[] = [careHomeId, templateId];
   let residentClause = '';
   if (residentId) { params.push(residentId); residentClause = `AND r.id = $${params.length}`; }
@@ -714,7 +893,7 @@ async function restoreTasksForToday(careHomeId: string, templateId: string, resi
     `INSERT INTO care_tasks
        (care_home_id, resident_id, template_id, task_date, task_name, icon, category,
         due_time, window_mins, note_type, handled_in)
-     SELECT r.care_home_id, r.id, ctt.id, CURRENT_DATE,
+     SELECT r.care_home_id, r.id, ctt.id, ${HOME_TODAY_SQL},
             ctt.name, ctt.icon, ctt.category, ctt.due_time, ctt.window_mins,
             ctt.note_type, COALESCE(ctt.handled_in, 'care_note')
      FROM residents r
@@ -725,10 +904,10 @@ async function restoreTasksForToday(careHomeId: string, templateId: string, resi
        AND (ctt.resident_id IS NULL OR ctt.resident_id = r.id)
        AND NOT EXISTS (
          SELECT 1 FROM resident_absences ab
-         WHERE ab.resident_id = r.id AND ab.start_date <= CURRENT_DATE
-           AND (ab.actual_return IS NULL OR ab.actual_return > CURRENT_DATE))
+         WHERE ab.resident_id = r.id AND ab.start_date <= ${HOME_TODAY_SQL}
+           AND (ab.actual_return IS NULL OR ab.actual_return > ${HOME_TODAY_SQL}))
        AND (ctt.frequency = 'daily'
-            OR (ctt.frequency = 'weekly' AND EXTRACT(DOW FROM CURRENT_DATE) = (abs(hashtext(r.id::text)) % 7)))
+            OR (ctt.frequency = 'weekly' AND EXTRACT(DOW FROM ${HOME_TODAY_SQL}) = (CASE WHEN ctt.resident_id IS NOT NULL AND ctt.day_of_week IS NOT NULL THEN ctt.day_of_week ELSE abs(hashtext(r.id::text)) % 7 END)))
        AND (
          ctt.resident_id = r.id
          OR (ctt.resident_id IS NULL
@@ -742,7 +921,7 @@ async function restoreTasksForToday(careHomeId: string, templateId: string, resi
        AND NOT EXISTS (
          SELECT 1 FROM care_tasks ct2
          WHERE ct2.resident_id = r.id AND ct2.template_id = ctt.id
-           AND ct2.task_date = CURRENT_DATE)`, params);
+           AND ct2.task_date = ${HOME_TODAY_SQL})`, params);
 
   return rowCount ?? 0;
 }

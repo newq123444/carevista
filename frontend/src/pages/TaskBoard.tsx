@@ -410,7 +410,7 @@ export default function TaskBoard() {
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">📋 Task Board</h1>
+          <h1 className="page-title">Task Board</h1>
           <p className="page-subtitle">
             {counts.done}/{counts.total} complete · {counts.due} due · {counts.overdue} overdue · {counts.missed > 0 ? `⚠️ ${counts.missed} missed` : '0 missed'}
           </p>

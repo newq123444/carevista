@@ -1,5 +1,6 @@
 // src/pages/News2Calculator.tsx — NEWS2 Early Warning Score Calculator
 import React, { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLang } from '../i18n';
 import { useResidents, useNews2Calculate, useNews2History, useNews2Escalations, useRespondToEscalation, useNews2Trend } from '../hooks';
 import type { Resident, News2Assessment, News2Escalation } from '../types';
@@ -68,7 +69,9 @@ function getRiskColor(score: number): string {
 export default function News2Calculator() {
   const { t: tr } = useLang();
   const { data: residents = [] } = useResidents();
-  const [selectedResident, setSelectedResident] = useState('');
+  const [searchParams] = useSearchParams();
+  // Opened from a soft-signs alert or a resident record: start on that resident.
+  const [selectedResident, setSelectedResident] = useState(searchParams.get('resident') || '');
   const { data: history } = useNews2History(selectedResident);
   const { data: escalations } = useNews2Escalations({ status: 'pending' });
   const { data: trendData } = useNews2Trend(selectedResident, 30);
@@ -84,6 +87,13 @@ export default function News2Calculator() {
   const [consciousness, setConsciousness] = useState<string>('alert');
   const [temperature, setTemperature] = useState<number>(37.0);
   const [notes, setNotes] = useState('');
+  // The boxes start with typical values so the layout reads, but a typical
+  // value is not a measurement. Each reading must be entered before saving,
+  // or an untouched form records a perfect score nobody took.
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const touch = (k: string) => setTouched(t => (t.has(k) ? t : new Set(t).add(k)));
+  const notEntered = ['rr', 'spo2', 'bp', 'pulse', 'temp'].filter(k => !touched.has(k));
+  const placeholderStyle = (k: string): React.CSSProperties => touched.has(k) ? {} : { color: '#9ca3af', borderStyle: 'dashed' };
 
   // Real-time score calculation
   const scores = useMemo(() => {
@@ -114,7 +124,7 @@ export default function News2Calculator() {
       consciousness,
       temperature,
       notes: notes || undefined,
-    });
+    }, { onSuccess: () => setTouched(new Set()) });
   };
 
   const handleRespond = (id: string) => {
@@ -169,7 +179,7 @@ export default function News2Calculator() {
                 <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Respiratory Rate (breaths/min)</label>
                 <span style={{ background: scores.rr > 0 ? '#fef3c7' : '#d1fae5', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 600 }}>Score: {scores.rr}</span>
               </div>
-              <input type="number" value={respiratoryRate} onChange={e => setRespiratoryRate(Number(e.target.value))} min={0} max={60} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4 }} />
+              <input type="number" value={respiratoryRate} onChange={e => { setRespiratoryRate(Number(e.target.value)); touch('rr'); }} min={0} max={60} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4, ...placeholderStyle('rr') }} />
             </div>
 
             {/* SpO2 */}
@@ -178,7 +188,7 @@ export default function News2Calculator() {
                 <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>SpO2 (%)</label>
                 <span style={{ background: scores.sp > 0 ? '#fef3c7' : '#d1fae5', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 600 }}>Score: {scores.sp}</span>
               </div>
-              <input type="number" value={spo2} onChange={e => setSpo2(Number(e.target.value))} min={50} max={100} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4 }} />
+              <input type="number" value={spo2} onChange={e => { setSpo2(Number(e.target.value)); touch('spo2'); }} min={50} max={100} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4, ...placeholderStyle('spo2') }} />
             </div>
 
             {/* Supplemental Oxygen */}
@@ -199,7 +209,7 @@ export default function News2Calculator() {
                 <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Systolic BP (mmHg)</label>
                 <span style={{ background: scores.bp > 0 ? '#fef3c7' : '#d1fae5', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 600 }}>Score: {scores.bp}</span>
               </div>
-              <input type="number" value={systolicBP} onChange={e => setSystolicBP(Number(e.target.value))} min={50} max={300} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4 }} />
+              <input type="number" value={systolicBP} onChange={e => { setSystolicBP(Number(e.target.value)); touch('bp'); }} min={50} max={300} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4, ...placeholderStyle('bp') }} />
             </div>
 
             {/* Pulse */}
@@ -208,7 +218,7 @@ export default function News2Calculator() {
                 <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Pulse (bpm)</label>
                 <span style={{ background: scores.p > 0 ? '#fef3c7' : '#d1fae5', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 600 }}>Score: {scores.p}</span>
               </div>
-              <input type="number" value={pulse} onChange={e => setPulse(Number(e.target.value))} min={20} max={220} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4 }} />
+              <input type="number" value={pulse} onChange={e => { setPulse(Number(e.target.value)); touch('pulse'); }} min={20} max={220} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4, ...placeholderStyle('pulse') }} />
             </div>
 
             {/* Consciousness */}
@@ -232,7 +242,7 @@ export default function News2Calculator() {
                 <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Temperature (C)</label>
                 <span style={{ background: scores.t > 0 ? '#fef3c7' : '#d1fae5', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 600 }}>Score: {scores.t}</span>
               </div>
-              <input type="number" step="0.1" value={temperature} onChange={e => setTemperature(Number(e.target.value))} min={30} max={45} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4 }} />
+              <input type="number" step="0.1" value={temperature} onChange={e => { setTemperature(Number(e.target.value)); touch('temp'); }} min={30} max={45} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4, ...placeholderStyle('temp') }} />
             </div>
 
             {/* Notes */}
@@ -241,10 +251,16 @@ export default function News2Calculator() {
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', marginTop: 4, resize: 'vertical' }} />
             </div>
 
+            {notEntered.length > 0 && (
+              <p style={{ margin: '0 0 10px', fontSize: 13.5, color: '#92400e', lineHeight: 1.45 }}>
+                Enter each reading you took. The grey numbers are placeholders, not measurements
+                ({notEntered.length} still to enter).
+              </p>
+            )}
             <button
               type="submit"
-              disabled={!selectedResident || calculateMutation.isPending}
-              style={{ width: '100%', padding: '12px', borderRadius: 8, background: '#0d9488', color: '#fff', fontWeight: 600, border: 'none', cursor: selectedResident ? 'pointer' : 'not-allowed', opacity: selectedResident ? 1 : 0.5, fontSize: '0.95rem' }}
+              disabled={!selectedResident || notEntered.length > 0 || calculateMutation.isPending}
+              style={{ width: '100%', padding: '12px', borderRadius: 8, background: '#0d9488', color: '#fff', fontWeight: 600, border: 'none', cursor: selectedResident && notEntered.length === 0 ? 'pointer' : 'not-allowed', opacity: selectedResident && notEntered.length === 0 ? 1 : 0.5, fontSize: '0.95rem', minHeight: 48 }}
             >
               {calculateMutation.isPending ? 'Calculating...' : 'Calculate & Save NEWS2'}
             </button>

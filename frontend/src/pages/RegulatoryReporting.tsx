@@ -37,7 +37,7 @@ export default function RegulatoryReporting() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">📋 Automated Regulatory Reporting</h1>
+          <h1 className="page-title">Automated Regulatory Reporting</h1>
           <p className="page-subtitle">Auto-generate statutory notifications, track deadlines, maintain audit trails</p>
         </div>
       </div>

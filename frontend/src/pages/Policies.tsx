@@ -28,7 +28,7 @@ export default function Policies() {
   return (
     <div>
       <div className="page-header">
-        <div><h1 className="page-title">📋 Policies & Procedures</h1><p className="page-subtitle">{filtered.length} documents</p></div>
+        <div><h1 className="page-title">Policies & Procedures</h1><p className="page-subtitle">{filtered.length} documents</p></div>
         <button className="btn btn-primary">+ Upload Policy</button>
       </div>
       <div className="card" style={{ marginBottom: 16 }}>

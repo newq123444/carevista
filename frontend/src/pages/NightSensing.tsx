@@ -22,7 +22,7 @@ const EVENT_LABELS: Record<string, string> = {
   out_of_bed: '🚶 Out of bed',
   out_of_bed_prolonged: '⚠️ Out of bed a long time',
   distress: '😢 Distress',
-  repeated_coughing: '🫁 Repeated coughing',
+  repeated_coughing: '💨 Repeated coughing',
   possible_fall: '🚑 Possible fall',
   left_room: '🚪 Left the room',
   unsettled_return: '🔄 Unsettled on returning',

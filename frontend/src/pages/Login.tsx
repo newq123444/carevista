@@ -1,268 +1,152 @@
-// src/pages/Login.tsx — God-Mode Login: unified portal for all roles
-import React, { useState } from 'react';
+// ────────────────────────────────────────────────────────────────────────────
+// Sign in.
+//
+// Plain and calm: the home's staff see this at 7am on a phone. Demo accounts
+// appear only where the server says demo sign-in is switched on — never on a
+// server holding real records.
+// ────────────────────────────────────────────────────────────────────────────
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuthStore } from '../store/auth.store';
 import { useLang, LanguageSwitcher } from '../i18n';
+import { Icon, type IconName } from '../components/Icon';
+import { Avatar } from '../components/ds';
 
-const DEMO_ACCOUNTS = [
-  { email: 'manager@demo.carevista.co.uk',   label: 'Home Manager',     icon: '🏠', color: '#7c3aed', role: 'home_manager',      name: 'Sarah Mitchell' },
-  { email: 'deputy@demo.carevista.co.uk',    label: 'Deputy Manager',   icon: '📋', color: '#0d9488', role: 'deputy_manager',    name: 'James Patel' },
-  { email: 'nurse@demo.carevista.co.uk',     label: 'Nurse',            icon: '🩺', color: '#0891b2', role: 'registered_nurse',  name: 'Priya Sharma' },
-  { email: 'senior@demo.carevista.co.uk',    label: 'Senior Carer',     icon: '⭐', color: '#059669', role: 'senior_carer',      name: 'Daniel Hughes' },
-  { email: 'carer1@demo.carevista.co.uk',    label: 'Care Assistant',   icon: '❤️', color: '#d97706', role: 'carer',             name: 'Amara Osei' },
-  { email: 'activities@demo.carevista.co.uk',label: 'Activities',       icon: '🎨', color: '#ec4899', role: 'activities',        name: 'Lisa Brown' },
-  { email: 'finance@demo.carevista.co.uk',   label: 'Finance',          icon: '💷', color: '#dc2626', role: 'finance',           name: 'Karen Lloyd' },
-  { email: 'cleaning@demo.carevista.co.uk', label: 'Cleaning Staff',   icon: '🧹', color: '#14b8a6', role: 'cleaning',          name: 'Grace Williams' },
-  { email: 'kitchen@demo.carevista.co.uk',  label: 'Kitchen Staff',    icon: '👨‍🍳', color: '#f97316', role: 'kitchen',           name: 'Marcus Johnson' },
-  { email: 'maintenance@demo.carevista.co.uk', label: 'Maintenance Staff', icon: '🔧', color: '#64748b', role: 'maintenance',    name: 'Robert Taylor' },
+const API = (import.meta as any).env?.VITE_API_URL || '/api';
+const DEMO_ACCOUNTS: { email: string; label: string; name: string }[] = [
+  { email: 'manager@demo.carevista.co.uk',     label: 'Home Manager',      name: 'Sarah Mitchell' },
+  { email: 'deputy@demo.carevista.co.uk',      label: 'Deputy Manager',    name: 'James Patel' },
+  { email: 'nurse@demo.carevista.co.uk',       label: 'Nurse',             name: 'Priya Sharma' },
+  { email: 'senior@demo.carevista.co.uk',      label: 'Senior Carer',      name: 'Daniel Hughes' },
+  { email: 'carer1@demo.carevista.co.uk',      label: 'Care Assistant',    name: 'Amara Osei' },
+  { email: 'activities@demo.carevista.co.uk',  label: 'Activities',        name: 'Lisa Brown' },
+  { email: 'finance@demo.carevista.co.uk',     label: 'Finance',           name: 'Karen Lloyd' },
+  { email: 'cleaning@demo.carevista.co.uk',    label: 'Cleaning Staff',    name: 'Grace Williams' },
+  { email: 'kitchen@demo.carevista.co.uk',     label: 'Kitchen Staff',     name: 'Marcus Johnson' },
+  { email: 'maintenance@demo.carevista.co.uk', label: 'Maintenance Staff', name: 'Robert Taylor' },
 ];
 const DEMO_PASSWORD = 'Demo1234!';
+
+const POINTS: { icon: IconName; text: string }[] = [
+  { icon: 'hand-heart', text: 'Record care in a few taps — from the round or from the person' },
+  { icon: 'wifi-off', text: 'Keeps working with no signal, and sends when it’s back' },
+  { icon: 'siren', text: 'Carers can flag “not themselves” to the nurse in seconds' },
+  { icon: 'shield-check', text: 'Every record sealed against later alteration' },
+];
 
 export default function Login() {
   const { t: tr } = useLang();
   const navigate = useNavigate();
   const { login, isLoading, error, clearError } = useAuthStore();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
+  const [demoOn, setDemoOn] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLocalError('');
-    clearError();
-    try {
-      await login(email.trim(), password);
-      navigate('/', { replace: true });
-    } catch (err: any) {
-      setLocalError(err.message || 'Login failed');
-    }
+  useEffect(() => {
+    axios.get(`${API}/auth/demo`).then(r => setDemoOn(!!r.data?.enabled)).catch(() => setDemoOn(false));
+  }, []);
+
+  const signIn = async (e: string, p: string) => {
+    setLocalError(''); clearError();
+    try { await login(e.trim(), p); navigate('/', { replace: true }); }
+    catch (err: any) { setLocalError(err.message || tr('Sign-in failed')); }
   };
-
-  const handleDemoLogin = async (acc: typeof DEMO_ACCOUNTS[0]) => {
-    setActiveDemo(acc.email);
-    setLocalError('');
-    clearError();
-    setEmail(acc.email);
-    setPassword(DEMO_PASSWORD);
-    try {
-      await login(acc.email, DEMO_PASSWORD);
-      navigate('/', { replace: true });
-    } catch (err: any) {
-      setLocalError(err.message || 'Demo login failed');
-    } finally {
-      setActiveDemo(null);
-    }
-  };
-
   const displayError = localError || error;
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex',
-      background: 'linear-gradient(135deg, #0f1623 0%, #1a2640 50%, #0f1623 100%)',
-      fontFamily: "'Segoe UI', system-ui, sans-serif",
-    }}>
-      {/* Left panel – branding */}
-      <div className="login-left" style={{
-        flex: '1 1 45%', display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', padding: '60px 48px',
-        borderRight: '1px solid rgba(255,255,255,.06)',
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg)' }}>
+      <aside className="login-left" style={{
+        flex: '1 1 44%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '56px 56px',
+        background: 'linear-gradient(160deg, #0f766e 0%, #115e59 55%, #134e4a 100%)', color: '#f0fdfa',
       }}>
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 48 }}>
-          <div style={{
-            width: 52, height: 52, borderRadius: 14,
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 26, boxShadow: '0 0 32px rgba(99,102,241,.4)',
-          }}>⚕</div>
-          <div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>CareVista</div>
-            <div style={{ fontSize: 12, color: '#4a5a7a', letterSpacing: '.1em', textTransform: 'uppercase', fontWeight: 600 }}>{tr('Care Home Management')}</div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 56 }}>
+          <span style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,.14)', display: 'grid', placeItems: 'center' }}><Icon name="hand-heart" size={26} /></span>
+          <span style={{ fontSize: 24, fontWeight: 750, letterSpacing: '-0.02em' }}>CareVista</span>
         </div>
-
-        <div style={{ marginBottom: 48 }}>
-          <h1 style={{ fontSize: 38, fontWeight: 800, color: '#fff', lineHeight: 1.15, marginBottom: 16, letterSpacing: '-1px' }}>
-            One platform.<br />
-            <span style={{ background: 'linear-gradient(90deg,#3b82f6,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Every role.</span>
-          </h1>
-          <p style={{ fontSize: 16, color: '#6b7a9a', lineHeight: 1.7, maxWidth: 380 }}>
-            A unified, intelligent care home management system designed for UK care providers — from carers to managers to nurses.
-          </p>
-        </div>
-
-        {/* Feature highlights */}
-        {[
-          { icon: '⚡', text: 'Real-time care notes & handover board' },
-          { icon: '💊', text: 'Digital eMAR with administration tracking' },
-          { icon: '🤖', text: 'AI-powered risk assessment & summaries' },
-          { icon: '✅', text: 'CQC compliance monitoring built-in' },
-        ].map(f => (
-          <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: 'rgba(59,130,246,.12)', border: '1px solid rgba(59,130,246,.2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0,
-            }}>{f.icon}</div>
-            <span style={{ fontSize: 14, color: '#8a9ab8' }}>{f.text}</span>
-          </div>
-        ))}
-
-        <div style={{ marginTop: 48, padding: '16px 20px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
-          <div style={{ fontSize: 12, color: '#4a5a7a', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em' }}>🔒 Demo Environment</div>
-          <div style={{ fontSize: 13, color: '#6b7a9a' }}>All data is simulated. Password for all accounts: <span style={{ color: '#93c5fd', fontFamily: 'monospace', fontWeight: 700 }}>Demo1234!</span></div>
-        </div>
-      </div>
-
-      {/* Right panel – login form */}
-      <div className="login-right" style={{
-        flex: '1 1 55%', display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', padding: '60px 48px', overflowY: 'auto',
-      }}>
-        <div style={{ maxWidth: 520, width: '100%', margin: '0 auto' }}>
-          {/* Mobile header - visible only when left panel is hidden */}
-          <div className="login-mobile-header">
-            <div style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, boxShadow: '0 0 20px rgba(99,102,241,.3)',
-            }}>⚕</div>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>CareVista</div>
-              <div style={{ fontSize: 10, color: '#4a5a7a', letterSpacing: '.08em', textTransform: 'uppercase' }}>{tr('Care Home Management')}</div>
+        <h1 style={{ color: '#fff', fontSize: 38, lineHeight: 1.12, fontWeight: 750, letterSpacing: '-0.03em', margin: '0 0 16px', maxWidth: 460 }}>
+          {tr('Care records that carers actually want to use.')}
+        </h1>
+        <p style={{ fontSize: 17, lineHeight: 1.6, opacity: .85, maxWidth: 440, margin: '0 0 40px' }}>
+          {tr('For care homes in England: the round, the residents, medicines and care plans — on the phone in your pocket.')}
+        </p>
+        <div style={{ display: 'grid', gap: 14 }}>
+          {POINTS.map(p => (
+            <div key={p.text} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <span style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,.12)', display: 'grid', placeItems: 'center', flexShrink: 0 }}><Icon name={p.icon} size={19} /></span>
+              <span style={{ fontSize: 15, opacity: .92 }}>{tr(p.text)}</span>
             </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><LanguageSwitcher compact /></div>
-          <h2 style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 8 }}>{tr('Sign in')}</h2>
-          <p style={{ fontSize: 14, color: '#4a5a7a', marginBottom: 32 }}>Enter your credentials or pick a demo account below</p>
+          ))}
+        </div>
+      </aside>
 
-          {/* Login form */}
-          <form onSubmit={handleSubmit} style={{ marginBottom: 32 }}>
+      <main className="login-right" style={{ flex: '1 1 56%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '48px 40px', overflowY: 'auto' }}>
+        <div style={{ maxWidth: 440, width: '100%', margin: '0 auto' }}>
+          <div className="login-mobile-header" style={{ alignItems: 'center', gap: 10, marginBottom: 28 }}>
+            <span className="cv-brand-mark" style={{ width: 42, height: 42, borderRadius: 12 }}><Icon name="hand-heart" size={22} /></span>
+            <span style={{ fontSize: 22, fontWeight: 750, letterSpacing: '-0.02em' }}>CareVista</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 18 }}><LanguageSwitcher compact /></div>
+          <h2 className="cv-h1" style={{ marginBottom: 6 }}>{tr('Sign in')}</h2>
+          <p className="cv-sub" style={{ margin: '0 0 26px' }}>{tr('Use the email and password your manager gave you.')}</p>
+
+          <form onSubmit={e => { e.preventDefault(); void signIn(email, password); }} style={{ display: 'grid', gap: 14 }}>
             {displayError && (
-              <div style={{
-                padding: '12px 16px', borderRadius: 10, marginBottom: 16,
-                background: '#2d1515', border: '1px solid #7f1d1d',
-                color: '#fca5a5', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8,
-              }}>
-                ⚠️ {displayError}
+              <div role="alert" style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--red-50)', border: '1px solid var(--red-200)', color: 'var(--red-700)', display: 'flex', gap: 8, alignItems: 'center', fontSize: 14.5 }}>
+                <Icon name="triangle-alert" size={18} />{displayError}
               </div>
             )}
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#8a9ab8', marginBottom: 6 }}>{tr('Email address')}</label>
-              <input
-                type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@carehome.co.uk" required
-                style={{
-                  width: '100%', padding: '12px 16px', borderRadius: 10,
-                  background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)',
-                  color: '#fff', fontSize: 15, outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-                onFocus={e => e.currentTarget.style.borderColor = '#3b82f6'}
-                onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)'}
-              />
-            </div>
-
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#8a9ab8', marginBottom: 6 }}>{tr('Password')}</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'} value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••" required
-                  style={{
-                    width: '100%', padding: '12px 44px 12px 16px', borderRadius: 10,
-                    background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)',
-                    color: '#fff', fontSize: 15, outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = '#3b82f6'}
-                  onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)'}
-                />
-                <button
-                  type="button" onClick={() => setShowPassword(s => !s)}
-                  style={{
-                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', color: '#6b7a9a', cursor: 'pointer', fontSize: 16,
-                  }}
-                >{showPassword ? '🙈' : '👁'}</button>
-              </div>
-            </div>
-
-            <button
-              type="submit" disabled={isLoading}
-              style={{
-                width: '100%', padding: '14px', borderRadius: 10, border: 'none',
-                background: isLoading ? '#0d9488' : 'linear-gradient(135deg,#3b82f6,#8b5cf6)',
-                color: '#fff', fontSize: 15, fontWeight: 700, cursor: isLoading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 20px rgba(99,102,241,.4)',
-                transition: 'opacity 150ms',
-              }}
-            >
-              {isLoading ? '⏳ Signing in…' : '→ Sign In'}
+            <label className="form-label">{tr('Email address')}
+              <input className="form-input" type="email" autoComplete="username" value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="you@yourhome.co.uk" required style={{ width: '100%', marginTop: 6, minHeight: 50, fontSize: 16 }} />
+            </label>
+            <label className="form-label">{tr('Password')}
+              <span style={{ position: 'relative', display: 'block', marginTop: 6 }}>
+                <input className="form-input" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password}
+                  onChange={e => setPassword(e.target.value)} required style={{ width: '100%', minHeight: 50, fontSize: 16, paddingRight: 64 }} />
+                <button type="button" onClick={() => setShowPassword(s => !s)} aria-label={showPassword ? tr('Hide password') : tr('Show password')}
+                  style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: 'var(--brand-700)', cursor: 'pointer', height: 40, padding: '0 8px', fontWeight: 600, fontSize: 13.5 }}>
+                  {showPassword ? tr('Hide') : tr('Show')}
+                </button>
+              </span>
+            </label>
+            <button type="submit" className="cv-btn cv-btn-primary cv-btn-lg" disabled={isLoading} style={{ marginTop: 6 }}>
+              {isLoading && !activeDemo ? tr('Signing in…') : tr('Sign in')}
             </button>
+            <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text-muted)', textAlign: 'center' }}>
+              {tr('Forgotten your password? Ask your manager — they can give you a new one-time password.')}
+            </p>
           </form>
 
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.07)' }} />
-            <span style={{ fontSize: 12, color: '#3a4a5e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em' }}>{tr('Quick Demo Login')}</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.07)' }} />
-          </div>
-
-          {/* Demo account cards */}
-          <div className="login-demo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            {DEMO_ACCOUNTS.map(acc => (
-              <button
-                key={acc.email}
-                onClick={() => handleDemoLogin(acc)}
-                disabled={isLoading}
-                style={{
-                  padding: '12px 14px', borderRadius: 12, border: `1px solid ${acc.color}30`,
-                  background: activeDemo === acc.email ? acc.color + '25' : acc.color + '10',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  transition: 'all 150ms', textAlign: 'left',
-                  opacity: isLoading && activeDemo !== acc.email ? 0.6 : 1,
-                  boxShadow: activeDemo === acc.email ? `0 0 16px ${acc.color}30` : 'none',
-                }}
-                onMouseEnter={e => {
-                  if (!isLoading) {
-                    (e.currentTarget as HTMLElement).style.borderColor = acc.color + '60';
-                    (e.currentTarget as HTMLElement).style.background = acc.color + '20';
-                  }
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = acc.color + '30';
-                  (e.currentTarget as HTMLElement).style.background = activeDemo === acc.email ? acc.color + '25' : acc.color + '10';
-                }}
-              >
-                <div style={{
-                  width: 36, height: 36, borderRadius: 9, flexShrink: 0,
-                  background: acc.color + '20', border: `1px solid ${acc.color}40`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-                }}>{acc.icon}</div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: acc.color }}>{acc.label}</div>
-                  <div style={{ fontSize: 11, color: '#4a5a7a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {activeDemo === acc.email ? '⏳ Signing in…' : acc.name}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <p style={{ marginTop: 24, fontSize: 12, color: '#2a3a52', textAlign: 'center' }}>
-            🔒 CareVista is GDPR compliant · Data encrypted at rest and in transit
-          </p>
+          {demoOn && (
+            <section style={{ marginTop: 34 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{tr('Demo — try a role')}</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              </div>
+              <div className="login-demo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                {DEMO_ACCOUNTS.map(acc => (
+                  <button key={acc.email} disabled={isLoading} onClick={async () => { setActiveDemo(acc.email); setEmail(acc.email); setPassword(DEMO_PASSWORD); await signIn(acc.email, DEMO_PASSWORD); setActiveDemo(null); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', textAlign: 'left', minHeight: 54, opacity: isLoading && activeDemo !== acc.email ? .6 : 1 }}>
+                    <Avatar name={acc.name} size={34} />
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ display: 'block', fontWeight: 650, fontSize: 13.5, color: 'var(--text-primary)' }}>{tr(acc.label)}</span>
+                      <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeDemo === acc.email ? tr('Signing in…') : acc.name}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
+                {tr('Demo data only — every resident and record here is made up.')}
+              </p>
+            </section>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

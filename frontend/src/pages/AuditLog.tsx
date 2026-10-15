@@ -34,7 +34,7 @@ export default function AuditLog() {
   return (
     <div>
       <div className="page-header">
-        <div><h1 className="page-title">🔍 Audit Log</h1><p className="page-subtitle">{total} records</p></div>
+        <div><h1 className="page-title">Audit Log</h1><p className="page-subtitle">{total} records</p></div>
         <button className="btn btn-secondary" onClick={exportCsv}>⬇️ Export CSV</button>
       </div>
       <div className="card" style={{ marginBottom:16 }}>

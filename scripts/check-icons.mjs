@@ -17,7 +17,11 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const formPath = join(root, 'frontend/src/pages/dashboards/CarerDashboard.tsx');
+// The option lists moved out of CarerDashboard into a shared module. When they
+// did, this guard silently went from checking 389 options to checking none and
+// still reported success — which is the worst thing a guard can do. Hence the
+// hard floor below.
+const formPath = join(root, 'frontend/src/constants/careOptions.ts');
 const iconPath = join(root, 'frontend/src/utils/optionIcons.ts');
 
 for (const p of [formPath, iconPath]) {
@@ -59,6 +63,16 @@ for (const g of groups) {
     if (seen.has(icon)) clashes.push(`${g.label}: "${seen.get(icon)}" and "${o}" both show ${icon}`);
     else seen.set(icon, o);
   }
+}
+
+// A guard that checks nothing must fail, not pass quietly. If the option lists
+// move again, this stops the build instead of rubber-stamping it.
+const MIN_EXPECTED = 200;
+if (total < MIN_EXPECTED) {
+  console.error(`Only found ${total} options in ${formPath.replace(root + '/', '')}.`);
+  console.error(`Expected at least ${MIN_EXPECTED} — the lists have probably moved again.`);
+  console.error('This guard is not checking what it claims to. Point it at the right file.');
+  process.exit(2);
 }
 
 console.log(`Checked ${total} options across ${groups.length} groups.`);

@@ -144,7 +144,7 @@ function EditStaffModal({ staff: s, onClose }: { staff: any; onClose: () => void
               </div>
             </div>
 
-            <div style={{ borderTop: '1px solid var(--border)', margin: '6px 0 14px', paddingTop: 14, fontWeight: 700, fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>🪪 DBS Check</div>
+            <div style={{ borderTop: '1px solid var(--border)', margin: '6px 0 14px', paddingTop: 14, fontWeight: 700, fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>🆔 DBS Check</div>
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">DBS Certificate Number</label>
@@ -223,7 +223,7 @@ export default function Staff() {
       <PrintHeader title="Staff directory" />
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <h1 className="page-title">👤 Staff Directory</h1>
+          <h1 className="page-title">Staff Directory</h1>
           <p className="page-subtitle">
             {staff.filter((x: any) => x.active !== false && !x.end_date).length} current ·{' '}
             {staff.filter((x: any) => x.active === false || x.end_date).length} left · {filtered.length} shown

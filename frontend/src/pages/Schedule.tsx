@@ -27,7 +27,7 @@ export default function Schedule() {
   return (
     <div>
       <div className="page-header">
-        <div><h1 className="page-title">📅 Rota / Schedule</h1><p className="page-subtitle">{formatDate(start)} — {formatDate(end)}</p></div>
+        <div><h1 className="page-title">Rota / Schedule</h1><p className="page-subtitle">{formatDate(start)} — {formatDate(end)}</p></div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev Week</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(0)}>{tr('Today')}</button>
